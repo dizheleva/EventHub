@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { Link } from "react-router-dom"
 import { CalendarDays, Menu, X } from "lucide-react"
 
 export function Navbar() {
@@ -8,7 +9,7 @@ export function Navbar() {
     <header className="border-b border-pink-100 bg-white/95 backdrop-blur-sm shadow-soft sticky top-0 z-50">
       <nav className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-3 group">
+        <Link to="/" className="flex items-center gap-3 group">
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-primary to-secondary rounded-xl blur opacity-50 group-hover:opacity-75 transition-opacity"></div>
             <div className="relative bg-gradient-to-br from-primary to-secondary p-2 rounded-xl">
@@ -18,19 +19,19 @@ export function Navbar() {
           <span className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             EventHub
           </span>
-        </a>
+        </Link>
 
         {/* Desktop menu */}
         <ul className="hidden md:flex items-center space-x-1">
           <li>
-            <a href="#" className="px-4 py-2 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors">
+            <Link to="/" className="px-4 py-2 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors">
               Начало
-            </a>
+            </Link>
           </li>
           <li>
-            <a href="#" className="px-4 py-2 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors">
+            <Link to="/events" className="px-4 py-2 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors">
               Събития
-            </a>
+            </Link>
           </li>
           <li>
             <a href="#" className="px-4 py-2 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors">
@@ -64,14 +65,14 @@ export function Navbar() {
         <div className="md:hidden border-t border-pink-100 bg-white/95 backdrop-blur-sm">
           <ul className="flex flex-col px-4 py-4 space-y-2">
             <li>
-              <a href="#" className="block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors" onClick={() => setMenuOpen(false)}>
+              <Link to="/" className="block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors" onClick={() => setMenuOpen(false)}>
                 Начало
-              </a>
+              </Link>
             </li>
             <li>
-              <a href="#" className="block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors" onClick={() => setMenuOpen(false)}>
+              <Link to="/events" className="block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors" onClick={() => setMenuOpen(false)}>
                 Събития
-              </a>
+              </Link>
             </li>
             <li>
               <a href="#" className="block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors" onClick={() => setMenuOpen(false)}>
