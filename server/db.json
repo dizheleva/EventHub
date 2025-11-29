@@ -1,20 +1,20 @@
 {
-    "events": [
-      {
-        "id": "1",
-        "title": "Детски театър",
-        "date": "2025-12-05",
-        "location": "Детски център Радост",
-        "description": "Весело представление за деца от 3-10 години",
-        "imageUrl": "https://via.placeholder.com/300x200"
-      },
-      {
-        "id": "2",
-        "title": "Рисуване на открито",
-        "date": "2025-12-07",
-        "location": "Градски парк",
-        "description": "Семинар за малки художници",
-        "imageUrl": "https://via.placeholder.com/300x200"
-      }
-    ]
-  }
+  "events": [
+    {
+      "id": "1",
+      "title": "Детски театър",
+      "date": "2025-12-05",
+      "location": "Детски център Радост",
+      "description": "Весело представление за деца от 3-10 години",
+      "imageUrl": "https://static.bnr.bg/gallery/cr/medium/ae854d361d4434891255dcd083b1f5f6.jpg"
+    },
+    {
+      "id": "2",
+      "title": "Рисуване на открито",
+      "date": "2025-12-07",
+      "location": "Градски парк",
+      "description": "Семинар за малки и големи художници",
+      "imageUrl": "https://static.bnr.bg/gallery/72/72e28cd3eb471c03f32e5cd53ca4e310.jpg"
+    }
+  ]
+}
