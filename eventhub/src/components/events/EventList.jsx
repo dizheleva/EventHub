@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Edit } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
 import { Modal } from "@/components/common/Modal";
 import { EditEventForm } from "./EditEventForm";
+import { DeleteEventModal } from "./DeleteEventModal";
 
 export function EventList() {
   const [events, setEvents] = useState([]);
@@ -9,6 +10,8 @@ export function EventList() {
   const [error, setError] = useState("");
   const [editingEvent, setEditingEvent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deletingEventId, setDeletingEventId] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -41,13 +44,24 @@ export function EventList() {
     setEditingEvent(null);
   }
 
-  function handleEventUpdated(updatedEvent) {
-    // Update the event in the list
-    setEvents(prevEvents =>
-      prevEvents.map(event =>
-        event.id === updatedEvent.id ? updatedEvent : event
-      )
-    );
+  function handleEventUpdated() {
+    // Refresh the event list from server to ensure we have the latest data
+    fetchEvents();
+  }
+
+  function handleDeleteClick(event) {
+    setDeletingEventId(event.id);
+    setIsDeleteModalOpen(true);
+  }
+
+  function handleCloseDeleteModal() {
+    setIsDeleteModalOpen(false);
+    setDeletingEventId(null);
+  }
+
+  function handleEventDeleted() {
+    // Refresh the event list from server after deletion
+    fetchEvents();
   }
 
   if (loading) return <div className="text-center py-20">Зареждане...</div>;
@@ -58,13 +72,22 @@ export function EventList() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {events.map(event => (
           <div key={event.id} className="relative p-6 bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow">
-            <button
-              onClick={() => handleEditClick(event)}
-              className="absolute top-4 right-4 p-2 text-gray-500 hover:text-primary hover:bg-pink-50 rounded-lg transition-colors"
-              aria-label="Редактирай събитие"
-            >
-              <Edit className="w-5 h-5" />
-            </button>
+            <div className="absolute top-4 right-4 flex gap-2">
+              <button
+                onClick={() => handleEditClick(event)}
+                className="p-2 text-gray-500 hover:text-primary hover:bg-pink-50 rounded-lg transition-colors"
+                aria-label="Редактирай събитие"
+              >
+                <Edit className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => handleDeleteClick(event)}
+                className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                aria-label="Изтрий събитие"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            </div>
             {event.imageUrl && (
               <img 
                 src={event.imageUrl} 
@@ -93,6 +116,14 @@ export function EventList() {
           />
         )}
       </Modal>
+
+      {/* Delete Modal */}
+      <DeleteEventModal
+        eventId={deletingEventId}
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        onDeleted={handleEventDeleted}
+      />
     </>
   );
 }
