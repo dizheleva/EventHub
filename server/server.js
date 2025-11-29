@@ -36,15 +36,19 @@ server.get('/', (req, res) => {
   });
 });
 
+// Middleware за добавяне на createdAt и updatedAt
+// За POST заявки добавяме createdAt и updatedAt
+// За PUT/PATCH заявки, updatedAt се добавя от клиента
 server.use((req, res, next) => {
-  // Добавя createdAt и updatedAt автоматично
-  if (req.method === "POST") {
-    req.body.createdAt = new Date().toISOString();
-    req.body.updatedAt = new Date().toISOString();
+  if (req.method === "POST" && req.body && typeof req.body === "object" && !Array.isArray(req.body)) {
+    if (!req.body.createdAt) {
+      req.body.createdAt = new Date().toISOString();
+    }
+    if (!req.body.updatedAt) {
+      req.body.updatedAt = new Date().toISOString();
+    }
   }
-  if (req.method === "PUT") {
-    req.body.updatedAt = new Date().toISOString();
-  }
+  // PUT/PATCH заявките вече имат updatedAt от клиента, няма нужда да го добавяме тук
   next();
 });
 
