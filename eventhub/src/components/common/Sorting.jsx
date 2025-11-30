@@ -21,10 +21,15 @@ export function Sorting({ sortBy, sortOrder, onSortChange }) {
     if (sortBy !== field) {
       return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
     }
+    const iconColor = field === "title" 
+      ? "text-yellow-500" 
+      : field === "date" 
+      ? "text-blue-500" 
+      : "text-green-500";
     return sortOrder === "asc" ? (
-      <ArrowUp className="w-4 h-4 text-primary" />
+      <ArrowUp className={`w-4 h-4 ${iconColor}`} />
     ) : (
-      <ArrowDown className="w-4 h-4 text-primary" />
+      <ArrowDown className={`w-4 h-4 ${iconColor}`} />
     );
   }
 
@@ -37,7 +42,11 @@ export function Sorting({ sortBy, sortOrder, onSortChange }) {
           onClick={() => handleSort(field.key)}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             sortBy === field.key
-              ? "bg-primary/10 text-primary border border-primary/20"
+              ? field.key === "title"
+                ? "bg-yellow-50 text-yellow-700 border border-yellow-300"
+                : field.key === "date"
+                ? "bg-blue-50 text-blue-700 border border-blue-300"
+                : "bg-green-50 text-green-700 border border-green-300"
               : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
           }`}
         >
