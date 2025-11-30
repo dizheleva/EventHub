@@ -72,17 +72,18 @@ export function EventList() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {events.map(event => (
           <div key={event.id} className="relative p-6 bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow">
-            <div className="absolute top-4 right-4 flex gap-2">
+            {/* Buttons positioned above the image */}
+            <div className="absolute top-2 right-2 flex gap-2 z-10">
               <button
                 onClick={() => handleEditClick(event)}
-                className="p-2 text-gray-500 hover:text-primary hover:bg-pink-50 rounded-lg transition-colors"
+                className="p-2 text-gray-500 hover:text-yellow-500 hover:bg-yellow-50 rounded-lg transition-colors bg-white/90 backdrop-blur-sm shadow-sm"
                 aria-label="Редактирай събитие"
               >
                 <Edit className="w-5 h-5" />
               </button>
               <button
                 onClick={() => handleDeleteClick(event)}
-                className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors bg-white/90 backdrop-blur-sm shadow-sm"
                 aria-label="Изтрий събитие"
               >
                 <Trash2 className="w-5 h-5" />
