@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { validators } from "@/utils/validators";
 import { Toast } from "@/components/common/Toast";
 import { FormField } from "@/components/common/FormField";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 // Helper function to format date for input[type="date"]
 function formatDateForInput(dateString) {
@@ -20,7 +21,7 @@ function formatDateForInput(dateString) {
   }
 }
 
-export function EditEventForm({ event, onEventUpdated, onClose }) {
+export function EditEventForm({ eventId, onEventUpdated, onClose }) {
   const [formData, setFormData] = useState({
     title: "",
     date: "",
@@ -30,20 +31,44 @@ export function EditEventForm({ event, onEventUpdated, onClose }) {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState(null);
 
-  // Pre-fill form with event data
+  // Fetch event data when component mounts or eventId changes
   useEffect(() => {
-    if (event) {
-      setFormData({
-        title: event.title || "",
-        date: formatDateForInput(event.date),
-        location: event.location || "",
-        description: event.description || "",
-        imageUrl: event.imageUrl || "",
-      });
+    if (!eventId) {
+      setIsLoading(false);
+      return;
     }
-  }, [event]);
+
+    setIsLoading(true);
+    fetch(`http://localhost:5000/events/${eventId}`)
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`Failed to fetch event: ${res.status} ${res.statusText}`);
+        }
+        return res.json();
+      })
+      .then(event => {
+        setFormData({
+          title: event.title || "",
+          date: formatDateForInput(event.date),
+          location: event.location || "",
+          description: event.description || "",
+          imageUrl: event.imageUrl || "",
+        });
+        setIsLoading(false);
+      })
+      .catch(err => {
+        console.error("Error fetching event:", err);
+        setToast({
+          type: "error",
+          message: err.message || "Възникна грешка при зареждане на събитието",
+        });
+        setTimeout(() => setToast(null), 3000);
+        setIsLoading(false);
+      });
+  }, [eventId]);
 
   // Validate single field
   function validateField(name, value) {
@@ -68,7 +93,7 @@ export function EditEventForm({ event, onEventUpdated, onClose }) {
   const hasErrors = Object.keys(errors).length > 0;
 
   // Handle input change with validation
-  function handleChange(e) {
+  function changeHandler(e) {
     const { name, value } = e.target;
     
     setFormData((prev) => ({
@@ -91,7 +116,7 @@ export function EditEventForm({ event, onEventUpdated, onClose }) {
   }
 
   // Handle blur - validate field
-  function handleBlur(e) {
+  function blurHandler(e) {
     const { name, value } = e.target;
     const error = validateField(name, value);
     setErrors((prev) => {
@@ -105,10 +130,10 @@ export function EditEventForm({ event, onEventUpdated, onClose }) {
   }
 
   // Handle form submit
-  async function handleSubmit(e) {
+  async function submitHandler(e) {
     e.preventDefault();
 
-    if (!event || !event.id) {
+    if (!eventId) {
       setToast({
         type: "error",
         message: "Грешка: Липсва ID на събитието",
@@ -127,32 +152,24 @@ export function EditEventForm({ event, onEventUpdated, onClose }) {
     setIsSubmitting(true);
 
     try {
-      // Prepare data with id and preserve existing fields for JSON Server
-      // JSON Server requires the full object with id for PUT requests
+      // Prepare data for PUT request
       const updateData = {
-        id: event.id,
+        id: eventId,
         ...formData,
-        // Preserve existing metadata fields
-        ...(event.createdAt && { createdAt: event.createdAt }),
-        ...(event.updatedAt && { updatedAt: new Date().toISOString() }),
+        updatedAt: new Date().toISOString(),
       };
 
-      console.log("Updating event:", updateData);
-
-      const res = await fetch(`http://localhost:5000/events/${event.id}`, {
+      const res = await fetch(`http://localhost:5000/events/${eventId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updateData),
       });
-
-      console.log("Response status:", res.status, res.statusText);
 
       if (!res.ok) {
         // Try to get error message from response
         let errorMessage = "Грешка при обновяване на събитие";
         try {
           const errorText = await res.text();
-          console.error("Error response:", errorText);
           if (errorText) {
             try {
               const errorData = JSON.parse(errorText);
@@ -168,21 +185,18 @@ export function EditEventForm({ event, onEventUpdated, onClose }) {
         throw new Error(errorMessage);
       }
 
-      // Handle empty response (some servers return empty body on PUT)
+      // Handle response
       let updatedEvent;
       const responseText = await res.text();
       if (responseText) {
         try {
           updatedEvent = JSON.parse(responseText);
         } catch {
-          // If response is not JSON, use the original event with updated data
-          updatedEvent = { ...event, ...updateData };
+          updatedEvent = { id: eventId, ...updateData };
         }
       } else {
-        // Empty response - use the original event with updated data
-        updatedEvent = { ...event, ...updateData };
+        updatedEvent = { id: eventId, ...updateData };
       }
-      console.log("Event updated successfully:", updatedEvent);
       
       // Show success toast
       setToast({
@@ -222,10 +236,11 @@ export function EditEventForm({ event, onEventUpdated, onClose }) {
     }
   }
 
-  if (!event) {
+  // Show loading spinner while fetching event data
+  if (isLoading) {
     return (
-      <div className="p-4 text-center text-gray-500">
-        Няма данни за събитието
+      <div className="py-8">
+        <LoadingSpinner message="Зареждане на данни..." />
       </div>
     );
   }
@@ -235,7 +250,7 @@ export function EditEventForm({ event, onEventUpdated, onClose }) {
       {/* Toast Notification */}
       {toast && <Toast type={toast.type} message={toast.message} />}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={submitHandler} className="space-y-4">
         {/* Title Field */}
         <FormField
           label="Заглавие"
@@ -244,8 +259,8 @@ export function EditEventForm({ event, onEventUpdated, onClose }) {
           placeholder="Въведете заглавие на събитието"
           value={formData.title}
           error={errors.title}
-          onChange={handleChange}
-          onBlur={handleBlur}
+          onChange={changeHandler}
+          onBlur={blurHandler}
           disabled={isSubmitting}
         />
 
@@ -256,8 +271,8 @@ export function EditEventForm({ event, onEventUpdated, onClose }) {
           type="date"
           value={formData.date}
           error={errors.date}
-          onChange={handleChange}
-          onBlur={handleBlur}
+          onChange={changeHandler}
+          onBlur={blurHandler}
           disabled={isSubmitting}
           min={new Date().toISOString().split("T")[0]}
         />
@@ -270,8 +285,8 @@ export function EditEventForm({ event, onEventUpdated, onClose }) {
           placeholder="Въведете локация на събитието"
           value={formData.location}
           error={errors.location}
-          onChange={handleChange}
-          onBlur={handleBlur}
+          onChange={changeHandler}
+          onBlur={blurHandler}
           disabled={isSubmitting}
         />
 
@@ -284,8 +299,8 @@ export function EditEventForm({ event, onEventUpdated, onClose }) {
           rows={4}
           value={formData.description}
           error={errors.description}
-          onChange={handleChange}
-          onBlur={handleBlur}
+          onChange={changeHandler}
+          onBlur={blurHandler}
           disabled={isSubmitting}
         />
 
@@ -297,8 +312,8 @@ export function EditEventForm({ event, onEventUpdated, onClose }) {
           placeholder="https://example.com/image.jpg"
           value={formData.imageUrl}
           error={errors.imageUrl}
-          onChange={handleChange}
-          onBlur={handleBlur}
+          onChange={changeHandler}
+          onBlur={blurHandler}
           disabled={isSubmitting}
           optional={true}
         />

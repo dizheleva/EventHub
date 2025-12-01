@@ -7,7 +7,7 @@ export function Sorting({ sortBy, sortOrder, onSortChange }) {
     { key: "location", label: "Локация" },
   ];
 
-  function handleSort(field) {
+  function sortHandler(field) {
     if (sortBy === field) {
       // Toggle between ascending and descending
       onSortChange(field, sortOrder === "asc" ? "desc" : "asc");
@@ -39,7 +39,7 @@ export function Sorting({ sortBy, sortOrder, onSortChange }) {
       {sortFields.map((field) => (
         <button
           key={field.key}
-          onClick={() => handleSort(field.key)}
+          onClick={() => sortHandler(field.key)}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             sortBy === field.key
               ? field.key === "title"

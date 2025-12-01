@@ -6,18 +6,18 @@ export function Modal({ isOpen, onClose, title, children }) {
   useEffect(() => {
     if (!isOpen) return;
 
-    function handleEscape(e) {
+    function escapeHandler(e) {
       if (e.key === "Escape") {
         onClose();
       }
     }
 
-    document.addEventListener("keydown", handleEscape);
+    document.addEventListener("keydown", escapeHandler);
     // Prevent body scroll when modal is open
     document.body.style.overflow = "hidden";
 
     return () => {
-      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("keydown", escapeHandler);
       document.body.style.overflow = "unset";
     };
   }, [isOpen, onClose]);

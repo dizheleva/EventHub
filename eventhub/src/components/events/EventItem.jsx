@@ -6,7 +6,7 @@ export function EventItem({ event, onEdit, onDelete }) {
       {/* Buttons positioned above the image */}
       <div className="absolute top-2 right-2 flex gap-2 z-10">
         <button
-          onClick={() => onEdit(event)}
+          onClick={() => onEdit(event.id)}
           className="p-2 text-gray-500 hover:text-yellow-500 hover:bg-yellow-50 rounded-lg transition-colors bg-white/90 backdrop-blur-sm shadow-sm"
           aria-label="Редактирай събитие"
         >

@@ -7,7 +7,7 @@ export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [toast, setToast] = useState(null);
 
-  async function handleDelete() {
+  async function deleteHandler() {
     if (!eventId) {
       setToast({
         type: "error",
@@ -104,7 +104,7 @@ export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted }) {
             </button>
             <button
               type="button"
-              onClick={handleDelete}
+              onClick={deleteHandler}
               disabled={isDeleting}
               className={`flex-1 py-3 px-6 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${
                 isDeleting
