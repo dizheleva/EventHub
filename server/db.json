@@ -16,6 +16,23 @@
       "location": "Градски парк",
       "description": "Семинар за малки и големи художници",
       "imageUrl": "https://static.bnr.bg/gallery/72/72e28cd3eb471c03f32e5cd53ca4e310.jpg"
+    },
+    {
+      "id": "I3VlhJm",
+      "title": "Коледен театър",
+      "date": "2025-12-20",
+      "location": "Куклен театър Варна",
+      "description": "Детски театър с Дядо Коледа и Снежанка. След представлението ще се подаряват подаръци.",
+      "imageUrl": "https://namoreto.bg/wp-content/uploads/2020/12/132150284_1521291828082162_5065814003445877196_o.jpg",
+      "updatedAt": "2025-12-01T01:00:01.435Z"
+    },
+    {
+      "title": "Лего работилница",
+      "date": "2025-12-15",
+      "location": "Младост 2, Варна",
+      "description": "Творим с лего!",
+      "imageUrl": "https://www.noviteroditeli.bg/sites/default/files/field/image/000-istock-485964165_0.jpg",
+      "id": "JNA781w"
     }
   ]
 }

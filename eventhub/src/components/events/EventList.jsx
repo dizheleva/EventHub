@@ -183,7 +183,7 @@ export function EventList() {
             onSortChange={sortChangeHandler}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 justify-items-center m-10 px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 justify-items-center m-10 px-8 gap-4">
             {paginatedEvents.map(event => (
               <EventItem
                 key={event.id}
