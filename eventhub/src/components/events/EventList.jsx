@@ -4,6 +4,7 @@ import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { Sorting } from "@/components/common/Sorting";
 import { Pagination } from "@/components/common/Pagination";
+import { SearchBar } from "@/components/common/SearchBar";
 import { EventItem } from "./EventItem";
 import { EditEventForm } from "./EditEventForm";
 import { DeleteEventModal } from "./DeleteEventModal";
@@ -13,6 +14,7 @@ export function EventList() {
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState("asc");
   const [currentPage, setCurrentPage] = useState(1);
@@ -114,6 +116,17 @@ export function EventList() {
     setCurrentPage(1); // Reset to first page when sorting changes
   }
 
+  function searchChangeHandler(query) {
+    setSearchQuery(query);
+    setCurrentPage(1); // Reset to first page when search changes
+  }
+
+  // Filter events by search query
+  const filteredEvents = events.filter(event =>
+    event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    event.location.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   // Sort events using array.sort()
   function sortEvents(eventsList) {
     const sorted = [...eventsList].sort((a, b) => {
@@ -144,7 +157,7 @@ export function EventList() {
   }
 
   // Calculate sorted and paginated events
-  const sortedEvents = sortEvents(events);
+  const sortedEvents = sortEvents(filteredEvents);
   const totalItems = sortedEvents.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   
@@ -177,31 +190,44 @@ export function EventList() {
         </div>
       ) : (
         <>
+          <SearchBar
+            value={searchQuery}
+            onChange={searchChangeHandler}
+          />
+
           <Sorting
             sortBy={sortBy}
             sortOrder={sortOrder}
             onSortChange={sortChangeHandler}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 justify-items-center m-10 px-8 gap-4">
-            {paginatedEvents.map(event => (
-              <EventItem
-                key={event.id}
-                event={event}
-                onEdit={editClickHandler}
-                onDelete={deleteClickHandler}
-              />
-            ))}
-          </div>
+          {sortedEvents.length === 0 ? (
+            <div className="text-center py-20">
+              <p className="text-gray-600">Няма събития по този критерий</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 justify-items-center m-10 px-8 gap-4">
+                {paginatedEvents.map(event => (
+                  <EventItem
+                    key={event.id}
+                    event={event}
+                    onEdit={editClickHandler}
+                    onDelete={deleteClickHandler}
+                  />
+                ))}
+              </div>
 
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            itemsPerPage={itemsPerPage}
-            totalItems={totalItems}
-            onPageChange={pageChangeHandler}
-            onItemsPerPageChange={itemsPerPageChangeHandler}
-          />
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                itemsPerPage={itemsPerPage}
+                totalItems={totalItems}
+                onPageChange={pageChangeHandler}
+                onItemsPerPageChange={itemsPerPageChangeHandler}
+              />
+            </>
+          )}
         </>
       )}
 
