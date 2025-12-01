@@ -34,7 +34,7 @@ export function Sorting({ sortBy, sortOrder, onSortChange }) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 mb-6">
+    <div className="flex flex-wrap items-center gap-2">
       <span className="text-sm font-medium text-gray-700">Сортирай по:</span>
       {sortFields.map((field) => (
         <button

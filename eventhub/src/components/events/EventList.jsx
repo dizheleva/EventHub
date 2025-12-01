@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Plus } from "lucide-react";
 import { Modal } from "@/components/common/Modal";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
@@ -174,16 +175,6 @@ export function EventList() {
 
   return (
     <>
-      {/* Add Event Button */}
-      <div className="mb-6 text-center">
-        <button
-          onClick={openCreateModalHandler}
-          className="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-medium hover:shadow-color hover:scale-[1.02] transition-all"
-        >
-          Добави събитие
-        </button>
-      </div>
-
       {events.length === 0 ? (
         <div className="text-center py-20">
           <p className="text-gray-600">Няма намерени събития</p>
@@ -195,11 +186,20 @@ export function EventList() {
             onChange={searchChangeHandler}
           />
 
-          <Sorting
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            onSortChange={sortChangeHandler}
-          />
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
+            <Sorting
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSortChange={sortChangeHandler}
+            />
+            <button
+              onClick={openCreateModalHandler}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg text-sm font-medium hover:shadow-color transition-all"
+            >
+              <Plus className="w-5 h-5" />
+              Добави събитие
+            </button>
+          </div>
 
           {sortedEvents.length === 0 ? (
             <div className="text-center py-20">

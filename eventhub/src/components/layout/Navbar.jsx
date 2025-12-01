@@ -43,11 +43,6 @@ export function Navbar() {
               Контакти
             </a>
           </li>
-          <li>
-            <button className="ml-4 px-6 py-2 bg-gradient-to-r from-primary to-secondary text-white font-medium rounded-xl hover:shadow-color transition-all hover:scale-105">
-              Добави събитие
-            </button>
-          </li>
         </ul>
 
         {/* Mobile menu toggle */}
@@ -83,11 +78,6 @@ export function Navbar() {
               <a href="#" className="block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors" onClick={() => setMenuOpen(false)}>
                 Контакти
               </a>
-            </li>
-            <li className="pt-2">
-              <button className="w-full px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-medium rounded-xl hover:shadow-color transition-all">
-                Добави събитие
-              </button>
             </li>
           </ul>
         </div>
