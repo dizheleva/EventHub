@@ -3,7 +3,7 @@ import { Modal } from "@/components/common/Modal";
 import { Toast } from "@/components/common/Toast";
 import { Loader2, Trash2 } from "lucide-react";
 
-export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted, onError, onSuccess }) {
+export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted, onError, deleteEvent }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -19,35 +19,17 @@ export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted, onError,
 
     setIsDeleting(true);
 
-    // Optimistic UI update: immediately call onDeleted to remove from UI
-    if (onDeleted) {
-      onDeleted(eventId);
-    }
-
     try {
-      const res = await fetch(`http://localhost:5000/events/${eventId}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-      });
+      // Use deleteEvent from hook (handles optimistic update and revert on error)
+      if (!deleteEvent) {
+        throw new Error("deleteEvent function is not provided");
+      }
+      
+      await deleteEvent(eventId);
 
-      if (!res.ok) {
-        // Try to get error message from response
-        let errorMessage = "Грешка при изтриване на събитие";
-        try {
-          const errorText = await res.text();
-          if (errorText) {
-            try {
-              const errorData = JSON.parse(errorText);
-              errorMessage = errorData.message || errorData.error || errorMessage;
-            } catch {
-              errorMessage = errorText || errorMessage;
-            }
-          }
-        } catch (parseError) {
-          console.error("Error parsing response:", parseError);
-        }
-        errorMessage = `Грешка ${res.status}: ${errorMessage}`;
-        throw new Error(errorMessage);
+      // Call onDeleted callback for any additional handling
+      if (onDeleted) {
+        onDeleted();
       }
 
       // Show success toast
@@ -55,11 +37,6 @@ export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted, onError,
         type: "success",
         message: "Събитието беше изтрито успешно!",
       });
-
-      // Call onSuccess callback to clear backup
-      if (onSuccess) {
-        onSuccess();
-      }
 
       // Close modal after successful deletion
       setTimeout(() => {
@@ -69,7 +46,7 @@ export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted, onError,
         setToast(null);
       }, 1500);
     } catch (err) {
-      // Call onError callback to revert state in EventList
+      // Call onError callback for additional error handling
       if (onError) {
         onError(eventId, err);
       }

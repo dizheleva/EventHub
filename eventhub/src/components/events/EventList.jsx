@@ -9,15 +9,14 @@ import { Pagination } from "@/components/common/Pagination";
 import { SearchBar } from "@/components/common/SearchBar";
 import { FiltersBar } from "@/components/common/FiltersBar";
 import { CATEGORIES } from "@/utils/categories";
+import { useEvents } from "@/hooks/useEvents";
 import { EventItem } from "./EventItem";
 import { EditEventForm } from "./EditEventForm";
 import { DeleteEventModal } from "./DeleteEventModal";
 import { CreateEventModal } from "./CreateEventModal";
 
 export function EventList() {
-  const [events, setEvents] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { events, isLoading, error, fetchEvents, createEvent, updateEvent, deleteEvent } = useEvents(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCity, setFilterCity] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
@@ -35,28 +34,7 @@ export function EventList() {
 
   useEffect(() => {
     fetchEvents();
-  }, []);
-
-  function fetchEvents() {
-    setIsLoading(true);
-    setError(null);
-    
-    fetch("http://localhost:5000/events")
-      .then(res => {
-        if (!res.ok) {
-          throw new Error(`Failed to fetch events: ${res.status} ${res.statusText}`);
-        }
-        return res.json();
-      })
-      .then(data => {
-        setEvents(data);
-        setIsLoading(false);
-      })
-      .catch(err => {
-        setError(err.message || "Възникна грешка при зареждане на събитията");
-        setIsLoading(false);
-      });
-  }
+  }, [fetchEvents]);
 
   function editClickHandler(eventId) {
     setSelectedEventId(eventId);
@@ -68,14 +46,23 @@ export function EventList() {
     setSelectedEventId(null);
   }
 
-  function eventUpdatedHandler(updatedEvent) {
-    // Optimistically update the event in local state without full refetch
-    setEvents(prevEvents =>
-      prevEvents.map(event =>
-        event.id === updatedEvent.id ? updatedEvent : event
-      )
-    );
-    closeEditModalHandler();
+  async function eventUpdatedHandler(updatedEvent) {
+    try {
+      // updateEvent already handles optimistic update
+      await updateEvent(updatedEvent.id, updatedEvent);
+      closeEditModalHandler();
+      setToast({
+        type: "success",
+        message: "Събитието беше обновено успешно!",
+      });
+      setTimeout(() => setToast(null), 3000);
+    } catch (err) {
+      setToast({
+        type: "error",
+        message: err.message || "Възникна грешка при обновяване на събитие",
+      });
+      setTimeout(() => setToast(null), 3000);
+    }
   }
 
   function deleteClickHandler(event) {
@@ -88,43 +75,19 @@ export function EventList() {
     setDeletingEventId(null);
   }
 
-  // Store deleted event for potential revert
-  const [deletedEventBackup, setDeletedEventBackup] = useState(null);
-
-  function eventDeletedHandler(eventId) {
-    // Optimistic UI update: immediately remove event from UI
-    const deletedEvent = events.find(e => e.id === eventId);
-    if (!deletedEvent) return;
-    
-    // Store backup for potential revert
-    setDeletedEventBackup(deletedEvent);
-    
-    // Remove from UI immediately
-    setEvents(prev => prev.filter(e => e.id !== eventId));
-    
-    // Clear backup after successful deletion (handled in DeleteEventModal success)
-    // If error occurs, onError will be called to revert
-  }
-
-  function eventDeleteSuccessHandler() {
-    // Clear backup on successful deletion
-    setDeletedEventBackup(null);
+  function eventDeletedHandler() {
+    // This is called after successful deletion in DeleteEventModal
+    // No additional action needed as deleteEvent hook handles everything
   }
 
   function eventDeleteErrorHandler(eventId, error) {
-    // Revert local state on error
-    if (deletedEventBackup && deletedEventBackup.id === eventId) {
-      setEvents(prev => [...prev, deletedEventBackup]);
-      setDeletedEventBackup(null);
-    }
-    // Show error toast
+    // Error handling is done in deleteEvent hook (revert state)
+    // Show additional toast if needed
     setToast({
       type: "error",
       message: error.message || "Възникна грешка при изтриване на събитие. Събитието беше възстановено.",
     });
-    setTimeout(() => {
-      setToast(null);
-    }, 3000);
+    setTimeout(() => setToast(null), 3000);
   }
 
   function openCreateModalHandler() {
@@ -135,10 +98,23 @@ export function EventList() {
     setShowCreateModal(false);
   }
 
-  function eventCreatedHandler(newEvent) {
-    // Append created event to state without full refetch
-    setEvents(prevEvents => [...prevEvents, newEvent]);
-    closeCreateModalHandler();
+  async function eventCreatedHandler(eventData) {
+    try {
+      // createEvent already handles optimistic update
+      await createEvent(eventData);
+      closeCreateModalHandler();
+      setToast({
+        type: "success",
+        message: "Събитието е създадено успешно!",
+      });
+      setTimeout(() => setToast(null), 3000);
+    } catch (err) {
+      setToast({
+        type: "error",
+        message: err.message || "Възникна грешка при създаване на събитие",
+      });
+      setTimeout(() => setToast(null), 3000);
+    }
   }
 
   function pageChangeHandler(newPage) {
@@ -345,7 +321,7 @@ export function EventList() {
         onClose={closeDeleteModalHandler}
         onDeleted={eventDeletedHandler}
         onError={eventDeleteErrorHandler}
-        onSuccess={eventDeleteSuccessHandler}
+        deleteEvent={deleteEvent}
       />
 
       {/* Create Event Modal */}
