@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AlertCircle } from "lucide-react";
 import { validators } from "@/utils/validators";
 import { Toast } from "@/components/common/Toast";
 import { FormField } from "@/components/common/FormField";
@@ -10,7 +11,14 @@ const INITIAL_FORM_STATE = {
   location: "",
   description: "",
   imageUrl: "",
+  city: "",
+  category: "",
+  organizer: "",
+  organizerUrl: "",
+  price: "",
 };
+
+const CATEGORIES = ["Деца", "Култура", "Спорт", "Работилници", "Сезонни", "Благотворителни"];
 
 export function EventForm({ mode = "create", onEventCreated, onClose }) {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
@@ -168,6 +176,19 @@ export function EventForm({ mode = "create", onEventCreated, onClose }) {
         min={new Date().toISOString().split("T")[0]}
       />
 
+      {/* City Field */}
+      <FormField
+        label="Град"
+        name="city"
+        type="text"
+        placeholder="Въведете град"
+        value={formData.city}
+        error={errors.city}
+        onChange={changeHandler}
+        onBlur={blurHandler}
+        disabled={isSubmitting}
+      />
+
       {/* Location Field */}
       <FormField
         label="Локация"
@@ -180,6 +201,39 @@ export function EventForm({ mode = "create", onEventCreated, onClose }) {
         onBlur={blurHandler}
         disabled={isSubmitting}
       />
+
+      {/* Category Field */}
+      <div>
+        <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+          Категория <span className="text-red-500">*</span>
+        </label>
+        <select
+          id="category"
+          name="category"
+          value={formData.category}
+          onChange={changeHandler}
+          onBlur={blurHandler}
+          disabled={isSubmitting}
+          className={`w-full border rounded-xl px-4 py-3 transition-colors focus:outline-none focus:ring-2 ${
+            errors.category
+              ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+              : "border-gray-300 focus:border-primary focus:ring-primary"
+          }`}
+        >
+          <option value="">Изберете категория</option>
+          {CATEGORIES.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
+        {errors.category && (
+          <p className="mt-1 text-sm text-red-500 flex items-center gap-1" role="alert">
+            <AlertCircle className="w-4 h-4" />
+            {errors.category}
+          </p>
+        )}
+      </div>
 
       {/* Description Field */}
       <FormField
@@ -203,6 +257,48 @@ export function EventForm({ mode = "create", onEventCreated, onClose }) {
         placeholder="https://example.com/image.jpg"
         value={formData.imageUrl}
         error={errors.imageUrl}
+        onChange={changeHandler}
+        onBlur={blurHandler}
+        disabled={isSubmitting}
+        optional={true}
+      />
+
+      {/* Organizer Field */}
+      <FormField
+        label="Организатор"
+        name="organizer"
+        type="text"
+        placeholder="Въведете име на организатор"
+        value={formData.organizer}
+        error={errors.organizer}
+        onChange={changeHandler}
+        onBlur={blurHandler}
+        disabled={isSubmitting}
+        optional={true}
+      />
+
+      {/* Organizer URL Field */}
+      <FormField
+        label="Уебсайт на организатор (URL)"
+        name="organizerUrl"
+        type="url"
+        placeholder="https://example.com"
+        value={formData.organizerUrl}
+        error={errors.organizerUrl}
+        onChange={changeHandler}
+        onBlur={blurHandler}
+        disabled={isSubmitting}
+        optional={true}
+      />
+
+      {/* Price Field */}
+      <FormField
+        label="Цена"
+        name="price"
+        type="text"
+        placeholder="Напр. Безплатно, 10 лв, 25 BGN"
+        value={formData.price}
+        error={errors.price}
         onChange={changeHandler}
         onBlur={blurHandler}
         disabled={isSubmitting}

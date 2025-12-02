@@ -48,5 +48,36 @@ export const validators = {
       return "Моля, въведете валиден URL адрес";
     }
   },
+  city: (value) => {
+    if (!value || value.trim().length === 0) {
+      return "Градът е задължителен";
+    }
+    return null;
+  },
+  category: (value) => {
+    if (!value || value.trim().length === 0) {
+      return "Категорията е задължителна";
+    }
+    return null;
+  },
+  organizer: () => {
+    // Optional field - no validation needed
+    return null;
+  },
+  organizerUrl: (value) => {
+    if (!value || value.trim().length === 0) {
+      return null; // Optional field
+    }
+    try {
+      new URL(value);
+      return null;
+    } catch {
+      return "Моля, въведете валиден URL адрес";
+    }
+  },
+  price: () => {
+    // Optional field - can be string or number
+    return null;
+  },
 };
 

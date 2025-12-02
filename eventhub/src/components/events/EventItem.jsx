@@ -28,7 +28,21 @@ export function EventItem({ event, onEdit, onDelete }) {
         />
       )}
       <h3 className="text-xl font-bold text-gray-900 mb-2 flex-shrink-0">{event.title}</h3>
-      <p className="text-gray-600 mb-1 flex-shrink-0">{event.date} — {event.location}</p>
+      <div className="flex flex-wrap items-center gap-2 mb-2 flex-shrink-0">
+        {event.category && (
+          <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-md">
+            {event.category}
+          </span>
+        )}
+        {event.price && (
+          <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-md">
+            {event.price}
+          </span>
+        )}
+      </div>
+      <p className="text-gray-600 mb-1 flex-shrink-0">
+        {event.date} — {event.city ? `${event.city}, ` : ""}{event.location}
+      </p>
       <div className="flex-1 overflow-y-auto mt-2 pr-2">
         <p className="text-gray-500">{event.description}</p>
       </div>

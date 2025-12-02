@@ -5,8 +5,13 @@
       "title": "Детски театър",
       "date": "2025-12-05",
       "location": "Детски център Радост",
+      "city": "София",
+      "category": "Деца",
       "description": "Весело представление за деца от 3-8 години",
       "imageUrl": "https://static.bnr.bg/gallery/cr/medium/ae854d361d4434891255dcd083b1f5f6.jpg",
+      "organizer": "Детски център Радост",
+      "organizerUrl": "https://example.com/radost",
+      "price": "15 лв",
       "updatedAt": "2025-11-30T23:36:40.202Z"
     },
     {
@@ -14,25 +19,63 @@
       "title": "Рисуване на открито",
       "date": "2025-12-07",
       "location": "Градски парк",
+      "city": "Пловдив",
+      "category": "Работилници",
       "description": "Семинар за малки и големи художници",
-      "imageUrl": "https://static.bnr.bg/gallery/72/72e28cd3eb471c03f32e5cd53ca4e310.jpg"
+      "imageUrl": "https://static.bnr.bg/gallery/72/72e28cd3eb471c03f32e5cd53ca4e310.jpg",
+      "organizer": "Арт Студио Пловдив",
+      "price": "Безплатно"
     },
     {
       "id": "I3VlhJm",
       "title": "Коледен театър",
       "date": "2025-12-20",
       "location": "Куклен театър Варна",
+      "city": "Варна",
+      "category": "Деца",
       "description": "Детски театър с Дядо Коледа и Снежанка. След представлението ще се подаряват подаръци.",
       "imageUrl": "https://namoreto.bg/wp-content/uploads/2020/12/132150284_1521291828082162_5065814003445877196_o.jpg",
+      "organizer": "Куклен театър Варна",
+      "organizerUrl": "https://example.com/puppet-theater-varna",
+      "price": "20 лв",
       "updatedAt": "2025-12-01T01:00:01.435Z"
     },
     {
       "title": "Лего работилница",
       "date": "2025-12-15",
       "location": "Младост 2, Варна",
+      "city": "Варна",
+      "category": "Работилници",
       "description": "Творим с лего!",
       "imageUrl": "https://www.noviteroditeli.bg/sites/default/files/field/image/000-istock-485964165_0.jpg",
+      "organizer": "Лего Клуб Варна",
+      "price": "12 лв",
       "id": "JNA781w"
+    },
+    {
+      "id": "3",
+      "title": "Футболен мач",
+      "date": "2025-12-10",
+      "location": "Стадион Георги Аспарухов",
+      "city": "София",
+      "category": "Спорт",
+      "description": "Вълнуващ мач между местни отбори",
+      "imageUrl": "",
+      "organizer": "БФС",
+      "organizerUrl": "https://example.com/bfs",
+      "price": "25 лв"
+    },
+    {
+      "id": "4",
+      "title": "Коледен концерт",
+      "date": "2025-12-24",
+      "location": "НДК",
+      "city": "София",
+      "category": "Култура",
+      "description": "Традиционен коледен концерт с класическа музика",
+      "imageUrl": "",
+      "organizer": "Софийска филхармония",
+      "price": "30 лв"
     }
   ]
 }

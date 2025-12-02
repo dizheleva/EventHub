@@ -124,8 +124,10 @@ export function EventList() {
 
   // Filter events by search query
   const filteredEvents = events.filter(event =>
-    event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    event.location.toLowerCase().includes(searchQuery.toLowerCase())
+    event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    event.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    event.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    event.category?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Sort events using array.sort()
