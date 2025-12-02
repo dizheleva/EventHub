@@ -124,10 +124,8 @@ export function EventList() {
 
   // Filter events by search query
   const filteredEvents = events.filter(event =>
-    event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    event.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    event.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    event.category?.toLowerCase().includes(searchQuery.toLowerCase())
+    event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    event.location.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Sort events using array.sort()
@@ -196,9 +194,9 @@ export function EventList() {
             />
             <button
               onClick={openCreateModalHandler}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg text-sm font-medium hover:shadow-color transition-all"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg text-sm font-medium hover:shadow-color transition-all border border-transparent ml-auto"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-4 h-4" />
               Добави събитие
             </button>
           </div>
@@ -209,7 +207,7 @@ export function EventList() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 justify-items-center m-10 px-8 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4 py-6 max-w-7xl mx-auto justify-items-center">
                 {paginatedEvents.map(event => (
                   <EventItem
                     key={event.id}

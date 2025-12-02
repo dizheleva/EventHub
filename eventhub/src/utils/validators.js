@@ -52,6 +52,9 @@ export const validators = {
     if (!value || value.trim().length === 0) {
       return "Градът е задължителен";
     }
+    if (value.trim().length < 2) {
+      return "Градът трябва да е поне 2 символа";
+    }
     return null;
   },
   category: (value) => {
@@ -60,7 +63,7 @@ export const validators = {
     }
     return null;
   },
-  organizer: () => {
+  organizer: (value) => {
     // Optional field - no validation needed
     return null;
   },
@@ -75,8 +78,8 @@ export const validators = {
       return "Моля, въведете валиден URL адрес";
     }
   },
-  price: () => {
-    // Optional field - can be string or number
+  price: (value) => {
+    // Optional field - string allowed, no validation needed
     return null;
   },
 };
