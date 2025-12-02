@@ -4,8 +4,7 @@ import { validators } from "@/utils/validators";
 import { Toast } from "@/components/common/Toast";
 import { FormField } from "@/components/common/FormField";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-
-const CATEGORIES = ["Деца", "Култура", "Спорт", "Работилници", "Сезонни", "Благотворителни"];
+import { CATEGORIES } from "@/utils/categories";
 
 // Helper function to format date for input[type="date"]
 function formatDateForInput(dateString) {
@@ -336,8 +335,8 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
           >
             <option value="">Изберете категория</option>
             {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
+              <option key={cat.value} value={cat.value}>
+                {cat.label}
               </option>
             ))}
           </select>

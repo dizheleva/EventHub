@@ -1,4 +1,5 @@
 import { Edit, Trash2 } from "lucide-react";
+import { getCategoryDisplay } from "@/utils/categories";
 
 export function EventItem({ event, onEdit, onDelete }) {
   return (
@@ -29,11 +30,9 @@ export function EventItem({ event, onEdit, onDelete }) {
       )}
       <h3 className="text-xl font-bold text-gray-900 mb-2 flex-shrink-0">{event.title}</h3>
       <div className="flex flex-wrap items-center gap-2 mb-2 flex-shrink-0">
-        {event.category && (
-          <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-md">
-            {event.category}
-          </span>
-        )}
+        <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-md">
+          {getCategoryDisplay(event.category)}
+        </span>
         {event.price && (
           <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-md">
             {event.price}

@@ -3,6 +3,7 @@ import { AlertCircle } from "lucide-react";
 import { validators } from "@/utils/validators";
 import { Toast } from "@/components/common/Toast";
 import { FormField } from "@/components/common/FormField";
+import { CATEGORIES } from "@/utils/categories";
 
 // Initial form state
 const INITIAL_FORM_STATE = {
@@ -17,8 +18,6 @@ const INITIAL_FORM_STATE = {
   organizerUrl: "",
   price: "",
 };
-
-const CATEGORIES = ["Деца", "Култура", "Спорт", "Работилници", "Сезонни", "Благотворителни"];
 
 export function EventForm({ mode = "create", onEventCreated, onClose }) {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
@@ -222,8 +221,8 @@ export function EventForm({ mode = "create", onEventCreated, onClose }) {
         >
           <option value="">Изберете категория</option>
           {CATEGORIES.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
+            <option key={cat.value} value={cat.value}>
+              {cat.label}
             </option>
           ))}
         </select>

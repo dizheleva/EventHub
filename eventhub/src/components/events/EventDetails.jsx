@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Calendar, MapPin, ExternalLink, Tag, DollarSign, User } from "lucide-react";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
+import { getCategoryDisplay } from "@/utils/categories";
 
 export function EventDetails({ eventId }) {
   const [event, setEvent] = useState(null);
@@ -82,14 +83,12 @@ export function EventDetails({ eventId }) {
                 {event.location}
               </span>
             </div>
-            {event.category && (
-              <div className="flex items-center gap-2">
-                <Tag className="w-5 h-5 text-primary" />
-                <span className="px-2 py-1 text-sm font-medium bg-primary/10 text-primary rounded-md">
-                  {event.category}
-                </span>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <Tag className="w-5 h-5 text-primary" />
+              <span className="px-2 py-1 text-sm font-medium bg-primary/10 text-primary rounded-md">
+                {getCategoryDisplay(event.category)}
+              </span>
+            </div>
             {event.price && (
               <div className="flex items-center gap-2">
                 <DollarSign className="w-5 h-5 text-primary" />
