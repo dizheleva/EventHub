@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import { Modal } from "@/components/common/Modal";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
+import { Toast } from "@/components/common/Toast";
 import { Sorting } from "@/components/common/Sorting";
 import { Pagination } from "@/components/common/Pagination";
 import { SearchBar } from "@/components/common/SearchBar";
@@ -30,6 +31,7 @@ export function EventList() {
   const [deletingEventId, setDeletingEventId] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     fetchEvents();
@@ -86,9 +88,43 @@ export function EventList() {
     setDeletingEventId(null);
   }
 
-  function eventDeletedHandler() {
-    // Refresh the event list from server after deletion
-    fetchEvents();
+  // Store deleted event for potential revert
+  const [deletedEventBackup, setDeletedEventBackup] = useState(null);
+
+  function eventDeletedHandler(eventId) {
+    // Optimistic UI update: immediately remove event from UI
+    const deletedEvent = events.find(e => e.id === eventId);
+    if (!deletedEvent) return;
+    
+    // Store backup for potential revert
+    setDeletedEventBackup(deletedEvent);
+    
+    // Remove from UI immediately
+    setEvents(prev => prev.filter(e => e.id !== eventId));
+    
+    // Clear backup after successful deletion (handled in DeleteEventModal success)
+    // If error occurs, onError will be called to revert
+  }
+
+  function eventDeleteSuccessHandler() {
+    // Clear backup on successful deletion
+    setDeletedEventBackup(null);
+  }
+
+  function eventDeleteErrorHandler(eventId, error) {
+    // Revert local state on error
+    if (deletedEventBackup && deletedEventBackup.id === eventId) {
+      setEvents(prev => [...prev, deletedEventBackup]);
+      setDeletedEventBackup(null);
+    }
+    // Show error toast
+    setToast({
+      type: "error",
+      message: error.message || "Възникна грешка при изтриване на събитие. Събитието беше възстановено.",
+    });
+    setTimeout(() => {
+      setToast(null);
+    }, 3000);
   }
 
   function openCreateModalHandler() {
@@ -215,6 +251,9 @@ export function EventList() {
 
   return (
     <>
+      {/* Toast Notification */}
+      {toast && <Toast type={toast.type} message={toast.message} />}
+
       {events.length === 0 ? (
         <div className="text-center py-20">
           <p className="text-gray-600">Няма намерени събития</p>
@@ -305,6 +344,8 @@ export function EventList() {
         isOpen={isDeleteModalOpen}
         onClose={closeDeleteModalHandler}
         onDeleted={eventDeletedHandler}
+        onError={eventDeleteErrorHandler}
+        onSuccess={eventDeleteSuccessHandler}
       />
 
       {/* Create Event Modal */}

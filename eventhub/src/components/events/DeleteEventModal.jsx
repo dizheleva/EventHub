@@ -3,7 +3,7 @@ import { Modal } from "@/components/common/Modal";
 import { Toast } from "@/components/common/Toast";
 import { Loader2, Trash2 } from "lucide-react";
 
-export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted }) {
+export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted, onError, onSuccess }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -18,6 +18,11 @@ export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted }) {
     }
 
     setIsDeleting(true);
+
+    // Optimistic UI update: immediately call onDeleted to remove from UI
+    if (onDeleted) {
+      onDeleted(eventId);
+    }
 
     try {
       const res = await fetch(`http://localhost:5000/events/${eventId}`, {
@@ -51,9 +56,9 @@ export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted }) {
         message: "Събитието беше изтрито успешно!",
       });
 
-      // Call callback
-      if (onDeleted) {
-        onDeleted(eventId);
+      // Call onSuccess callback to clear backup
+      if (onSuccess) {
+        onSuccess();
       }
 
       // Close modal after successful deletion
@@ -64,9 +69,14 @@ export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted }) {
         setToast(null);
       }, 1500);
     } catch (err) {
+      // Call onError callback to revert state in EventList
+      if (onError) {
+        onError(eventId, err);
+      }
+      // Show error toast
       setToast({
         type: "error",
-        message: err.message || "Възникна грешка при изтриване на събитие",
+        message: err.message || "Възникна грешка при изтриване на събитие. Събитието беше възстановено.",
       });
       setTimeout(() => {
         setToast(null);
