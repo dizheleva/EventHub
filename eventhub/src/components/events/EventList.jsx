@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Plus } from "lucide-react";
 import { Modal } from "@/components/common/Modal";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
@@ -7,24 +7,61 @@ import { Toast } from "@/components/common/Toast";
 import { Sorting } from "@/components/common/Sorting";
 import { Pagination } from "@/components/common/Pagination";
 import { SearchBar } from "@/components/common/SearchBar";
-import { FiltersBar } from "@/components/common/FiltersBar";
-import { CATEGORIES } from "@/utils/categories";
 import { useEvents } from "@/hooks/useEvents";
 import { EventItem } from "./EventItem";
 import { EditEventForm } from "./EditEventForm";
 import { DeleteEventModal } from "./DeleteEventModal";
 import { CreateEventModal } from "./CreateEventModal";
+import { EventsFilters } from "./EventsFilters";
+
+// Helper function: Sort events
+function sortEvents(eventsList, sortByField, sortOrderValue) {
+  const sorted = [...eventsList].sort((a, b) => {
+    let aValue = a[sortByField];
+    let bValue = b[sortByField];
+
+    // Handle different data types
+    if (sortByField === "date") {
+      // Compare dates
+      aValue = new Date(aValue || 0);
+      bValue = new Date(bValue || 0);
+    } else {
+      // Compare strings (title, location)
+      aValue = (aValue || "").toString().toLowerCase();
+      bValue = (bValue || "").toString().toLowerCase();
+    }
+
+    if (aValue < bValue) {
+      return sortOrderValue === "asc" ? -1 : 1;
+    }
+    if (aValue > bValue) {
+      return sortOrderValue === "asc" ? 1 : -1;
+    }
+    return 0;
+  });
+
+  return sorted;
+}
 
 export function EventList() {
   const { events, isLoading, error, fetchEvents, createEvent, updateEvent, deleteEvent } = useEvents(true);
+  
+  // Search state
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterCity, setFilterCity] = useState("");
-  const [filterCategory, setFilterCategory] = useState("");
-  const [filterPrice, setFilterPrice] = useState("");
+  
+  // Filter states
+  const [selectedCity, setSelectedCity] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedPrice, setSelectedPrice] = useState("");
+  
+  // Sort states
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState("asc");
+  
+  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(6);
+  // Modal states
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState(null);
@@ -34,7 +71,8 @@ export function EventList() {
 
   useEffect(() => {
     fetchEvents();
-  }, [fetchEvents]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   function editClickHandler(eventId) {
     setSelectedEventId(eventId);
@@ -134,90 +172,76 @@ export function EventList() {
     setCurrentPage(1); // Reset to first page when sorting changes
   }
 
+  // Handlers that reset pagination
   function searchChangeHandler(query) {
     setSearchQuery(query);
-    setCurrentPage(1); // Reset to first page when search changes
+    setCurrentPage(1);
   }
 
-  function filterCityChangeHandler(city) {
-    setFilterCity(city);
-    setCurrentPage(1); // Reset to first page when filter changes
-  }
-
-  function filterCategoryChangeHandler(category) {
-    setFilterCategory(category);
-    setCurrentPage(1); // Reset to first page when filter changes
-  }
-
-  function filterPriceChangeHandler(price) {
-    setFilterPrice(price);
-    setCurrentPage(1); // Reset to first page when filter changes
+  function filtersChangeHandler(updatedFilters) {
+    setSelectedCity(updatedFilters.city || "");
+    setSelectedCategory(updatedFilters.category || "");
+    setSelectedPrice(updatedFilters.price || "");
+    setCurrentPage(1);
   }
 
   // Compute unique cities safely
-  const uniqueCities = [...new Set(events.map(e => e.city).filter(Boolean))].sort();
+  const uniqueCities = useMemo(() => {
+    return [...new Set(events.map(e => e.city).filter(Boolean))].sort();
+  }, [events]);
 
-  // Apply filtering logic before sorting
-  const filteredEvents = events.filter(event => {
-    const matchesSearch =
-      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.location.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesCity =
-      filterCity === "" || event.city === filterCity;
-
-    const matchesCategory =
-      filterCategory === "" || event.category === filterCategory;
-
-    const isFree =
-      !event.price ||
-      event.price.trim() === "" ||
-      event.price.toLowerCase().includes("безплат");
-
-    const matchesPrice =
-      filterPrice === "" || (filterPrice === "free" && isFree);
-
-    return matchesSearch && matchesCity && matchesCategory && matchesPrice;
-  });
-
-  // Sort events using array.sort()
-  function sortEvents(eventsList) {
-    const sorted = [...eventsList].sort((a, b) => {
-      let aValue = a[sortBy];
-      let bValue = b[sortBy];
-
-      // Handle different data types
-      if (sortBy === "date") {
-        // Compare dates
-        aValue = new Date(aValue || 0);
-        bValue = new Date(bValue || 0);
-      } else {
-        // Compare strings (title, location)
-        aValue = (aValue || "").toString().toLowerCase();
-        bValue = (bValue || "").toString().toLowerCase();
-      }
-
-      if (aValue < bValue) {
-        return sortOrder === "asc" ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return sortOrder === "asc" ? 1 : -1;
-      }
-      return 0;
+  // Apply all filters and sorting using useMemo for optimization
+  // Pipeline: events → search → city → category → price → sort
+  const filteredAndSortedEvents = useMemo(() => {
+    // Step 1: Apply search filter
+    let filtered = events.filter(event => {
+      if (!searchQuery) return true;
+      const query = searchQuery.toLowerCase();
+      return (
+        event.title?.toLowerCase().includes(query) ||
+        event.location?.toLowerCase().includes(query)
+      );
     });
 
-    return sorted;
-  }
+    // Step 2: Apply city filter (exact match)
+    if (selectedCity) {
+      filtered = filtered.filter(event => event.city === selectedCity);
+    }
 
-  // Calculate sorted and paginated events
-  const sortedEvents = sortEvents(filteredEvents);
-  const totalItems = sortedEvents.length;
+    // Step 3: Apply category filter (exact match)
+    if (selectedCategory) {
+      filtered = filtered.filter(event => event.category === selectedCategory);
+    }
+
+    // Step 4: Apply price filter
+    if (selectedPrice === "free") {
+      filtered = filtered.filter(event => {
+        const priceValue = event.price || "";
+        const priceLower = priceValue.toLowerCase();
+        return (
+          priceValue === "Безплатно" ||
+          priceLower.includes("безплат") ||
+          priceLower.includes("free")
+        );
+      });
+    }
+
+    // Step 5: Apply sorting
+    filtered = sortEvents(filtered, sortBy, sortOrder);
+
+    return filtered;
+  }, [events, searchQuery, selectedCity, selectedCategory, selectedPrice, sortBy, sortOrder]);
+
+  // Calculate pagination
+  const totalItems = filteredAndSortedEvents.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   
-  // Get paginated events
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedEvents = sortedEvents.slice(startIndex, endIndex);
+  // Apply pagination
+  const paginatedEvents = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredAndSortedEvents.slice(startIndex, endIndex);
+  }, [filteredAndSortedEvents, currentPage, itemsPerPage]);
 
   // Loading state
   if (isLoading) return <LoadingSpinner />;
@@ -242,15 +266,10 @@ export function EventList() {
           />
 
           <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
-            <FiltersBar
+            <EventsFilters
+              filters={{ city: selectedCity, category: selectedCategory, price: selectedPrice }}
+              onChange={filtersChangeHandler}
               cities={uniqueCities}
-              categories={CATEGORIES}
-              selectedCity={filterCity}
-              selectedCategory={filterCategory}
-              selectedPrice={filterPrice}
-              onCityChange={filterCityChangeHandler}
-              onCategoryChange={filterCategoryChangeHandler}
-              onPriceChange={filterPriceChangeHandler}
             />
             <Sorting
               sortBy={sortBy}
@@ -269,7 +288,7 @@ export function EventList() {
             </button>
           </div>
 
-          {sortedEvents.length === 0 ? (
+          {filteredAndSortedEvents.length === 0 ? (
             <div className="text-center py-20">
               <p className="text-gray-600">Няма събития по този критерий</p>
             </div>

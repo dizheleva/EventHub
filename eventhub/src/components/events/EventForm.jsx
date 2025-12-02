@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { AlertCircle } from "lucide-react";
 import { validators } from "@/utils/validators";
 import { Toast } from "@/components/common/Toast";
 import { FormField } from "@/components/common/FormField";
-import { CATEGORIES } from "@/utils/categories";
+import { CategorySelect } from "@/components/common/CategorySelect";
 
 // Initial form state
 const INITIAL_FORM_STATE = {
@@ -202,37 +201,13 @@ export function EventForm({ mode = "create", onEventCreated, onClose }) {
       />
 
       {/* Category Field */}
-      <div>
-        <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-          Категория <span className="text-red-500">*</span>
-        </label>
-        <select
-          id="category"
-          name="category"
-          value={formData.category}
-          onChange={changeHandler}
-          onBlur={blurHandler}
-          disabled={isSubmitting}
-          className={`w-full border rounded-xl px-4 py-3 transition-colors focus:outline-none focus:ring-2 ${
-            errors.category
-              ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-              : "border-gray-300 focus:border-primary focus:ring-primary"
-          }`}
-        >
-          <option value="">Изберете категория</option>
-          {CATEGORIES.map((cat) => (
-            <option key={cat.value} value={cat.value}>
-              {cat.label}
-            </option>
-          ))}
-        </select>
-        {errors.category && (
-          <p className="mt-1 text-sm text-red-500 flex items-center gap-1" role="alert">
-            <AlertCircle className="w-4 h-4" />
-            {errors.category}
-          </p>
-        )}
-      </div>
+      <CategorySelect
+        value={formData.category}
+        onChange={changeHandler}
+        onBlur={blurHandler}
+        error={errors.category}
+        disabled={isSubmitting}
+      />
 
       {/* Description Field */}
       <FormField

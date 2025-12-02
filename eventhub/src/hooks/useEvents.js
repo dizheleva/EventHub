@@ -9,34 +9,31 @@ export function useEvents(initialLoading = false) {
 
   // Fetch all events
   async function fetchEvents() {
-    setIsLoading(true);
     setError(null);
 
-    try {
-      const res = await fetch(API_BASE_URL);
-      
-      if (!res.ok) {
-        throw new Error(`Failed to fetch events: ${res.status} ${res.statusText}`);
-      }
-      
+    try {        
+      setIsLoading(true);
+      const res = await fetch(API_BASE_URL);      
+      if (!res.ok) throw new Error(`Failed to fetch events: ${res.status} ${res.statusText}`);
       const data = await res.json();
       setEvents(data);
-      setIsLoading(false);
       return data;
     } catch (err) {
       const errorMessage = err.message || "Възникна грешка при зареждане на събитията";
       setError(errorMessage);
-      setIsLoading(false);
       throw err;
+    } finally {
+      setIsLoading(false);
     }
   }
 
   // Create new event
   async function createEvent(eventData) {
-    setIsLoading(true);
     setError(null);
 
     try {
+        
+      setIsLoading(true);
       const res = await fetch(API_BASE_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -64,14 +61,14 @@ export function useEvents(initialLoading = false) {
       const newEvent = await res.json();
       
       // Optimistic update: add to local state
-      setEvents(prev => [...prev, newEvent]);
-      setIsLoading(false);
+      setEvents(prev => [...prev, newEvent]);      
       return newEvent;
     } catch (err) {
       const errorMessage = err.message || "Възникна грешка при създаване на събитие";
       setError(errorMessage);
-      setIsLoading(false);
       throw err;
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -104,7 +101,6 @@ export function useEvents(initialLoading = false) {
       });
 
       if (!res.ok) {
-        // Revert optimistic update on error
         if (originalEvent) {
           setEvents(prev => prev.map(event => event.id === id ? originalEvent : event));
         }

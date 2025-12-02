@@ -2,24 +2,7 @@ import { Edit, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getCategoryDisplay } from "@/utils/categories";
 import { formatPrice } from "@/utils/priceFormatter";
-
-// Format date to "DD.MM.YYYY — Ден от седмицата"
-function formatDate(dateString) {
-  if (!dateString) return "";
-  try {
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    
-    const daysOfWeek = ["Неделя", "Понеделник", "Вторник", "Сряда", "Четвъртък", "Петък", "Събота"];
-    const dayOfWeek = daysOfWeek[date.getDay()];
-    
-    return `${day}.${month}.${year} — ${dayOfWeek}`;
-  } catch {
-    return dateString;
-  }
-}
+import { formatDate } from "@/utils/dateFormatter";
 
 export function EventItem({ event, onEdit, onDelete }) {
   const formattedDate = formatDate(event.date);
