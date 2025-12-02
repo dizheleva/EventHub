@@ -145,7 +145,7 @@ export function EventDetails() {
             {event.title}
           </h1>
 
-          {/* Meta Information */}
+          {/* Meta Information - Responsive Grid */}
           <div className="flex flex-col gap-4 md:gap-6 mb-8">
             {/* Date and Category on one row */}
             <div className="flex items-center gap-3 text-gray-700">

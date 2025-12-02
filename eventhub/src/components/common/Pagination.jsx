@@ -24,9 +24,9 @@ export function Pagination({
           onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
           className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         >
-          <option value={10}>10</option>
-          <option value={20}>20</option>
-          <option value={50}>50</option>
+          <option value={6}>6</option>
+          <option value={12}>12</option>
+          <option value={24}>24</option>
         </select>
         <span className="text-sm text-gray-600">
           от {totalItems} събития

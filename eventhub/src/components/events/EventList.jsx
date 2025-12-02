@@ -19,7 +19,7 @@ export function EventList() {
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState("asc");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(6);
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState(null);
