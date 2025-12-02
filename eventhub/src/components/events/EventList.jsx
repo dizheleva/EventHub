@@ -6,6 +6,8 @@ import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { Sorting } from "@/components/common/Sorting";
 import { Pagination } from "@/components/common/Pagination";
 import { SearchBar } from "@/components/common/SearchBar";
+import { FiltersBar } from "@/components/common/FiltersBar";
+import { CATEGORIES } from "@/utils/categories";
 import { EventItem } from "./EventItem";
 import { EditEventForm } from "./EditEventForm";
 import { DeleteEventModal } from "./DeleteEventModal";
@@ -16,6 +18,9 @@ export function EventList() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterCity, setFilterCity] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterPrice, setFilterPrice] = useState("");
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState("asc");
   const [currentPage, setCurrentPage] = useState(1);
@@ -122,11 +127,46 @@ export function EventList() {
     setCurrentPage(1); // Reset to first page when search changes
   }
 
-  // Filter events by search query
-  const filteredEvents = events.filter(event =>
-    event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    event.location.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  function filterCityChangeHandler(city) {
+    setFilterCity(city);
+    setCurrentPage(1); // Reset to first page when filter changes
+  }
+
+  function filterCategoryChangeHandler(category) {
+    setFilterCategory(category);
+    setCurrentPage(1); // Reset to first page when filter changes
+  }
+
+  function filterPriceChangeHandler(price) {
+    setFilterPrice(price);
+    setCurrentPage(1); // Reset to first page when filter changes
+  }
+
+  // Compute unique cities safely
+  const uniqueCities = [...new Set(events.map(e => e.city).filter(Boolean))].sort();
+
+  // Apply filtering logic before sorting
+  const filteredEvents = events.filter(event => {
+    const matchesSearch =
+      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.location.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesCity =
+      filterCity === "" || event.city === filterCity;
+
+    const matchesCategory =
+      filterCategory === "" || event.category === filterCategory;
+
+    const isFree =
+      !event.price ||
+      event.price.trim() === "" ||
+      event.price.toLowerCase().includes("безплат");
+
+    const matchesPrice =
+      filterPrice === "" || (filterPrice === "free" && isFree);
+
+    return matchesSearch && matchesCity && matchesCategory && matchesPrice;
+  });
 
   // Sort events using array.sort()
   function sortEvents(eventsList) {
@@ -187,14 +227,27 @@ export function EventList() {
           />
 
           <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
+            <FiltersBar
+              cities={uniqueCities}
+              categories={CATEGORIES}
+              selectedCity={filterCity}
+              selectedCategory={filterCategory}
+              selectedPrice={filterPrice}
+              onCityChange={filterCityChangeHandler}
+              onCategoryChange={filterCategoryChangeHandler}
+              onPriceChange={filterPriceChangeHandler}
+            />
             <Sorting
               sortBy={sortBy}
               sortOrder={sortOrder}
               onSortChange={sortChangeHandler}
             />
+          </div>
+
+          <div className="mb-6 flex justify-end">
             <button
               onClick={openCreateModalHandler}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg text-sm font-medium hover:shadow-color transition-all border border-transparent ml-auto"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg text-sm font-medium hover:shadow-color transition-all border border-transparent"
             >
               <Plus className="w-4 h-4" />
               Добави събитие
