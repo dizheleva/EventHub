@@ -1,9 +1,18 @@
 import { useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { CalendarDays, Menu, X } from "lucide-react"
+import { useAuth } from "@/contexts/AuthContext"
 
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { isAuthenticated, user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  function handleLogout() {
+    logout()
+    navigate("/")
+    setMenuOpen(false)
+  }
 
   return (
     <header className="border-b border-pink-100 bg-white/95 backdrop-blur-sm shadow-soft sticky top-0 z-50">
@@ -33,16 +42,38 @@ export function Navbar() {
               Събития
             </Link>
           </li>
-          <li>
-            <a href="#" className="px-4 py-2 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors">
-              За нас
-            </a>
-          </li>
-          <li>
-            <a href="#" className="px-4 py-2 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors">
-              Контакти
-            </a>
-          </li>
+          
+          {/* Auth buttons */}
+          {!isAuthenticated ? (
+            <>
+              <li>
+                <Link to="/login" className="px-4 py-2 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors">
+                  Вход
+                </Link>
+              </li>
+              <li>
+                <Link to="/register" className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-medium hover:shadow-color transition-all">
+                  Регистрация
+                </Link>
+              </li>
+            </>
+          ) : (
+            <>
+              <li>
+                <span className="px-4 py-2 rounded-xl text-gray-700 font-medium">
+                  Добре дошли, <span className="text-primary font-semibold">{user?.email}</span>
+                </span>
+              </li>
+              <li>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors"
+                >
+                  Изход
+                </button>
+              </li>
+            </>
+          )}
         </ul>
 
         {/* Mobile menu toggle */}
@@ -69,16 +100,38 @@ export function Navbar() {
                 Събития
               </Link>
             </li>
-            <li>
-              <a href="#" className="block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors" onClick={() => setMenuOpen(false)}>
-                За нас
-              </a>
-            </li>
-            <li>
-              <a href="#" className="block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors" onClick={() => setMenuOpen(false)}>
-                Контакти
-              </a>
-            </li>
+            
+            {/* Auth buttons */}
+            {!isAuthenticated ? (
+              <>
+                <li>
+                  <Link to="/login" className="block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors" onClick={() => setMenuOpen(false)}>
+                    Вход
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/register" className="block px-4 py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-medium hover:shadow-color transition-all" onClick={() => setMenuOpen(false)}>
+                    Регистрация
+                  </Link>
+                </li>
+              </>
+            ) : (
+              <>
+                <li>
+                  <div className="block px-4 py-3 rounded-xl text-gray-700 font-medium">
+                    Добре дошли, <span className="text-primary font-semibold">{user?.email}</span>
+                  </div>
+                </li>
+                <li>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors"
+                  >
+                    Изход
+                  </button>
+                </li>
+              </>
+            )}
           </ul>
         </div>
       )}
