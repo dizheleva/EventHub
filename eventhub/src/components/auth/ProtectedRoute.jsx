@@ -2,29 +2,29 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Toast } from "@/components/common/Toast";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 /**
  * ProtectedRoute - Route guard for authenticated routes
  * 
- * If user is NOT logged in:
- *   - Redirects to login page (or custom redirectTo)
- *   - Preserves original URL in query parameter (?redirect=/original-path)
- *   - Shows toast notification
- * 
- * If user IS logged in:
- *   - Renders children normally
+ * Waits for auth to be ready before making decisions:
+ *   - Shows LoadingSpinner while auth is initializing
+ *   - If user is NOT logged in → redirects to login page
+ *   - If user IS logged in → renders children normally
  * 
  * @param {React.ReactNode} children - Content to render if authenticated
  * @param {string} redirectTo - Custom redirect path (default: "/login")
  */
 export function ProtectedRoute({ children, redirectTo = "/login" }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAuthReady } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [showToast, setShowToast] = useState(false);
 
+  // Wait for auth to be ready before making redirect decisions
   useEffect(() => {
-    if (!isAuthenticated) {
+    // Only check authentication and redirect if auth is ready
+    if (isAuthReady && !isAuthenticated) {
       // Show toast notification
       setShowToast(true);
 
@@ -41,9 +41,18 @@ export function ProtectedRoute({ children, redirectTo = "/login" }) {
         clearTimeout(redirectTimer);
       };
     }
-  }, [isAuthenticated, navigate, location, redirectTo]);
+  }, [isAuthenticated, isAuthReady, navigate, location, redirectTo]);
 
-  // If not authenticated, show toast and don't render children
+  // Show loading spinner while auth is initializing
+  if (!isAuthReady) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <LoadingSpinner message="Зареждане..." />
+      </div>
+    );
+  }
+
+  // If not authenticated (and auth is ready), show toast and don't render children
   if (!isAuthenticated) {
     return (
       <>

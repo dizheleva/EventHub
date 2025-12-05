@@ -7,19 +7,31 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthReady, setIsAuthReady] = useState(false); // Loading state for auth initialization
 
-  // Load user from localStorage on mount
+  // Load user from localStorage on app start
+  // This ensures auth state is restored before rendering protected routes
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error("Error parsing stored user:", error);
-        localStorage.removeItem("user");
+    try {
+      const storedUser = localStorage.getItem("authUser");
+      if (storedUser) {
+        try {
+          // Safely parse user data from localStorage
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+          setIsAuthenticated(true);
+        } catch (parseError) {
+          // If parsing fails, remove corrupted data
+          console.error("Error parsing stored user:", parseError);
+          localStorage.removeItem("authUser");
+        }
       }
+    } catch (error) {
+      // If localStorage access fails, log error but continue
+      console.error("Error accessing localStorage:", error);
+    } finally {
+      // Mark auth as ready after checking localStorage
+      setIsAuthReady(true);
     }
   }, []);
 
@@ -51,8 +63,8 @@ export function AuthProvider({ children }) {
       setUser(userWithoutPassword);
       setIsAuthenticated(true);
 
-      // Save to localStorage
-      localStorage.setItem("user", JSON.stringify(userWithoutPassword));
+      // Save user to localStorage under "authUser" key for persistence
+      localStorage.setItem("authUser", JSON.stringify(userWithoutPassword));
 
       return { success: true, user: userWithoutPassword };
     } catch (error) {
@@ -104,8 +116,8 @@ export function AuthProvider({ children }) {
       setUser(userWithoutPassword);
       setIsAuthenticated(true);
 
-      // Save to localStorage
-      localStorage.setItem("user", JSON.stringify(userWithoutPassword));
+      // Save user to localStorage under "authUser" key for persistence
+      localStorage.setItem("authUser", JSON.stringify(userWithoutPassword));
 
       return { success: true, user: userWithoutPassword };
     } catch (error) {
@@ -118,13 +130,15 @@ export function AuthProvider({ children }) {
   function logout() {
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem("user");
+    // Remove user from localStorage on logout
+    localStorage.removeItem("authUser");
   }
 
   // Context value
   const value = {
     user,
     isAuthenticated,
+    isAuthReady, // Expose auth ready state for route guards
     login,
     register,
     logout,

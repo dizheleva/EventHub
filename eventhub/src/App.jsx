@@ -9,50 +9,70 @@ import { RegisterPage } from "@/pages/RegisterPage"
 import { Features } from "@/components/home/Features"
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 import { GuestRoute } from "@/components/auth/GuestRoute"
+import { LoadingSpinner } from "@/components/common/LoadingSpinner"
+import { useAuth } from "@/contexts/AuthContext"
+
+function AppRoutes() {
+  return (
+    <Routes>
+      {/* Public routes - accessible to everyone */}
+      <Route path="/" element={
+        <>
+          <HomePage />
+          <Features />
+        </>
+      } />
+      <Route path="/events" element={<EventsPage />} />
+      <Route path="/events/:id" element={<EventDetails />} />
+      
+      {/* Protected routes - require authentication */}
+      <Route 
+        path="/my-events" 
+        element={
+          <ProtectedRoute>
+            <MyEventsPage />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* Guest routes - only accessible when NOT logged in */}
+      <Route 
+        path="/login" 
+        element={
+          <GuestRoute>
+            <LoginPage />
+          </GuestRoute>
+        } 
+      />
+      <Route 
+        path="/register" 
+        element={
+          <GuestRoute>
+            <RegisterPage />
+          </GuestRoute>
+        } 
+      />
+    </Routes>
+  );
+}
 
 export default function App() {
+  const { isAuthReady } = useAuth();
+
+  // Show centered loading spinner while auth is initializing
+  // This ensures auth state is restored from localStorage before rendering routes
+  if (!isAuthReady) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner message="Зареждане..." />
+      </div>
+    );
+  }
+
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Layout>
-        <Routes>
-          {/* Public routes - accessible to everyone */}
-          <Route path="/" element={
-            <>
-              <HomePage />
-              <Features />
-            </>
-          } />
-          <Route path="/events" element={<EventsPage />} />
-          <Route path="/events/:id" element={<EventDetails />} />
-          
-          {/* Protected routes - require authentication */}
-          <Route 
-            path="/my-events" 
-            element={
-              <ProtectedRoute>
-                <MyEventsPage />
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Guest routes - only accessible when NOT logged in */}
-          <Route 
-            path="/login" 
-            element={
-              <GuestRoute>
-                <LoginPage />
-              </GuestRoute>
-            } 
-          />
-          <Route 
-            path="/register" 
-            element={
-              <GuestRoute>
-                <RegisterPage />
-              </GuestRoute>
-            } 
-          />
-        </Routes>
+        <AppRoutes />
       </Layout>
     </Router>    
   )
