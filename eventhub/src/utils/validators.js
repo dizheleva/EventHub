@@ -63,7 +63,7 @@ export const validators = {
     }
     return null;
   },
-  organizer: (value) => {
+  organizer: () => {
     // Optional field - no validation needed
     return null;
   },
@@ -78,8 +78,17 @@ export const validators = {
       return "Моля, въведете валиден URL адрес";
     }
   },
-  price: (value) => {
+  price: () => {
     // Optional field - string allowed, no validation needed
+    return null;
+  },
+  password: (value) => {
+    if (!value || value.trim().length === 0) {
+      return "Паролата е задължителна";
+    }
+    if (value.length < 6) {
+      return "Паролата трябва да е поне 6 символа";
+    }
     return null;
   },
 };
