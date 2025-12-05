@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { FormField } from "@/components/common/FormField";
 import { Toast } from "@/components/common/Toast";
@@ -28,7 +28,11 @@ function validatePassword(password) {
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
+  
+  // Get redirect URL from query parameter (preserved by ProtectedRoute)
+  const redirectPath = searchParams.get("redirect") || "/events";
   
   const [formData, setFormData] = useState({
     email: "",
@@ -117,9 +121,10 @@ export function LoginPage() {
         message: "Успешно влизане!",
       });
 
-      // Redirect to events page after short delay
+      // Redirect to original destination (or /events if no redirect param)
+      // This preserves the user's intended destination after login
       setTimeout(() => {
-        navigate("/events");
+        navigate(redirectPath, { replace: true });
       }, 500);
     } catch (error) {
       setToast({
