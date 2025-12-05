@@ -8,8 +8,9 @@ import { useAuth } from "@/contexts/AuthContext";
 export function EventItem({ event, onEdit, onDelete }) {
   const { user, isAuthenticated } = useAuth();
   
-  // Check if current user is the author (creator) of this event
+  // Authorization check: Verify current user is the owner (creator) of this event
   // Support both creatorId (new) and userId (legacy) for backward compatibility
+  // Only owners can see and use Edit/Delete buttons
   const eventCreatorId = event.creatorId || event.userId;
   const isOwner = isAuthenticated && user && eventCreatorId === user.id;
   const formattedDate = formatDate(event.date);
@@ -20,7 +21,8 @@ export function EventItem({ event, onEdit, onDelete }) {
 
   return (
     <div className="relative w-full max-w-md p-8 bg-white rounded-xl shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col group">
-      {/* Buttons positioned above the image - only show if user is owner */}
+      {/* Authorization: Edit/Delete buttons - ONLY visible to owner */}
+      {/* For non-owners: buttons are completely hidden (no empty space) */}
       {isOwner && (
         <div className="absolute top-2 right-2 flex gap-2 z-10">
           <button

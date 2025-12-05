@@ -77,6 +77,8 @@ export function EventList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
 
+  // Authorization check before opening edit modal
+  // Only owners can edit their events - prevent unauthorized access
   async function editClickHandler(eventId) {
     if (!isAuthenticated) {
       setToast({
@@ -87,23 +89,25 @@ export function EventList() {
       return;
     }
 
-    // Check if user is the author (creator)
+    // Check if user is the author (creator) - authorization check
     // Support both creatorId (new) and userId (legacy) for backward compatibility
     try {
       const event = events.find(e => e.id === eventId);
       const eventCreatorId = event?.creatorId || event?.userId;
       if (event && eventCreatorId !== user?.id) {
+        // User is NOT the owner - prevent unauthorized access
         setToast({
           type: "error",
-          message: "Нямате право да редактирате това събитие.",
+          message: "Нямате права да редактирате това събитие",
         });
         setTimeout(() => setToast(null), 3000);
-        return;
+        return; // Prevent opening modal for non-owners
       }
     } catch (err) {
       console.error("Error checking event ownership:", err);
     }
 
+    // User is authorized - open edit modal
     setSelectedEventId(eventId);
     setShowEditModal(true);
   }
@@ -132,6 +136,8 @@ export function EventList() {
     }
   }
 
+  // Authorization check before opening delete modal
+  // Only owners can delete their events - prevent unauthorized access
   function deleteClickHandler(event) {
     if (!isAuthenticated) {
       setToast({
@@ -142,18 +148,20 @@ export function EventList() {
       return;
     }
 
-    // Check if user is the author (creator)
+    // Check if user is the author (creator) - authorization check
     // Support both creatorId (new) and userId (legacy) for backward compatibility
     const eventCreatorId = event.creatorId || event.userId;
     if (eventCreatorId !== user?.id) {
+      // User is NOT the owner - prevent unauthorized access
       setToast({
         type: "error",
-        message: "Нямате право да изтриете това събитие.",
+        message: "Нямате права да изтривате това събитие",
       });
       setTimeout(() => setToast(null), 3000);
-      return;
+      return; // Prevent opening modal for non-owners
     }
 
+    // User is authorized - open delete modal
     setDeletingEventId(event.id);
     setIsDeleteModalOpen(true);
   }

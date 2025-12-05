@@ -29,20 +29,23 @@ export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted, onError,
       }
       const event = await eventResponse.json();
 
-      // Check if current user is the author (creator)
+      // Authorization check: Verify current user is the owner (creator) of this event
       // Support both creatorId (new) and userId (legacy) for backward compatibility
       const eventCreatorId = event.creatorId || event.userId;
       if (user && eventCreatorId !== user.id) {
+        // User is NOT the owner - prevent unauthorized deletion
+        // Close modal immediately and show error message
+        // Do NOT make backend call when unauthorized
         setToast({
           type: "error",
-          message: "Нямате право да изтриете това събитие.",
+          message: "Нямате права да изтривате това събитие",
         });
         setTimeout(() => {
           setToast(null);
           if (onClose) onClose();
         }, 2000);
         setIsDeleting(false);
-        return;
+        return; // Prevent backend call - do NOT allow deletion
       }
 
       // Use deleteEvent from hook (handles optimistic update and revert on error)

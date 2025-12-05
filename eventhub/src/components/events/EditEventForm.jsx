@@ -42,20 +42,22 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
         return res.json();
       })
       .then(event => {
-        // Check if current user is the author (creator)
-        // Support both userId (legacy) and creatorId for backward compatibility
+        // Authorization check: Verify current user is the owner (creator) of this event
+        // Support both creatorId (new) and userId (legacy) for backward compatibility
         const eventCreatorId = event.creatorId || event.userId;
         if (user && eventCreatorId !== user.id) {
+          // User is NOT the owner - prevent unauthorized access
+          // Close modal immediately and show error message
           setToast({
             type: "error",
-            message: "Нямате право да редактирате това събитие.",
+            message: "Нямате права да редактирате това събитие",
           });
           setTimeout(() => {
             setToast(null);
             if (onClose) onClose();
           }, 2000);
           setIsLoading(false);
-          return;
+          return; // Prevent further execution - do NOT allow editing
         }
 
         setFormData({

@@ -25,8 +25,9 @@ export function EventDetails() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [toast, setToast] = useState(null);
 
-  // Check if current user is the author (creator) of this event
+  // Authorization check: Verify current user is the owner (creator) of this event
   // Support both creatorId (new) and userId (legacy) for backward compatibility
+  // This check determines if user can see/edit/delete this event
   const eventCreatorId = event?.creatorId || event?.userId;
   const isOwner = isAuthenticated && user && event && eventCreatorId === user.id;
 
@@ -79,6 +80,8 @@ export function EventDetails() {
     }
   }
 
+  // Authorization check before opening edit modal
+  // Only owners can edit their events
   function handleEdit() {
     if (!isAuthenticated) {
       setToast({
@@ -89,18 +92,22 @@ export function EventDetails() {
       return;
     }
 
+    // Double-check ownership before opening modal
+    // This prevents unauthorized access even if UI is manipulated
     if (!isOwner) {
       setToast({
         type: "error",
-        message: "Нямате право да редактирате това събитие.",
+        message: "Нямате права да редактирате това събитие",
       });
       setTimeout(() => setToast(null), 3000);
-      return;
+      return; // Prevent opening modal for non-owners
     }
 
     setShowEditModal(true);
   }
 
+  // Authorization check before opening delete modal
+  // Only owners can delete their events
   function handleDelete() {
     if (!isAuthenticated) {
       setToast({
@@ -111,13 +118,15 @@ export function EventDetails() {
       return;
     }
 
+    // Double-check ownership before opening modal
+    // This prevents unauthorized access even if UI is manipulated
     if (!isOwner) {
       setToast({
         type: "error",
-        message: "Нямате право да изтриете това събитие.",
+        message: "Нямате права да изтривате това събитие",
       });
       setTimeout(() => setToast(null), 3000);
-      return;
+      return; // Prevent opening modal for non-owners
     }
 
     setShowDeleteModal(true);
@@ -225,35 +234,13 @@ export function EventDetails() {
       {toast && <Toast type={toast.type} message={toast.message} />}
 
       {/* Back Button */}
-      <div className="flex items-center justify-between mb-8">
-        <button
-          onClick={() => navigate("/events")}
-          className="flex items-center gap-2 text-gray-600 hover:text-primary transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="font-medium">Назад към събитията</span>
-        </button>
-
-        {/* Action Buttons - Only visible to owner */}
-        {isOwner && (
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleEdit}
-              className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-xl font-medium hover:bg-yellow-600 transition-all shadow-sm hover:shadow-md"
-            >
-              <Edit className="w-5 h-5" />
-              Редактирай
-            </button>
-            <button
-              onClick={handleDelete}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-all shadow-sm hover:shadow-md"
-            >
-              <Trash2 className="w-5 h-5" />
-              Изтрий
-            </button>
-          </div>
-        )}
-      </div>
+      <button
+        onClick={() => navigate("/events")}
+        className="flex items-center gap-2 mb-8 text-gray-600 hover:text-primary transition-colors"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        <span className="font-medium">Назад към събитията</span>
+      </button>
 
       <article className="bg-white rounded-2xl shadow-lg overflow-hidden">
         {/* Hero Image */}
@@ -269,10 +256,32 @@ export function EventDetails() {
 
         {/* Content */}
         <div className="p-6 md:p-10">
-          {/* Title */}
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8">
-            {event.title}
-          </h1>
+          {/* Title with Action Bar - Action bar only visible to owner */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 flex-1">
+              {event.title}
+            </h1>
+            
+            {/* Action Bar - Only render if user is owner */}
+            {isOwner && (
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <button
+                  onClick={handleEdit}
+                  className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-xl font-medium hover:bg-yellow-600 transition-all shadow-sm hover:shadow-md"
+                >
+                  <Edit className="w-5 h-5" />
+                  Редактирай
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-all shadow-sm hover:shadow-md"
+                >
+                  <Trash2 className="w-5 h-5" />
+                  Изтрий
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Meta Information - Responsive Grid */}
           <div className="flex flex-col gap-4 md:gap-6 mb-8">
