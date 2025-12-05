@@ -31,24 +31,43 @@ export function useEvents(initialLoading = false) {
     }
   }
 
-  // Create new event
-  // eventData should already include creatorId (automatically set by EventForm)
-  // creatorId is exported in GET responses so UI can check ownership
+  // Create new event with Optimistic UI
+  // eventData should already include ownerId/creatorId (automatically set by EventForm)
+  // Steps:
+  // 1. Immediately add event to local state with temporary ID
+  // 2. Call POST /events
+  // 3. On success: Replace temporary ID with real ID from server
+  // 4. On failure: Remove optimistic event and show error
   async function createEvent(eventData) {
     setError(null);
 
+    // Step 1: Optimistic create - immediately add event to local state with temporary ID
+    // This makes the UI feel instant - user sees the event appear immediately
+    const tempId = "temp-" + Date.now();
+    const optimisticEvent = {
+      ...eventData,
+      id: tempId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    
+    // Add optimistic event to local state immediately
+    setEvents(prev => [...prev, optimisticEvent]);
+
     try {
-      setIsLoading(true);
-      
-      // POST request includes creatorId in eventData
-      // creatorId is automatically added by EventForm from authenticated user
+      // Step 2: Call POST /events to create event on server
+      // POST request includes ownerId/creatorId in eventData
+      // ownerId/creatorId is automatically added by EventForm from authenticated user
       const res = await fetch(API_BASE_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(eventData), // Includes creatorId field
+        body: JSON.stringify(eventData), // Includes ownerId/creatorId field
       });
 
       if (!res.ok) {
+        // Step 4: On failure - remove optimistic event from local state
+        setEvents(prev => prev.filter(e => e.id !== tempId));
+        
         let errorMessage = "Грешка при създаване на събитие";
         try {
           const errorText = await res.text();
@@ -66,6 +85,7 @@ export function useEvents(initialLoading = false) {
         throw new Error(`Грешка ${res.status}: ${errorMessage}`);
       }
 
+      // Step 3: On success - get real event from server response
       const responseText = await res.text();
       
       let newEvent;
@@ -73,7 +93,7 @@ export function useEvents(initialLoading = false) {
         try {
           newEvent = JSON.parse(responseText);
         } catch {
-          // If response is empty or invalid, create event from request data
+          // If response is empty or invalid, create event from request data with real ID
           newEvent = {
             ...eventData,
             id: Date.now().toString(),
@@ -82,7 +102,7 @@ export function useEvents(initialLoading = false) {
           };
         }
       } else {
-        // If response is empty, create event from request data
+        // If response is empty, create event from request data with real ID
         newEvent = {
           ...eventData,
           id: Date.now().toString(),
@@ -91,19 +111,30 @@ export function useEvents(initialLoading = false) {
         };
       }
       
-      // Optimistic update: add to local state
-      setEvents(prev => [...prev, newEvent]);      
+      // Replace temporary ID with real ID from server
+      // This ensures the event has the correct ID from the backend
+      setEvents(prev => prev.map(event => 
+        event.id === tempId ? newEvent : event
+      ));
+      
       return newEvent;
     } catch (err) {
+      // Step 4: On failure - ensure optimistic event is removed (in case it wasn't already)
+      setEvents(prev => prev.filter(e => e.id !== tempId));
+      
       const errorMessage = err.message || "Възникна грешка при създаване на събитие";
       setError(errorMessage);
       throw err;
-    } finally {
-      setIsLoading(false);
     }
+    // Note: No setIsLoading for optimistic UI - operation should feel instant
   }
 
-  // Update existing event
+  // Update existing event with Optimistic UI
+  // Steps:
+  // 1. Immediately update event in local state
+  // 2. Call PUT /events/:id
+  // 3. On success: Update with server response (may have additional fields)
+  // 4. On failure: Rollback to original state and show error
   async function updateEvent(id, eventData) {
     if (!id) {
       throw new Error("Липсва ID на събитието");
@@ -111,30 +142,38 @@ export function useEvents(initialLoading = false) {
 
     setError(null);
 
-    // Optimistic update: update in local state immediately
+    // Find original event for rollback in case of failure
     const originalEvent = events.find(e => e.id === id);
-    if (originalEvent) {
-      // Preserve creatorId when updating - do NOT overwrite the creator
-      // Support both creatorId (new) and userId (legacy) for backward compatibility
-      const originalCreatorId = originalEvent.creatorId || originalEvent.userId;
-      const optimisticUpdate = { 
-        ...originalEvent, 
-        ...eventData, 
-        creatorId: eventData.creatorId !== undefined ? eventData.creatorId : originalCreatorId, // Preserve creatorId
-        updatedAt: new Date().toISOString() 
-      };
-      setEvents(prev => prev.map(event => event.id === id ? optimisticUpdate : event));
+    if (!originalEvent) {
+      throw new Error("Събитието не беше намерено");
     }
 
+    // Step 1: Optimistic update - immediately update event in local state
+    // This makes the UI feel instant - user sees changes immediately
+    // Preserve ownerId/creatorId when updating - do NOT overwrite the creator
+    // Support both creatorId (new) and userId (legacy) for backward compatibility
+    const originalOwnerId = originalEvent.ownerId || originalEvent.creatorId || originalEvent.userId;
+    const optimisticUpdate = { 
+      ...originalEvent, 
+      ...eventData, 
+      // Preserve ownerId/creatorId - do NOT overwrite the creator
+      ownerId: eventData.ownerId !== undefined ? eventData.ownerId : originalOwnerId,
+      creatorId: eventData.creatorId !== undefined ? eventData.creatorId : (originalEvent.creatorId || originalEvent.userId),
+      updatedAt: new Date().toISOString() 
+    };
+    
+    // Update local state immediately
+    setEvents(prev => prev.map(event => event.id === id ? optimisticUpdate : event));
+
     try {
-      // Preserve creatorId from original event if not provided in updateData
-      // Support both creatorId (new) and userId (legacy) for backward compatibility
-      const originalCreatorId = originalEvent?.creatorId || originalEvent?.userId;
+      // Step 2: Call PUT /events/:id to update event on server
+      // Preserve ownerId/creatorId from original event if not provided in updateData
       const updateData = {
         id,
         ...eventData,
-        // Preserve creatorId from original event - do NOT overwrite
-        creatorId: eventData.creatorId !== undefined ? eventData.creatorId : originalCreatorId,
+        // Preserve ownerId/creatorId from original event - do NOT overwrite
+        ownerId: eventData.ownerId !== undefined ? eventData.ownerId : originalOwnerId,
+        creatorId: eventData.creatorId !== undefined ? eventData.creatorId : (originalEvent.creatorId || originalEvent.userId),
         updatedAt: new Date().toISOString(),
       };
 
@@ -145,9 +184,8 @@ export function useEvents(initialLoading = false) {
       });
 
       if (!res.ok) {
-        if (originalEvent) {
-          setEvents(prev => prev.map(event => event.id === id ? originalEvent : event));
-        }
+        // Step 4: On failure - rollback to original state
+        setEvents(prev => prev.map(event => event.id === id ? originalEvent : event));
         
         let errorMessage = "Грешка при обновяване на събитие";
         try {
@@ -166,52 +204,71 @@ export function useEvents(initialLoading = false) {
         throw new Error(`Грешка ${res.status}: ${errorMessage}`);
       }
 
-      // Get updated event from response
+      // Step 3: On success - get updated event from server response
+      // Server may have additional fields or modifications
       let updatedEvent;
       const responseText = await res.text();
       if (responseText) {
         try {
           updatedEvent = JSON.parse(responseText);
         } catch {
+          // If response is invalid, use updateData
           updatedEvent = { id, ...updateData };
         }
       } else {
+        // If response is empty, use updateData
         updatedEvent = { id, ...updateData };
       }
 
-      // Update with server response
+      // Update with server response (may have additional fields from server)
       setEvents(prev => prev.map(event => event.id === id ? updatedEvent : event));
       return updatedEvent;
     } catch (err) {
+      // Step 4: On failure - ensure rollback to original state (in case it wasn't already)
+      setEvents(prev => prev.map(event => event.id === id ? originalEvent : event));
+      
       const errorMessage = err.message || "Възникна грешка при обновяване на събитие";
       setError(errorMessage);
       throw err;
     }
+    // Note: No setIsLoading for optimistic UI - operation should feel instant
   }
 
-  // Delete event with optimistic UI
+  // Delete event with Optimistic UI
+  // Steps:
+  // 1. Store backup of current events state
+  // 2. Immediately remove event from local state
+  // 3. Call DELETE /events/:id
+  // 4. On failure: Restore backup and show error
   async function deleteEvent(id) {
     if (!id) {
       throw new Error("Липсва ID на събитието");
     }
 
-    // Optimistic update: remove from local state immediately
+    // Find event to delete
     const deletedEvent = events.find(e => e.id === id);
     if (!deletedEvent) {
       throw new Error("Събитието не беше намерено");
     }
 
+    // Step 1: Store backup of current events state for rollback
+    // This allows us to restore the exact previous state if deletion fails
+    const eventsBackup = [...events];
+
+    // Step 2: Optimistic delete - immediately remove event from local state
+    // This makes the UI feel instant - user sees the event disappear immediately
     setEvents(prev => prev.filter(e => e.id !== id));
 
     try {
+      // Step 3: Call DELETE /events/:id to delete event on server
       const res = await fetch(`${API_BASE_URL}/${id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
       });
 
       if (!res.ok) {
-        // Revert optimistic update on error
-        setEvents(prev => [...prev, deletedEvent]);
+        // Step 4: On failure - restore backup to previous state
+        setEvents(eventsBackup);
         
         let errorMessage = "Грешка при изтриване на събитие";
         try {
@@ -230,14 +287,17 @@ export function useEvents(initialLoading = false) {
         throw new Error(`Грешка ${res.status}: ${errorMessage}`);
       }
 
+      // Success - event is already removed from local state (optimistic update)
       return true;
     } catch (err) {
-      // Revert optimistic update on error
-      setEvents(prev => [...prev, deletedEvent]);
+      // Step 4: On failure - ensure backup is restored (in case it wasn't already)
+      setEvents(eventsBackup);
+      
       const errorMessage = err.message || "Възникна грешка при изтриване на събитие";
       setError(errorMessage);
       throw err;
     }
+    // Note: No setIsLoading for optimistic UI - operation should feel instant
   }
 
   return {
