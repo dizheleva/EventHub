@@ -8,6 +8,8 @@ import { Sorting } from "@/components/common/Sorting";
 import { Pagination } from "@/components/common/Pagination";
 import { SearchBar } from "@/components/common/SearchBar";
 import { useEvents } from "@/hooks/useEvents";
+import { useAuth } from "@/contexts/AuthContext";
+import { GuardedRoute } from "@/components/routing/GuardedRoute";
 import { EventItem } from "./EventItem";
 import { EditEventForm } from "./EditEventForm";
 import { DeleteEventModal } from "./DeleteEventModal";
@@ -45,6 +47,7 @@ function sortEvents(eventsList, sortByField, sortOrderValue) {
 
 export function EventList() {
   const { events, isLoading, error, fetchEvents, createEvent, updateEvent, deleteEvent } = useEvents(true);
+  const { isAuthenticated } = useAuth();
   
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -75,6 +78,14 @@ export function EventList() {
   }, []); // Only run once on mount
 
   function editClickHandler(eventId) {
+    if (!isAuthenticated) {
+      setToast({
+        type: "error",
+        message: "Моля, влезте в профила си.",
+      });
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
     setSelectedEventId(eventId);
     setShowEditModal(true);
   }
@@ -104,6 +115,14 @@ export function EventList() {
   }
 
   function deleteClickHandler(event) {
+    if (!isAuthenticated) {
+      setToast({
+        type: "error",
+        message: "Моля, влезте в профила си.",
+      });
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
     setDeletingEventId(event.id);
     setIsDeleteModalOpen(true);
   }
@@ -129,6 +148,14 @@ export function EventList() {
   }
 
   function openCreateModalHandler() {
+    if (!isAuthenticated) {
+      setToast({
+        type: "error",
+        message: "Моля, влезте в профила си.",
+      });
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
     setShowCreateModal(true);
   }
 
@@ -319,36 +346,42 @@ export function EventList() {
       )}
 
       {/* Edit Modal */}
-      <Modal
-        isOpen={showEditModal}
-        onClose={closeEditModalHandler}
-        title="Редактирай събитие"
-      >
-        {selectedEventId && (
-          <EditEventForm
-            eventId={selectedEventId}
-            onEventUpdated={eventUpdatedHandler}
-            onClose={closeEditModalHandler}
-          />
-        )}
-      </Modal>
+      <GuardedRoute>
+        <Modal
+          isOpen={showEditModal}
+          onClose={closeEditModalHandler}
+          title="Редактирай събитие"
+        >
+          {selectedEventId && (
+            <EditEventForm
+              eventId={selectedEventId}
+              onEventUpdated={eventUpdatedHandler}
+              onClose={closeEditModalHandler}
+            />
+          )}
+        </Modal>
+      </GuardedRoute>
 
       {/* Delete Modal */}
-      <DeleteEventModal
-        eventId={deletingEventId}
-        isOpen={isDeleteModalOpen}
-        onClose={closeDeleteModalHandler}
-        onDeleted={eventDeletedHandler}
-        onError={eventDeleteErrorHandler}
-        deleteEvent={deleteEvent}
-      />
+      <GuardedRoute>
+        <DeleteEventModal
+          eventId={deletingEventId}
+          isOpen={isDeleteModalOpen}
+          onClose={closeDeleteModalHandler}
+          onDeleted={eventDeletedHandler}
+          onError={eventDeleteErrorHandler}
+          deleteEvent={deleteEvent}
+        />
+      </GuardedRoute>
 
       {/* Create Event Modal */}
-      <CreateEventModal
-        isOpen={showCreateModal}
-        onClose={closeCreateModalHandler}
-        onEventCreated={eventCreatedHandler}
-      />
+      <GuardedRoute>
+        <CreateEventModal
+          isOpen={showCreateModal}
+          onClose={closeCreateModalHandler}
+          onEventCreated={eventCreatedHandler}
+        />
+      </GuardedRoute>
     </>
   );
 }
