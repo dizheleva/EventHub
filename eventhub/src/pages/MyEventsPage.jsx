@@ -16,6 +16,12 @@ export function MyEventsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [toast, setToast] = useState(null);
 
+  // Scroll to top on component mount
+  // This ensures the page starts at the top when navigating to MyEventsPage
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
   // Fetch events when component mounts
   // This ensures events are loaded when user navigates to this page
   useEffect(() => {
@@ -24,20 +30,20 @@ export function MyEventsPage() {
   }, []); // Only run once on mount
 
   // Filter events to show only those created by the current user
-  // Support both creatorId (new) and userId (legacy) for backward compatibility
-  // Events without creatorId/userId are safely ignored
+  // Support ownerId (required), creatorId (new), and userId (legacy) for backward compatibility
+  // Events without ownerId/creatorId/userId are safely ignored
   const myEvents = useMemo(() => {
     if (!isAuthenticated || !user) {
       return [];
     }
 
     return events.filter(event => {
-      // Get creatorId (new field) or userId (legacy field) for backward compatibility
-      const eventCreatorId = event.creatorId || event.userId;
+      // Get ownerId (required field), creatorId (new field), or userId (legacy field) for backward compatibility
+      const eventOwnerId = event.ownerId || event.creatorId || event.userId;
       
-      // Only include events that have a creatorId/userId and match current user
-      // Safely ignore events without creatorId/userId (backward compatibility)
-      return eventCreatorId && eventCreatorId === user.id;
+      // Only include events that have an ownerId/creatorId/userId and match current user
+      // Safely ignore events without ownerId/creatorId/userId (backward compatibility)
+      return eventOwnerId && eventOwnerId === user.id;
     });
   }, [events, user, isAuthenticated]);
 
@@ -144,17 +150,14 @@ export function MyEventsPage() {
           <div className="flex flex-col items-center gap-4">
             <CalendarX className="w-16 h-16 text-gray-400" />
             <p className="text-xl text-gray-600 font-medium">
-              Все още нямате създадени събития
-            </p>
-            <p className="text-gray-500">
-              Създайте първото си събитие, за да започнете да споделяте с другите!
+              Нямате добавени събития.
             </p>
             <button
               onClick={openCreateModalHandler}
               className="mt-4 flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-medium hover:shadow-color transition-all"
             >
               <Plus className="w-5 h-5" />
-              Създай първо събитие
+              Добави събитие
             </button>
           </div>
         </div>

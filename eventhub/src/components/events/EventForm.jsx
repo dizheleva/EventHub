@@ -115,12 +115,14 @@ export function EventForm({ mode = "create", onEventCreated, onClose }) {
         return;
       }
 
-      // Add creatorId to event data - automatically include current user's ID
-      // creatorId is not visible in the form UI, it's added automatically
-      // This ensures every event has a creatorId field for ownership checks
+      // Add ownerId and creatorId to event data - automatically include current user's ID
+      // ownerId is the required field, creatorId is kept for backward compatibility
+      // These fields are not visible in the form UI, they're added automatically
+      // This ensures every event has an ownerId field for ownership checks
       const eventDataWithUser = {
         ...formData,
-        creatorId: user.id, // Automatically set creatorId from authenticated user
+        ownerId: user.id, // Automatically set ownerId from authenticated user (required field)
+        creatorId: user.id, // Also set creatorId for backward compatibility
       };
 
       // If mode is create and onEventCreated callback exists, pass data to parent
