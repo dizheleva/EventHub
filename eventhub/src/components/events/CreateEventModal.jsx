@@ -2,16 +2,13 @@ import { Modal } from "@/components/common/Modal";
 import { EventForm } from "./EventForm";
 
 export function CreateEventModal({ isOpen, onClose, onEventCreated }) {
-  function eventCreatedHandler(newEvent) {
+  async function eventCreatedHandler(eventData) {
+    // Pass event data to parent (EventList) which will handle API call
+    // Await to properly handle async errors
     if (onEventCreated) {
-      onEventCreated(newEvent);
+      await onEventCreated(eventData);
     }
-    // Close modal after success
-    setTimeout(() => {
-      if (onClose) {
-        onClose();
-      }
-    }, 1500);
+    // Note: Modal will be closed by EventList after successful creation
   }
 
   return (

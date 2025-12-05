@@ -1,8 +1,14 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, Edit, Trash2 } from "lucide-react";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
+import { Modal } from "@/components/common/Modal";
+import { Toast } from "@/components/common/Toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEvents } from "@/hooks/useEvents";
+import { EditEventForm } from "@/components/events/EditEventForm";
+import { DeleteEventModal } from "@/components/events/DeleteEventModal";
 import { getCategoryDisplay } from "@/utils/categories";
 import { formatPrice } from "@/utils/priceFormatter";
 import { formatDate } from "@/utils/dateFormatter";
@@ -10,9 +16,17 @@ import { formatDate } from "@/utils/dateFormatter";
 export function EventDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
+  const { deleteEvent, updateEvent } = useEvents();
   const [event, setEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  // Check if current user is the author
+  const isOwner = isAuthenticated && user && event && event.userId === user.id;
 
   useEffect(() => {
     if (!id) {
@@ -43,6 +57,111 @@ export function EventDetails() {
         setIsLoading(false);
       });
   }, [id]);
+
+  // Refresh event data after update
+  function refreshEvent() {
+    if (id) {
+      fetch(`http://localhost:5000/events/${id}`)
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`Грешка при зареждане: ${res.status}`);
+          }
+          return res.json();
+        })
+        .then(data => {
+          setEvent(data);
+        })
+        .catch(err => {
+          console.error("Error refreshing event:", err);
+        });
+    }
+  }
+
+  function handleEdit() {
+    if (!isAuthenticated) {
+      setToast({
+        type: "error",
+        message: "Моля, влезте в профила си.",
+      });
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
+    if (!isOwner) {
+      setToast({
+        type: "error",
+        message: "Нямате право да редактирате това събитие.",
+      });
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
+    setShowEditModal(true);
+  }
+
+  function handleDelete() {
+    if (!isAuthenticated) {
+      setToast({
+        type: "error",
+        message: "Моля, влезте в профила си.",
+      });
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
+    if (!isOwner) {
+      setToast({
+        type: "error",
+        message: "Нямате право да изтриете това събитие.",
+      });
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
+    setShowDeleteModal(true);
+  }
+
+  async function handleEventUpdated(updatedEvent) {
+    try {
+      await updateEvent(updatedEvent.id, updatedEvent);
+      setShowEditModal(false);
+      refreshEvent();
+      setToast({
+        type: "success",
+        message: "Събитието беше обновено успешно!",
+      });
+      setTimeout(() => setToast(null), 3000);
+    } catch (err) {
+      setToast({
+        type: "error",
+        message: err.message || "Възникна грешка при обновяване на събитие",
+      });
+      setTimeout(() => setToast(null), 3000);
+    }
+  }
+
+  async function handleEventDeleted() {
+    try {
+      if (id) {
+        await deleteEvent(id);
+        setShowDeleteModal(false);
+        setToast({
+          type: "success",
+          message: "Събитието беше изтрито успешно!",
+        });
+        setTimeout(() => {
+          setToast(null);
+          navigate("/events");
+        }, 1500);
+      }
+    } catch (err) {
+      setToast({
+        type: "error",
+        message: err.message || "Възникна грешка при изтриване на събитие",
+      });
+      setTimeout(() => setToast(null), 3000);
+    }
+  }
 
   function retryHandler() {
     if (id) {
@@ -100,14 +219,39 @@ export function EventDetails() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* Toast Notification */}
+      {toast && <Toast type={toast.type} message={toast.message} />}
+
       {/* Back Button */}
-      <button
-        onClick={() => navigate("/events")}
-        className="flex items-center gap-2 mb-8 text-gray-600 hover:text-primary transition-colors"
-      >
-        <ArrowLeft className="w-5 h-5" />
-        <span className="font-medium">Назад към събитията</span>
-      </button>
+      <div className="flex items-center justify-between mb-8">
+        <button
+          onClick={() => navigate("/events")}
+          className="flex items-center gap-2 text-gray-600 hover:text-primary transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="font-medium">Назад към събитията</span>
+        </button>
+
+        {/* Action Buttons - Only visible to owner */}
+        {isOwner && (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleEdit}
+              className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-xl font-medium hover:bg-yellow-600 transition-all shadow-sm hover:shadow-md"
+            >
+              <Edit className="w-5 h-5" />
+              Редактирай
+            </button>
+            <button
+              onClick={handleDelete}
+              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-all shadow-sm hover:shadow-md"
+            >
+              <Trash2 className="w-5 h-5" />
+              Изтрий
+            </button>
+          </div>
+        )}
+      </div>
 
       <article className="bg-white rounded-2xl shadow-lg overflow-hidden">
         {/* Hero Image */}
@@ -218,6 +362,39 @@ export function EventDetails() {
           </div>
         </div>
       </article>
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <Modal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          title="Редактирай събитие"
+        >
+          <EditEventForm
+            eventId={id}
+            onEventUpdated={handleEventUpdated}
+            onClose={() => setShowEditModal(false)}
+          />
+        </Modal>
+      )}
+
+      {/* Delete Modal */}
+      {showDeleteModal && (
+        <DeleteEventModal
+          eventId={id}
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onDeleted={handleEventDeleted}
+          onError={(eventId, error) => {
+            setToast({
+              type: "error",
+              message: error.message || "Възникна грешка при изтриване на събитие",
+            });
+            setTimeout(() => setToast(null), 3000);
+          }}
+          deleteEvent={deleteEvent}
+        />
+      )}
     </div>
   );
 }

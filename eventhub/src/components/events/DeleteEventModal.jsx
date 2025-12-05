@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Modal } from "@/components/common/Modal";
 import { Toast } from "@/components/common/Toast";
 import { Loader2, Trash2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted, onError, deleteEvent }) {
+  const { user } = useAuth();
   const [isDeleting, setIsDeleting] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -20,6 +22,27 @@ export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted, onError,
     setIsDeleting(true);
 
     try {
+      // First, fetch the event to check ownership
+      const eventResponse = await fetch(`http://localhost:5000/events/${eventId}`);
+      if (!eventResponse.ok) {
+        throw new Error("Грешка при зареждане на събитието");
+      }
+      const event = await eventResponse.json();
+
+      // Check if current user is the author
+      if (user && event.userId !== user.id) {
+        setToast({
+          type: "error",
+          message: "Нямате право да изтриете това събитие.",
+        });
+        setTimeout(() => {
+          setToast(null);
+          if (onClose) onClose();
+        }, 2000);
+        setIsDeleting(false);
+        return;
+      }
+
       // Use deleteEvent from hook (handles optimistic update and revert on error)
       if (!deleteEvent) {
         throw new Error("deleteEvent function is not provided");

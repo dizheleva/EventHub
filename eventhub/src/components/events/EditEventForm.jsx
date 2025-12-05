@@ -5,8 +5,10 @@ import { FormField } from "@/components/common/FormField";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { CategorySelect } from "@/components/common/CategorySelect";
 import { formatDateForInput } from "@/utils/dateFormatter";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function EditEventForm({ eventId, onEventUpdated, onClose }) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     title: "",
     date: "",
@@ -40,6 +42,20 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
         return res.json();
       })
       .then(event => {
+        // Check if current user is the author
+        if (user && event.userId !== user.id) {
+          setToast({
+            type: "error",
+            message: "Нямате право да редактирате това събитие.",
+          });
+          setTimeout(() => {
+            setToast(null);
+            if (onClose) onClose();
+          }, 2000);
+          setIsLoading(false);
+          return;
+        }
+
         setFormData({
           title: event.title || "",
           date: formatDateForInput(event.date),
@@ -63,7 +79,7 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
         setTimeout(() => setToast(null), 3000);
         setIsLoading(false);
       });
-  }, [eventId]);
+  }, [eventId, user, onClose]);
 
   // Validate single field
   function validateField(name, value) {
@@ -72,13 +88,16 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
     return validator(value);
   }
 
-  // Validate all fields
+  // Validate all fields - only validate fields that exist in the form
   function validateForm(data) {
     const newErrors = {};
-    Object.keys(validators).forEach((field) => {
-      const error = validateField(field, data[field]);
-      if (error) {
-        newErrors[field] = error;
+    // Only validate fields that are in the form data
+    Object.keys(data).forEach((field) => {
+      if (validators[field]) {
+        const error = validateField(field, data[field]);
+        if (error) {
+          newErrors[field] = error;
+        }
       }
     });
     return newErrors;
@@ -147,10 +166,18 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
     setIsSubmitting(true);
 
     try {
-      // Prepare data for PUT request
+      // Fetch original event to preserve userId
+      const originalEventResponse = await fetch(`http://localhost:5000/events/${eventId}`);
+      if (!originalEventResponse.ok) {
+        throw new Error("Грешка при зареждане на събитието");
+      }
+      const originalEvent = await originalEventResponse.json();
+
+      // Prepare data for PUT request - preserve userId from original event
       const updateData = {
         id: eventId,
         ...formData,
+        userId: originalEvent.userId, // Preserve userId
         updatedAt: new Date().toISOString(),
       };
 

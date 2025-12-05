@@ -3,6 +3,7 @@ import { validators } from "@/utils/validators";
 import { Toast } from "@/components/common/Toast";
 import { FormField } from "@/components/common/FormField";
 import { CategorySelect } from "@/components/common/CategorySelect";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Initial form state
 const INITIAL_FORM_STATE = {
@@ -19,6 +20,7 @@ const INITIAL_FORM_STATE = {
 };
 
 export function EventForm({ mode = "create", onEventCreated, onClose }) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,13 +33,16 @@ export function EventForm({ mode = "create", onEventCreated, onClose }) {
     return validator(value);
   }
 
-  // Validate all fields
+  // Validate all fields - only validate fields that exist in the form
   function validateForm(data) {
     const newErrors = {};
-    Object.keys(validators).forEach((field) => {
-      const error = validateField(field, data[field]);
-      if (error) {
-        newErrors[field] = error;
+    // Only validate fields that are in the form data
+    Object.keys(data).forEach((field) => {
+      if (validators[field]) {
+        const error = validateField(field, data[field]);
+        if (error) {
+          newErrors[field] = error;
+        }
       }
     });
     return newErrors;
@@ -86,21 +91,78 @@ export function EventForm({ mode = "create", onEventCreated, onClose }) {
   // Handle form submit
   async function submitHandler(e) {
     e.preventDefault();
+    console.log("Form submitted", { mode, formData, user });
 
     // Validate all fields
     const formErrors = validateForm(formData);
+    console.log("Form errors:", formErrors);
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
+      console.log("Form has errors, stopping submission");
       return;
     }
 
+    console.log("Setting isSubmitting to true");
     setIsSubmitting(true);
 
     try {
+      // Check if user is authenticated (required for creating events)
+      if (!user || !user.id) {
+        console.log("User not authenticated");
+        setToast({
+          type: "error",
+          message: "Моля, влезте в профила си, за да създадете събитие.",
+        });
+        setTimeout(() => {
+          setToast(null);
+        }, 3000);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Add userId to event data
+      const eventDataWithUser = {
+        ...formData,
+        userId: user.id,
+      };
+      console.log("Event data with user:", eventDataWithUser);
+
+      // If mode is create and onEventCreated callback exists, pass data to parent
+      // Parent (EventList) will handle the API call via useEvents hook
+      if (mode === "create" && onEventCreated) {
+        console.log("Calling onEventCreated callback");
+        // Pass data to parent (EventList will handle API call via createEvent)
+        // Await the callback to handle errors properly
+        try {
+          await onEventCreated(eventDataWithUser);
+          console.log("onEventCreated completed successfully");
+          
+          // Only clear form and reset state if successful
+          setFormData(INITIAL_FORM_STATE);
+          setErrors({});
+          setIsSubmitting(false);
+        } catch (err) {
+          // If parent callback throws error, show it and keep form data
+          console.error("Error in onEventCreated callback:", err);
+          setToast({
+            type: "error",
+            message: err.message || "Възникна грешка при създаване на събитие",
+          });
+          setTimeout(() => {
+            setToast(null);
+          }, 3000);
+          setIsSubmitting(false);
+        }
+        return;
+      }
+      
+      console.log("Fallback: making direct API call");
+
+      // Fallback: If no callback, make API call directly (shouldn't happen in normal flow)
       const res = await fetch("http://localhost:5000/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(eventDataWithUser),
       });
 
       if (!res.ok) {
@@ -112,9 +174,7 @@ export function EventForm({ mode = "create", onEventCreated, onClose }) {
       // Show success toast
       setToast({
         type: "success",
-        message: mode === "create" 
-          ? "Събитието е създадено успешно!" 
-          : "Събитието беше създадено успешно!",
+        message: "Събитието е създадено успешно!",
       });
 
       // Clear form

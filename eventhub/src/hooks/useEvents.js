@@ -32,8 +32,8 @@ export function useEvents(initialLoading = false) {
     setError(null);
 
     try {
-        
       setIsLoading(true);
+      
       const res = await fetch(API_BASE_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -58,7 +58,30 @@ export function useEvents(initialLoading = false) {
         throw new Error(`Грешка ${res.status}: ${errorMessage}`);
       }
 
-      const newEvent = await res.json();
+      const responseText = await res.text();
+      
+      let newEvent;
+      if (responseText) {
+        try {
+          newEvent = JSON.parse(responseText);
+        } catch {
+          // If response is empty or invalid, create event from request data
+          newEvent = {
+            ...eventData,
+            id: Date.now().toString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+        }
+      } else {
+        // If response is empty, create event from request data
+        newEvent = {
+          ...eventData,
+          id: Date.now().toString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      }
       
       // Optimistic update: add to local state
       setEvents(prev => [...prev, newEvent]);      
@@ -83,7 +106,13 @@ export function useEvents(initialLoading = false) {
     // Optimistic update: update in local state immediately
     const originalEvent = events.find(e => e.id === id);
     if (originalEvent) {
-      const optimisticUpdate = { ...originalEvent, ...eventData, updatedAt: new Date().toISOString() };
+      // Preserve userId when updating
+      const optimisticUpdate = { 
+        ...originalEvent, 
+        ...eventData, 
+        userId: eventData.userId !== undefined ? eventData.userId : originalEvent.userId, // Preserve userId
+        updatedAt: new Date().toISOString() 
+      };
       setEvents(prev => prev.map(event => event.id === id ? optimisticUpdate : event));
     }
 
@@ -91,6 +120,8 @@ export function useEvents(initialLoading = false) {
       const updateData = {
         id,
         ...eventData,
+        // Preserve userId from original event if not provided
+        userId: eventData.userId !== undefined ? eventData.userId : (originalEvent?.userId),
         updatedAt: new Date().toISOString(),
       };
 

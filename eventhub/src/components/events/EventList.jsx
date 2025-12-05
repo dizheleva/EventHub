@@ -47,7 +47,7 @@ function sortEvents(eventsList, sortByField, sortOrderValue) {
 
 export function EventList() {
   const { events, isLoading, error, fetchEvents, createEvent, updateEvent, deleteEvent } = useEvents(true);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -77,7 +77,7 @@ export function EventList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
 
-  function editClickHandler(eventId) {
+  async function editClickHandler(eventId) {
     if (!isAuthenticated) {
       setToast({
         type: "error",
@@ -86,6 +86,22 @@ export function EventList() {
       setTimeout(() => setToast(null), 3000);
       return;
     }
+
+    // Check if user is the author
+    try {
+      const event = events.find(e => e.id === eventId);
+      if (event && event.userId !== user?.id) {
+        setToast({
+          type: "error",
+          message: "Нямате право да редактирате това събитие.",
+        });
+        setTimeout(() => setToast(null), 3000);
+        return;
+      }
+    } catch (err) {
+      console.error("Error checking event ownership:", err);
+    }
+
     setSelectedEventId(eventId);
     setShowEditModal(true);
   }
@@ -123,6 +139,17 @@ export function EventList() {
       setTimeout(() => setToast(null), 3000);
       return;
     }
+
+    // Check if user is the author
+    if (event.userId !== user?.id) {
+      setToast({
+        type: "error",
+        message: "Нямате право да изтриете това събитие.",
+      });
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
     setDeletingEventId(event.id);
     setIsDeleteModalOpen(true);
   }
@@ -164,9 +191,12 @@ export function EventList() {
   }
 
   async function eventCreatedHandler(eventData) {
+    console.log("eventCreatedHandler called with:", eventData);
     try {
+      console.log("Calling createEvent...");
       // createEvent already handles optimistic update
-      await createEvent(eventData);
+      const result = await createEvent(eventData);
+      console.log("createEvent completed:", result);
       closeCreateModalHandler();
       setToast({
         type: "success",
@@ -174,11 +204,14 @@ export function EventList() {
       });
       setTimeout(() => setToast(null), 3000);
     } catch (err) {
+      console.error("Error in eventCreatedHandler:", err);
       setToast({
         type: "error",
         message: err.message || "Възникна грешка при създаване на събитие",
       });
       setTimeout(() => setToast(null), 3000);
+      // Don't close modal on error so user can retry
+      throw err; // Re-throw to let EventForm handle it
     }
   }
 
@@ -305,15 +338,18 @@ export function EventList() {
             />
           </div>
 
-          <div className="mb-6 flex justify-end">
-            <button
-              onClick={openCreateModalHandler}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg text-sm font-medium hover:shadow-color transition-all border border-transparent"
-            >
-              <Plus className="w-4 h-4" />
-              Добави събитие
-            </button>
-          </div>
+          {/* Show "Add Event" button only for authenticated users */}
+          {isAuthenticated && (
+            <div className="mb-6 flex justify-end">
+              <button
+                onClick={openCreateModalHandler}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg text-sm font-medium hover:shadow-color transition-all border border-transparent"
+              >
+                <Plus className="w-4 h-4" />
+                Добави събитие
+              </button>
+            </div>
+          )}
 
           {filteredAndSortedEvents.length === 0 ? (
             <div className="text-center py-20">
@@ -345,43 +381,49 @@ export function EventList() {
         </>
       )}
 
-      {/* Edit Modal */}
-      <GuardedRoute>
-        <Modal
-          isOpen={showEditModal}
-          onClose={closeEditModalHandler}
-          title="Редактирай събитие"
-        >
-          {selectedEventId && (
-            <EditEventForm
-              eventId={selectedEventId}
-              onEventUpdated={eventUpdatedHandler}
-              onClose={closeEditModalHandler}
-            />
-          )}
-        </Modal>
-      </GuardedRoute>
+      {/* Edit Modal - Only render GuardedRoute when modal is open */}
+      {showEditModal && (
+        <GuardedRoute>
+          <Modal
+            isOpen={showEditModal}
+            onClose={closeEditModalHandler}
+            title="Редактирай събитие"
+          >
+            {selectedEventId && (
+              <EditEventForm
+                eventId={selectedEventId}
+                onEventUpdated={eventUpdatedHandler}
+                onClose={closeEditModalHandler}
+              />
+            )}
+          </Modal>
+        </GuardedRoute>
+      )}
 
-      {/* Delete Modal */}
-      <GuardedRoute>
-        <DeleteEventModal
-          eventId={deletingEventId}
-          isOpen={isDeleteModalOpen}
-          onClose={closeDeleteModalHandler}
-          onDeleted={eventDeletedHandler}
-          onError={eventDeleteErrorHandler}
-          deleteEvent={deleteEvent}
-        />
-      </GuardedRoute>
+      {/* Delete Modal - Only render GuardedRoute when modal is open */}
+      {isDeleteModalOpen && (
+        <GuardedRoute>
+          <DeleteEventModal
+            eventId={deletingEventId}
+            isOpen={isDeleteModalOpen}
+            onClose={closeDeleteModalHandler}
+            onDeleted={eventDeletedHandler}
+            onError={eventDeleteErrorHandler}
+            deleteEvent={deleteEvent}
+          />
+        </GuardedRoute>
+      )}
 
-      {/* Create Event Modal */}
-      <GuardedRoute>
-        <CreateEventModal
-          isOpen={showCreateModal}
-          onClose={closeCreateModalHandler}
-          onEventCreated={eventCreatedHandler}
-        />
-      </GuardedRoute>
+      {/* Create Event Modal - Only render GuardedRoute when modal is open */}
+      {showCreateModal && (
+        <GuardedRoute>
+          <CreateEventModal
+            isOpen={showCreateModal}
+            onClose={closeCreateModalHandler}
+            onEventCreated={eventCreatedHandler}
+          />
+        </GuardedRoute>
+      )}
     </>
   );
 }

@@ -3,8 +3,13 @@ import { Link } from "react-router-dom";
 import { getCategoryDisplay } from "@/utils/categories";
 import { formatPrice } from "@/utils/priceFormatter";
 import { formatDate } from "@/utils/dateFormatter";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function EventItem({ event, onEdit, onDelete }) {
+  const { user, isAuthenticated } = useAuth();
+  
+  // Check if current user is the author of this event
+  const isOwner = isAuthenticated && user && event.userId === user.id;
   const formattedDate = formatDate(event.date);
   const city = event.city || "";
   const category = event.category || "";
@@ -13,23 +18,25 @@ export function EventItem({ event, onEdit, onDelete }) {
 
   return (
     <div className="relative w-full max-w-md p-8 bg-white rounded-xl shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col group">
-      {/* Buttons positioned above the image */}
-      <div className="absolute top-2 right-2 flex gap-2 z-10">
-        <button
-          onClick={() => onEdit(event.id)}
-          className="p-2 text-gray-500 hover:text-yellow-500 hover:bg-yellow-50 rounded-lg transition-colors bg-white/90 backdrop-blur-sm shadow-sm focus-visible:outline-2 focus-visible:outline-yellow-500 focus-visible:outline-offset-2"
-          aria-label="Редактирай събитие"
-        >
-          <Edit className="w-5 h-5" />
-        </button>
-        <button
-          onClick={() => onDelete(event)}
-          className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors bg-white/90 backdrop-blur-sm shadow-sm focus-visible:outline-2 focus-visible:outline-red-500 focus-visible:outline-offset-2"
-          aria-label="Изтрий събитие"
-        >
-          <Trash2 className="w-5 h-5" />
-        </button>
-      </div>
+      {/* Buttons positioned above the image - only show if user is owner */}
+      {isOwner && (
+        <div className="absolute top-2 right-2 flex gap-2 z-10">
+          <button
+            onClick={() => onEdit(event.id)}
+            className="p-2 text-gray-500 hover:text-yellow-500 hover:bg-yellow-50 rounded-lg transition-colors bg-white/90 backdrop-blur-sm shadow-sm focus-visible:outline-2 focus-visible:outline-yellow-500 focus-visible:outline-offset-2"
+            aria-label="Редактирай събитие"
+          >
+            <Edit className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => onDelete(event)}
+            className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors bg-white/90 backdrop-blur-sm shadow-sm focus-visible:outline-2 focus-visible:outline-red-500 focus-visible:outline-offset-2"
+            aria-label="Изтрий събитие"
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
+        </div>
+      )}
       {event.imageUrl && (
         <Link 
           to={`/events/${event.id}`}
