@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useLocation } from "react-router-dom"
 import { CalendarDays, Menu, X } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 
@@ -7,6 +7,10 @@ export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const { isAuthenticated, user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // Check if current path is active for styling
+  const isActive = (path) => location.pathname === path
 
   function handleLogout() {
     logout()
@@ -42,6 +46,22 @@ export function Navbar() {
               Събития
             </Link>
           </li>
+          
+          {/* My Events link - only visible when authenticated */}
+          {isAuthenticated && (
+            <li>
+              <Link 
+                to="/my-events" 
+                className={`px-4 py-2 rounded-xl font-medium transition-colors ${
+                  isActive("/my-events")
+                    ? "bg-primary/10 text-primary font-semibold"
+                    : "text-gray-700 hover:bg-pink-50 hover:text-primary"
+                }`}
+              >
+                Моите събития
+              </Link>
+            </li>
+          )}
           
           {/* Auth buttons */}
           {!isAuthenticated ? (
@@ -100,6 +120,23 @@ export function Navbar() {
                 Събития
               </Link>
             </li>
+            
+            {/* My Events link - only visible when authenticated */}
+            {isAuthenticated && (
+              <li>
+                <Link 
+                  to="/my-events" 
+                  className={`block px-4 py-3 rounded-xl font-medium transition-colors ${
+                    isActive("/my-events")
+                      ? "bg-primary/10 text-primary font-semibold"
+                      : "text-gray-700 hover:bg-pink-50 hover:text-primary"
+                  }`}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Моите събития
+                </Link>
+              </li>
+            )}
             
             {/* Auth buttons */}
             {!isAuthenticated ? (
