@@ -30,7 +30,9 @@ server.get('/', (req, res) => {
     version: "1.0.0",
     endpoints: {
       events: "/events",
-      eventById: "/events/:id"
+      eventById: "/events/:id",
+      users: "/users",
+      userById: "/users/:id"
     },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
   });
@@ -59,6 +61,7 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log("✅ JSON Server is running on http://localhost:" + PORT);
   console.log("✅ Try: http://localhost:" + PORT + "/events");
+  console.log("✅ Try: http://localhost:" + PORT + "/users");
 });
 
 server.on('error', (err) => {
