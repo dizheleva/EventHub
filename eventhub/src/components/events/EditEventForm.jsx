@@ -42,8 +42,10 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
         return res.json();
       })
       .then(event => {
-        // Check if current user is the author
-        if (user && event.userId !== user.id) {
+        // Check if current user is the author (creator)
+        // Support both userId (legacy) and creatorId for backward compatibility
+        const eventCreatorId = event.creatorId || event.userId;
+        if (user && eventCreatorId !== user.id) {
           setToast({
             type: "error",
             message: "Нямате право да редактирате това събитие.",
@@ -166,18 +168,21 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
     setIsSubmitting(true);
 
     try {
-      // Fetch original event to preserve userId
+      // Fetch original event to preserve creatorId
+      // This ensures the creatorId is not overwritten during edit
       const originalEventResponse = await fetch(`http://localhost:5000/events/${eventId}`);
       if (!originalEventResponse.ok) {
         throw new Error("Грешка при зареждане на събитието");
       }
       const originalEvent = await originalEventResponse.json();
 
-      // Prepare data for PUT request - preserve userId from original event
+      // Prepare data for PUT request - preserve creatorId from original event
+      // Support both creatorId (new) and userId (legacy) for backward compatibility
+      const originalCreatorId = originalEvent.creatorId || originalEvent.userId;
       const updateData = {
         id: eventId,
         ...formData,
-        userId: originalEvent.userId, // Preserve userId
+        creatorId: originalCreatorId, // Preserve creatorId - do NOT overwrite
         updatedAt: new Date().toISOString(),
       };
 

@@ -87,10 +87,12 @@ export function EventList() {
       return;
     }
 
-    // Check if user is the author
+    // Check if user is the author (creator)
+    // Support both creatorId (new) and userId (legacy) for backward compatibility
     try {
       const event = events.find(e => e.id === eventId);
-      if (event && event.userId !== user?.id) {
+      const eventCreatorId = event?.creatorId || event?.userId;
+      if (event && eventCreatorId !== user?.id) {
         setToast({
           type: "error",
           message: "Нямате право да редактирате това събитие.",
@@ -140,8 +142,10 @@ export function EventList() {
       return;
     }
 
-    // Check if user is the author
-    if (event.userId !== user?.id) {
+    // Check if user is the author (creator)
+    // Support both creatorId (new) and userId (legacy) for backward compatibility
+    const eventCreatorId = event.creatorId || event.userId;
+    if (eventCreatorId !== user?.id) {
       setToast({
         type: "error",
         message: "Нямате право да изтриете това събитие.",
@@ -191,12 +195,10 @@ export function EventList() {
   }
 
   async function eventCreatedHandler(eventData) {
-    console.log("eventCreatedHandler called with:", eventData);
     try {
-      console.log("Calling createEvent...");
       // createEvent already handles optimistic update
-      const result = await createEvent(eventData);
-      console.log("createEvent completed:", result);
+      // eventData includes creatorId automatically set by EventForm
+      await createEvent(eventData);
       closeCreateModalHandler();
       setToast({
         type: "success",
@@ -204,7 +206,6 @@ export function EventList() {
       });
       setTimeout(() => setToast(null), 3000);
     } catch (err) {
-      console.error("Error in eventCreatedHandler:", err);
       setToast({
         type: "error",
         message: err.message || "Възникна грешка при създаване на събитие",

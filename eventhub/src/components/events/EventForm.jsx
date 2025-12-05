@@ -91,24 +91,19 @@ export function EventForm({ mode = "create", onEventCreated, onClose }) {
   // Handle form submit
   async function submitHandler(e) {
     e.preventDefault();
-    console.log("Form submitted", { mode, formData, user });
 
     // Validate all fields
     const formErrors = validateForm(formData);
-    console.log("Form errors:", formErrors);
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
-      console.log("Form has errors, stopping submission");
       return;
     }
 
-    console.log("Setting isSubmitting to true");
     setIsSubmitting(true);
 
     try {
       // Check if user is authenticated (required for creating events)
       if (!user || !user.id) {
-        console.log("User not authenticated");
         setToast({
           type: "error",
           message: "Моля, влезте в профила си, за да създадете събитие.",
@@ -120,22 +115,21 @@ export function EventForm({ mode = "create", onEventCreated, onClose }) {
         return;
       }
 
-      // Add userId to event data
+      // Add creatorId to event data - automatically include current user's ID
+      // creatorId is not visible in the form UI, it's added automatically
+      // This ensures every event has a creatorId field for ownership checks
       const eventDataWithUser = {
         ...formData,
-        userId: user.id,
+        creatorId: user.id, // Automatically set creatorId from authenticated user
       };
-      console.log("Event data with user:", eventDataWithUser);
 
       // If mode is create and onEventCreated callback exists, pass data to parent
       // Parent (EventList) will handle the API call via useEvents hook
       if (mode === "create" && onEventCreated) {
-        console.log("Calling onEventCreated callback");
         // Pass data to parent (EventList will handle API call via createEvent)
         // Await the callback to handle errors properly
         try {
           await onEventCreated(eventDataWithUser);
-          console.log("onEventCreated completed successfully");
           
           // Only clear form and reset state if successful
           setFormData(INITIAL_FORM_STATE);
@@ -143,7 +137,6 @@ export function EventForm({ mode = "create", onEventCreated, onClose }) {
           setIsSubmitting(false);
         } catch (err) {
           // If parent callback throws error, show it and keep form data
-          console.error("Error in onEventCreated callback:", err);
           setToast({
             type: "error",
             message: err.message || "Възникна грешка при създаване на събитие",
@@ -155,8 +148,6 @@ export function EventForm({ mode = "create", onEventCreated, onClose }) {
         }
         return;
       }
-      
-      console.log("Fallback: making direct API call");
 
       // Fallback: If no callback, make API call directly (shouldn't happen in normal flow)
       const res = await fetch("http://localhost:5000/events", {

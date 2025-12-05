@@ -25,8 +25,10 @@ export function EventDetails() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [toast, setToast] = useState(null);
 
-  // Check if current user is the author
-  const isOwner = isAuthenticated && user && event && event.userId === user.id;
+  // Check if current user is the author (creator) of this event
+  // Support both creatorId (new) and userId (legacy) for backward compatibility
+  const eventCreatorId = event?.creatorId || event?.userId;
+  const isOwner = isAuthenticated && user && event && eventCreatorId === user.id;
 
   useEffect(() => {
     if (!id) {

@@ -8,8 +8,10 @@ import { useAuth } from "@/contexts/AuthContext";
 export function EventItem({ event, onEdit, onDelete }) {
   const { user, isAuthenticated } = useAuth();
   
-  // Check if current user is the author of this event
-  const isOwner = isAuthenticated && user && event.userId === user.id;
+  // Check if current user is the author (creator) of this event
+  // Support both creatorId (new) and userId (legacy) for backward compatibility
+  const eventCreatorId = event.creatorId || event.userId;
+  const isOwner = isAuthenticated && user && eventCreatorId === user.id;
   const formattedDate = formatDate(event.date);
   const city = event.city || "";
   const category = event.category || "";

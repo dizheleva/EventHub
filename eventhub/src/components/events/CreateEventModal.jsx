@@ -4,6 +4,7 @@ import { EventForm } from "./EventForm";
 export function CreateEventModal({ isOpen, onClose, onEventCreated }) {
   async function eventCreatedHandler(eventData) {
     // Pass event data to parent (EventList) which will handle API call
+    // eventData already includes creatorId (set automatically by EventForm)
     // Await to properly handle async errors
     if (onEventCreated) {
       await onEventCreated(eventData);

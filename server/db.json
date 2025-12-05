@@ -27,6 +27,7 @@
       "category": "Деца",
       "price": "Безплатно",
       "organizer": "Детски център Радост",
+      "creatorId": 1,
       "updatedAt": "2025-11-30T23:36:40.202Z"
     },
     {
@@ -38,7 +39,8 @@
       "imageUrl": "https://static.bnr.bg/gallery/72/72e28cd3eb471c03f32e5cd53ca4e310.jpg",
       "city": "София",
       "category": "Работилници",
-      "price": "Безплатно"
+      "price": "Безплатно",
+      "creatorId": 1
     },
     {
       "id": "I3VlhJm",

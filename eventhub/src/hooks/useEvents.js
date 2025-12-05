@@ -8,11 +8,15 @@ export function useEvents(initialLoading = false) {
   const [error, setError] = useState(null);
 
   // Fetch all events
+  // Returns events with creatorId field (or userId for legacy events)
+  // UI can check ownership using creatorId/userId
   async function fetchEvents() {
     setError(null);
 
     try {        
       setIsLoading(true);
+      // GET request returns events with creatorId field (if available)
+      // Older events may have userId instead - UI handles both gracefully
       const res = await fetch(API_BASE_URL);      
       if (!res.ok) throw new Error(`Failed to fetch events: ${res.status} ${res.statusText}`);
       const data = await res.json();
@@ -28,16 +32,20 @@ export function useEvents(initialLoading = false) {
   }
 
   // Create new event
+  // eventData should already include creatorId (automatically set by EventForm)
+  // creatorId is exported in GET responses so UI can check ownership
   async function createEvent(eventData) {
     setError(null);
 
     try {
       setIsLoading(true);
       
+      // POST request includes creatorId in eventData
+      // creatorId is automatically added by EventForm from authenticated user
       const res = await fetch(API_BASE_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(eventData),
+        body: JSON.stringify(eventData), // Includes creatorId field
       });
 
       if (!res.ok) {
@@ -106,22 +114,27 @@ export function useEvents(initialLoading = false) {
     // Optimistic update: update in local state immediately
     const originalEvent = events.find(e => e.id === id);
     if (originalEvent) {
-      // Preserve userId when updating
+      // Preserve creatorId when updating - do NOT overwrite the creator
+      // Support both creatorId (new) and userId (legacy) for backward compatibility
+      const originalCreatorId = originalEvent.creatorId || originalEvent.userId;
       const optimisticUpdate = { 
         ...originalEvent, 
         ...eventData, 
-        userId: eventData.userId !== undefined ? eventData.userId : originalEvent.userId, // Preserve userId
+        creatorId: eventData.creatorId !== undefined ? eventData.creatorId : originalCreatorId, // Preserve creatorId
         updatedAt: new Date().toISOString() 
       };
       setEvents(prev => prev.map(event => event.id === id ? optimisticUpdate : event));
     }
 
     try {
+      // Preserve creatorId from original event if not provided in updateData
+      // Support both creatorId (new) and userId (legacy) for backward compatibility
+      const originalCreatorId = originalEvent?.creatorId || originalEvent?.userId;
       const updateData = {
         id,
         ...eventData,
-        // Preserve userId from original event if not provided
-        userId: eventData.userId !== undefined ? eventData.userId : (originalEvent?.userId),
+        // Preserve creatorId from original event - do NOT overwrite
+        creatorId: eventData.creatorId !== undefined ? eventData.creatorId : originalCreatorId,
         updatedAt: new Date().toISOString(),
       };
 

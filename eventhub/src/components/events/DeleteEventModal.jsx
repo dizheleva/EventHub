@@ -29,8 +29,10 @@ export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted, onError,
       }
       const event = await eventResponse.json();
 
-      // Check if current user is the author
-      if (user && event.userId !== user.id) {
+      // Check if current user is the author (creator)
+      // Support both creatorId (new) and userId (legacy) for backward compatibility
+      const eventCreatorId = event.creatorId || event.userId;
+      if (user && eventCreatorId !== user.id) {
         setToast({
           type: "error",
           message: "Нямате право да изтриете това събитие.",
