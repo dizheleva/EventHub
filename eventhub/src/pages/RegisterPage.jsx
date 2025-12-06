@@ -26,12 +26,12 @@ function validatePassword(password) {
   return null;
 }
 
-function validateName(name) {
-  if (!name || name.trim().length === 0) {
-    return "Името е задължително";
+function validateUsername(username) {
+  if (!username || username.trim().length === 0) {
+    return "Потребителското име е задължително";
   }
-  if (name.trim().length < 2) {
-    return "Името трябва да е поне 2 символа";
+  if (username.trim().length < 3) {
+    return "Потребителското име трябва да е поне 3 символа";
   }
   return null;
 }
@@ -51,7 +51,7 @@ export function RegisterPage() {
   const { register } = useAuth();
   
   const [formData, setFormData] = useState({
-    name: "",
+    username: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -63,7 +63,7 @@ export function RegisterPage() {
 
   // Validate single field
   function validateField(name, value) {
-    if (name === "name") return validateName(value);
+    if (name === "username") return validateUsername(value);
     if (name === "email") return validateEmail(value);
     if (name === "password") return validatePassword(value);
     if (name === "confirmPassword") {
@@ -76,12 +76,12 @@ export function RegisterPage() {
   function validateForm(data) {
     const newErrors = {};
     
-    const nameError = validateName(data.name);
+    const usernameError = validateUsername(data.username);
     const emailError = validateEmail(data.email);
     const passwordError = validatePassword(data.password);
     const confirmPasswordError = validateConfirmPassword(data.password, data.confirmPassword);
     
-    if (nameError) newErrors.name = nameError;
+    if (usernameError) newErrors.username = usernameError;
     if (emailError) newErrors.email = emailError;
     if (passwordError) newErrors.password = passwordError;
     if (confirmPasswordError) newErrors.confirmPassword = confirmPasswordError;
@@ -155,7 +155,7 @@ export function RegisterPage() {
     try {
       // Prepare user data (without confirmPassword)
       const userData = {
-        name: formData.name.trim(),
+        username: formData.username.trim(),
         email: formData.email.trim(),
         password: formData.password,
       };
@@ -181,9 +181,6 @@ export function RegisterPage() {
   return (
     <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        {/* Toast Notification */}
-        {toast && <Toast type={toast.type} message={toast.message} />}
-
         <div className="bg-white rounded-2xl shadow-lg p-8">
           {/* Header */}
           <div className="text-center mb-8">
@@ -193,14 +190,14 @@ export function RegisterPage() {
 
           {/* Form */}
           <form onSubmit={submitHandler} className="space-y-6">
-            {/* Name Field */}
+            {/* Username Field */}
             <FormField
-              label="Име"
-              name="name"
+              label="Потребителско име"
+              name="username"
               type="text"
-              placeholder="Вашето име"
-              value={formData.name}
-              error={errors.name}
+              placeholder="Минимум 3 символа"
+              value={formData.username}
+              error={errors.username}
               onChange={changeHandler}
               onBlur={blurHandler}
               disabled={isSubmitting}

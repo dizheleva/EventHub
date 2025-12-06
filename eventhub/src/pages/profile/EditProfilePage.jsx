@@ -27,7 +27,7 @@ export function EditProfilePage() {
   const navigate = useNavigate();
   const { user, isAuthenticated, isAuthReady, login } = useAuth();
   const [formData, setFormData] = useState({
-    name: "",
+    username: "",
     email: "",
   });
   const [formErrors, setFormErrors] = useState({});
@@ -70,7 +70,7 @@ export function EditProfilePage() {
 
         const userData = await response.json();
         setFormData({
-          name: userData.name || "",
+          username: userData.username || "",
           email: userData.email || "",
         });
       } catch (err) {
@@ -120,11 +120,11 @@ export function EditProfilePage() {
           error = "Невалиден имейл адрес";
         }
         break;
-      case "name":
+      case "username":
         if (!value || value.trim().length === 0) {
-          error = "Името е задължително";
-        } else if (value.trim().length < 2) {
-          error = "Името трябва да е поне 2 символа";
+          error = "Потребителското име е задължително";
+        } else if (value.trim().length < 3) {
+          error = "Потребителското име трябва да е поне 3 символа";
         }
         break;
       default:
@@ -153,12 +153,12 @@ export function EditProfilePage() {
       isValid = false;
     }
 
-    // Validate name
-    if (!formData.name || formData.name.trim().length === 0) {
-      errors.name = "Името е задължително";
+    // Validate username
+    if (!formData.username || formData.username.trim().length === 0) {
+      errors.username = "Потребителското име е задължително";
       isValid = false;
-    } else if (formData.name.trim().length < 2) {
-      errors.name = "Името трябва да е поне 2 символа";
+    } else if (formData.username.trim().length < 3) {
+      errors.username = "Потребителското име трябва да е поне 3 символа";
       isValid = false;
     }
 
@@ -241,7 +241,7 @@ export function EditProfilePage() {
   }
 
   // Show error if profile failed to load (only if we haven't loaded any data yet)
-  if (error && isLoading === false && !formData.email && !formData.name) {
+  if (error && isLoading === false && !formData.email && !formData.username) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
         <ErrorMessage message={error} onRetry={() => window.location.reload()} />
@@ -267,16 +267,16 @@ export function EditProfilePage() {
         </div>
 
         <form onSubmit={handleSubmit} className="p-8">
-          {/* Name Field */}
+          {/* Username Field */}
           <FormField
-            label="Име"
-            name="name"
+            label="Потребителско име"
+            name="username"
             type="text"
-            value={formData.name}
+            value={formData.username}
             onChange={handleChange}
             onBlur={handleBlur}
-            error={formErrors.name}
-            placeholder="Въведете вашето име"
+            error={formErrors.username}
+            placeholder="Минимум 3 символа"
           />
 
           {/* Email Field */}

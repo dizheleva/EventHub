@@ -113,14 +113,22 @@ export function UserProfilePage() {
         <div className="bg-gradient-to-br from-primary/10 via-secondary/10 to-primary/5 px-8 py-12">
           <div className="flex items-center gap-6">
             {/* Avatar */}
-            <div className="w-24 h-24 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-4xl font-bold shadow-lg">
-              {profileUser.name ? profileUser.name.charAt(0).toUpperCase() : profileUser.email.charAt(0).toUpperCase()}
-            </div>
+            {profileUser.avatarUrl ? (
+              <img
+                src={profileUser.avatarUrl}
+                alt={profileUser.username || "Avatar"}
+                className="w-24 h-24 rounded-full object-cover shadow-lg"
+              />
+            ) : (
+              <div className="w-24 h-24 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-4xl font-bold shadow-lg">
+                {profileUser.username ? profileUser.username.charAt(0).toUpperCase() : profileUser.email.charAt(0).toUpperCase()}
+              </div>
+            )}
             
             {/* User Info */}
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                {profileUser.name || "Потребител"}
+                {profileUser.username || "Потребител"}
               </h2>
               <p className="text-lg text-gray-600 flex items-center gap-2">
                 <Mail className="w-5 h-5" />
@@ -133,14 +141,14 @@ export function UserProfilePage() {
         {/* Profile Details */}
         <div className="p-8">
           <div className="space-y-6">
-            {/* Name */}
+            {/* Username */}
             <div className="flex items-start gap-4">
               <div className="p-3 bg-primary/10 rounded-xl">
                 <User className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-1">Име</h3>
-                <p className="text-lg text-gray-900">{profileUser.name || "Не е посочено"}</p>
+                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-1">Потребителско име</h3>
+                <p className="text-lg text-gray-900">{profileUser.username || "Не е посочено"}</p>
               </div>
             </div>
 

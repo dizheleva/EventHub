@@ -4,15 +4,18 @@
       "id": 1,
       "email": "test@test.com",
       "password": "123456",
-      "name": "Test User"
+      "username": "testuser",
+      "avatarUrl": "",
+      "createdAt": "2025-01-01T00:00:00.000Z"
     },
     {
-      "name": "Диляна",
+      "id": 2,
       "email": "di.nikolova89@gmail.com",
       "password": "dilqna",
+      "username": "Диляна",
+      "avatarUrl": "",
       "createdAt": "2025-12-05T21:36:55.595Z",
-      "updatedAt": "2025-12-05T21:36:55.595Z",
-      "id": 2
+      "updatedAt": "2025-12-05T21:36:55.595Z"
     }
   ],
   "events": [

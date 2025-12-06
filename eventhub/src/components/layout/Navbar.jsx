@@ -97,7 +97,7 @@ export function Navbar() {
             <>
               <li>
                 <span className="px-4 py-2 rounded-xl text-gray-700 font-medium">
-                  Добре дошли, <span className="text-primary font-semibold">{user?.email}</span>
+                  Добре дошли, <span className="text-primary font-semibold">{user?.username || user?.email}</span>
                 </span>
               </li>
               <li>
@@ -189,7 +189,7 @@ export function Navbar() {
               <>
                 <li>
                   <div className="block px-4 py-3 rounded-xl text-gray-700 font-medium">
-                    Добре дошли, <span className="text-primary font-semibold">{user?.email}</span>
+                    Добре дошли, <span className="text-primary font-semibold">{user?.username || user?.email}</span>
                   </div>
                 </li>
                 <li>

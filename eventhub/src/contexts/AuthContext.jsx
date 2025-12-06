@@ -90,7 +90,7 @@ export function AuthProvider({ children }) {
         throw new Error("Потребител с този email вече съществува");
       }
 
-      // Create new user
+      // Create new user with required fields
       const newUserResponse = await fetch("http://localhost:5000/users", {
         method: "POST",
         headers: {
@@ -98,8 +98,8 @@ export function AuthProvider({ children }) {
         },
         body: JSON.stringify({
           ...userData,
+          avatarUrl: "",
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
         }),
       });
 
