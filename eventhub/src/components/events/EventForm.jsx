@@ -152,12 +152,6 @@ export function EventForm({ mode = "create", onEventCreated, onClose }) {
 
       const newEvent = await res.json();
       
-      // Show success toast
-      setToast({
-        type: "success",
-        message: "Събитието е създадено успешно!",
-      });
-
       // Clear form
       setFormData(INITIAL_FORM_STATE);
       setErrors({});
@@ -345,9 +339,6 @@ export function EventForm({ mode = "create", onEventCreated, onClose }) {
 
   return (
     <>
-      {/* Toast Notification */}
-      {toast && <Toast type={toast.type} message={toast.message} />}
-
       {isInModal ? (
         <form onSubmit={submitHandler} className="space-y-4">
           {formFields}

@@ -27,7 +27,6 @@
       "category": "Деца",
       "price": "Безплатно",
       "organizer": "Детски център Радост",
-      "creatorId": 1,
       "updatedAt": "2025-11-30T23:36:40.202Z"
     },
     {
@@ -39,8 +38,7 @@
       "imageUrl": "https://static.bnr.bg/gallery/72/72e28cd3eb471c03f32e5cd53ca4e310.jpg",
       "city": "София",
       "category": "Работилници",
-      "price": "Безплатно",
-      "creatorId": 1
+      "price": "Безплатно"
     },
     {
       "id": "I3VlhJm",
@@ -107,6 +105,21 @@
       "price": "",
       "userId": 2,
       "updatedAt": "2025-12-05T22:18:11.281Z"
+    },
+    {
+      "title": "Четене на приказки",
+      "date": "2025-12-21",
+      "location": "Парк Младост",
+      "description": "Приказки за деца между 3 и 7 години",
+      "imageUrl": "",
+      "city": "Варна",
+      "category": "Деца",
+      "organizer": "",
+      "organizerUrl": "",
+      "price": "",
+      "ownerId": 2,
+      "creatorId": 2,
+      "id": "HQh3lH6"
     }
   ]
 }
