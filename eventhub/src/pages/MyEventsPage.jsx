@@ -319,8 +319,12 @@ export function MyEventsPage() {
                 <div 
                   className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto"
                 >
-                  {paginatedEvents.map(event => (
-                    <div key={event.id} className="w-full min-w-0 h-full">
+                  {paginatedEvents.map((event, index) => (
+                    <div 
+                      key={event.id} 
+                      className="w-full min-w-0 h-full opacity-0 animate-fade-in-up"
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                    >
                       <EventItem
                         event={event}
                         onEdit={handleEdit}
