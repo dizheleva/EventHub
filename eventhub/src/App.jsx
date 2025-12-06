@@ -6,6 +6,8 @@ import { EventDetails } from "@/pages/EventDetails"
 import { MyEventsPage } from "@/pages/MyEventsPage"
 import { LoginPage } from "@/pages/LoginPage"
 import { RegisterPage } from "@/pages/RegisterPage"
+import { UserProfilePage } from "@/pages/profile/UserProfilePage"
+import { EditProfilePage } from "@/pages/profile/EditProfilePage"
 import { Features } from "@/components/home/Features"
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 import { GuestRoute } from "@/components/auth/GuestRoute"
@@ -32,6 +34,24 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <MyEventsPage />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* Profile routes - protected, only owner can access */}
+      <Route 
+        path="/profile/:userId" 
+        element={
+          <ProtectedRoute>
+            <UserProfilePage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/profile/:userId/edit" 
+        element={
+          <ProtectedRoute>
+            <EditProfilePage />
           </ProtectedRoute>
         } 
       />

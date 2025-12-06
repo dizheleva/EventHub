@@ -63,6 +63,22 @@ export function Navbar() {
             </li>
           )}
           
+          {/* Profile link - only visible when authenticated */}
+          {isAuthenticated && user && (
+            <li>
+              <Link 
+                to={`/profile/${user.id}`} 
+                className={`px-4 py-2 rounded-xl font-medium transition-colors ${
+                  isActive(`/profile/${user.id}`) || isActive(`/profile/${user.id}/edit`)
+                    ? "bg-primary/10 text-primary font-semibold"
+                    : "text-gray-700 hover:bg-pink-50 hover:text-primary"
+                }`}
+              >
+                Профил
+              </Link>
+            </li>
+          )}
+          
           {/* Auth buttons */}
           {!isAuthenticated ? (
             <>
@@ -134,6 +150,23 @@ export function Navbar() {
                   onClick={() => setMenuOpen(false)}
                 >
                   Моите събития
+                </Link>
+              </li>
+            )}
+            
+            {/* Profile link - only visible when authenticated */}
+            {isAuthenticated && user && (
+              <li>
+                <Link 
+                  to={`/profile/${user.id}`} 
+                  className={`block px-4 py-3 rounded-xl font-medium transition-colors ${
+                    isActive(`/profile/${user.id}`) || isActive(`/profile/${user.id}/edit`)
+                      ? "bg-primary/10 text-primary font-semibold"
+                      : "text-gray-700 hover:bg-pink-50 hover:text-primary"
+                  }`}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Профил
                 </Link>
               </li>
             )}
