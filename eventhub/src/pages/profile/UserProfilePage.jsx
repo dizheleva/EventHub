@@ -1,10 +1,35 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Edit, Mail, User, Calendar } from "lucide-react";
+import { Edit, Mail, User, Calendar, CalendarDays } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@/hooks/useUser";
+import { useEvents } from "@/hooks/useEvents";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { useToast } from "@/contexts/ToastContext";
+
+/**
+ * Format date for "Member since" display
+ * @param {string} dateString - ISO date string
+ * @returns {string} Formatted date string
+ */
+function formatMemberSince(dateString) {
+  if (!dateString) return "Неизвестно";
+  try {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const year = date.getFullYear();
+    
+    const months = [
+      "януари", "февруари", "март", "април", "май", "юни",
+      "юли", "август", "септември", "октомври", "ноември", "декември"
+    ];
+    
+    return `${day} ${months[date.getMonth()]} ${year}`;
+  } catch {
+    return dateString;
+  }
+}
 
 /**
  * UserProfilePage - Display user profile information
@@ -15,10 +40,9 @@ import { useToast } from "@/contexts/ToastContext";
 export function UserProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated, isAuthReady } = useAuth();
-  const [profileUser, setProfileUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { user: currentUser, isAuthenticated, isAuthReady } = useAuth();
+  const { user: profileUser, isLoading: isLoadingUser, error: userError, fetchUser } = useUser();
+  const { events, isLoading: isLoadingEvents, fetchEvents } = useEvents();
   const { showToast } = useToast();
 
   // Authorization check: Only allow users to view their own profile
@@ -32,46 +56,31 @@ export function UserProfilePage() {
     }
 
     // If userId doesn't match current user, redirect to events
-    if (userId !== String(user?.id)) {
+    if (userId !== String(currentUser?.id)) {
       showToast("error", "Нямате права да виждате този профил.");
       navigate("/events");
       return;
     }
 
-    // Load user profile data
-    async function loadProfile() {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        // Fetch user from backend
-        const response = await fetch(`http://localhost:5000/users/${userId}`);
-        
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Потребителят не е намерен");
-          }
-          throw new Error(`Грешка при зареждане на профила: ${response.status}`);
-        }
-
-        const userData = await response.json();
-        // Remove password from user data for security
-        const { password: _, ...userWithoutPassword } = userData;
-        setProfileUser(userWithoutPassword);
-      } catch (err) {
-        const errorMessage = err.message || "Възникна грешка при зареждане на профила";
-        setError(errorMessage);
-        showToast("error", errorMessage);
-      } finally {
-        setIsLoading(false);
-      }
+    // Load user profile and events
+    if (userId) {
+      fetchUser(userId);
+      fetchEvents();
     }
+  }, [userId, currentUser, isAuthenticated, isAuthReady, navigate, showToast, fetchUser, fetchEvents]);
 
-    loadProfile();
-  }, [userId, user, isAuthenticated, isAuthReady, navigate, showToast]);
+  // Calculate number of events created by this user
+  const userEventsCount = useMemo(() => {
+    if (!events || !profileUser) return 0;
+    const userIdNum = Number(userId);
+    return events.filter(event => {
+      const eventCreatorId = event.creatorId || event.userId;
+      return eventCreatorId === userIdNum;
+    }).length;
+  }, [events, profileUser, userId]);
 
   // Show loading while auth is initializing or profile is loading
-  if (!isAuthReady || isLoading) {
+  if (!isAuthReady || isLoadingUser) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <LoadingSpinner message="Зареждане на профил..." />
@@ -80,10 +89,10 @@ export function UserProfilePage() {
   }
 
   // Show error if profile failed to load
-  if (error) {
+  if (userError) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <ErrorMessage message={error} onRetry={() => window.location.reload()} />
+        <ErrorMessage message={userError} onRetry={() => fetchUser(userId)} />
       </div>
     );
   }
@@ -93,90 +102,110 @@ export function UserProfilePage() {
     return null;
   }
 
+  const memberSince = formatMemberSince(profileUser.createdAt);
+  const avatarInitial = profileUser.username 
+    ? profileUser.username.charAt(0).toUpperCase() 
+    : profileUser.email.charAt(0).toUpperCase();
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      {/* Header with Edit button */}
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-4xl font-bold text-gray-900">Моят профил</h1>
-        <button
-          onClick={() => navigate(`/profile/${userId}/edit`)}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-medium hover:shadow-color hover:scale-105 transition-all duration-200"
-        >
-          <Edit className="w-5 h-5" />
-          Редактирай
-        </button>
-      </div>
-
-      {/* Profile Card */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        {/* Profile Header */}
+      {/* Profile Card - centered like EventDetails */}
+      <article className="bg-white rounded-2xl shadow-lg overflow-hidden animate-fadeIn">
+        {/* Profile Header with gradient background */}
         <div className="bg-gradient-to-br from-primary/10 via-secondary/10 to-primary/5 px-8 py-12">
-          <div className="flex items-center gap-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
             {/* Avatar */}
             {profileUser.avatarUrl ? (
               <img
                 src={profileUser.avatarUrl}
                 alt={profileUser.username || "Avatar"}
-                className="w-24 h-24 rounded-full object-cover shadow-lg"
+                className="w-32 h-32 rounded-full object-cover shadow-lg border-4 border-white"
               />
             ) : (
-              <div className="w-24 h-24 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-4xl font-bold shadow-lg">
-                {profileUser.username ? profileUser.username.charAt(0).toUpperCase() : profileUser.email.charAt(0).toUpperCase()}
+              <div className="w-32 h-32 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-5xl font-bold shadow-lg border-4 border-white">
+                {avatarInitial}
               </div>
             )}
             
             {/* User Info */}
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            <div className="flex-1 text-center sm:text-left">
+              <h1 className="text-4xl font-bold text-gray-900 mb-3">
                 {profileUser.username || "Потребител"}
-              </h2>
-              <p className="text-lg text-gray-600 flex items-center gap-2">
-                <Mail className="w-5 h-5" />
-                {profileUser.email}
-              </p>
+              </h1>
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-gray-600">
+                <div className="flex items-center gap-2">
+                  <Mail className="w-5 h-5" />
+                  <span className="text-lg">{profileUser.email}</span>
+                </div>
+              </div>
             </div>
+
+            {/* Edit Button */}
+            <button
+              onClick={() => navigate(`/profile/${userId}/edit`)}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-medium hover:shadow-color hover:scale-105 transition-all duration-200"
+            >
+              <Edit className="w-5 h-5" />
+              Редактирай профила
+            </button>
           </div>
         </div>
 
         {/* Profile Details */}
         <div className="p-8">
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Username */}
             <div className="flex items-start gap-4">
-              <div className="p-3 bg-primary/10 rounded-xl">
+              <div className="p-3 bg-primary/10 rounded-xl flex-shrink-0">
                 <User className="w-6 h-6 text-primary" />
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-gray-500 uppercase mb-1">Потребителско име</h3>
-                <p className="text-lg text-gray-900">{profileUser.username || "Не е посочено"}</p>
+                <p className="text-lg text-gray-900 font-medium">{profileUser.username || "Не е посочено"}</p>
               </div>
             </div>
 
             {/* Email */}
             <div className="flex items-start gap-4">
-              <div className="p-3 bg-primary/10 rounded-xl">
+              <div className="p-3 bg-primary/10 rounded-xl flex-shrink-0">
                 <Mail className="w-6 h-6 text-primary" />
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-gray-500 uppercase mb-1">Имейл</h3>
-                <p className="text-lg text-gray-900">{profileUser.email}</p>
+                <p className="text-lg text-gray-900 font-medium">{profileUser.email}</p>
               </div>
             </div>
 
-            {/* User ID */}
+            {/* Member Since */}
             <div className="flex items-start gap-4">
-              <div className="p-3 bg-primary/10 rounded-xl">
+              <div className="p-3 bg-primary/10 rounded-xl flex-shrink-0">
                 <Calendar className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-1">ID на потребител</h3>
-                <p className="text-lg text-gray-900 font-mono">{profileUser.id}</p>
+                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-1">Член от</h3>
+                <p className="text-lg text-gray-900 font-medium">{memberSince}</p>
+              </div>
+            </div>
+
+            {/* Events Created */}
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-primary/10 rounded-xl flex-shrink-0">
+                <CalendarDays className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-1">Създадени събития</h3>
+                <p className="text-lg text-gray-900 font-medium">
+                  {isLoadingEvents ? (
+                    <span className="text-gray-400">Зареждане...</span>
+                  ) : (
+                    <span className="text-primary font-bold">{userEventsCount}</span>
+                  )}
+                </p>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </article>
     </div>
   );
 }
-
