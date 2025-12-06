@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Edit, Trash2, Calendar } from "lucide-react";
+import { ArrowLeft, ExternalLink, Edit, Trash2, Calendar, Heart } from "lucide-react";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -8,6 +8,7 @@ import { Modal } from "@/components/common/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useEvents } from "@/hooks/useEvents";
+import { useInterested } from "@/hooks/useInterested";
 import { EditEventForm } from "@/components/events/EditEventForm";
 import { DeleteEventModal } from "@/components/events/DeleteEventModal";
 import { getCategoryDisplay } from "@/utils/categories";
@@ -25,6 +26,9 @@ export function EventDetails() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { showToast } = useToast();
+  
+  // Use interest hook for this event
+  const { toggleInterest, interestsCount, userInterested, loading: interestsLoading } = useInterested(event?.id);
 
   // Authorization check: Verify current user is the owner (creator) of this event
   // Support both creatorId (new) and userId (legacy) for backward compatibility
@@ -231,7 +235,7 @@ export function EventDetails() {
         {/* Content */}
         <div className="p-6 md:p-10">
           {/* Title with Action Bar - Action bar only visible to owner */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 flex-1">
               {event.title}
             </h1>
@@ -255,6 +259,50 @@ export function EventDetails() {
                 </button>
               </div>
             )}
+          </div>
+
+          {/* Interest Section */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
+            <div className="flex items-center gap-4">
+              {userInterested ? (
+                <button
+                  onClick={async () => {
+                    try {
+                      await toggleInterest();
+                    } catch (err) {
+                      showToast("error", err.message || "Възникна грешка при премахване на интереса");
+                    }
+                  }}
+                  disabled={interestsLoading}
+                  className="flex items-center gap-2 px-6 py-3 border-2 border-primary bg-white text-primary rounded-xl font-medium hover:bg-primary/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Heart className="w-5 h-5 fill-primary" />
+                  Не се интересувам
+                </button>
+              ) : (
+                <button
+                  onClick={async () => {
+                    if (!isAuthenticated) {
+                      showToast("error", "Моля, влезте в профила си, за да изразите интерес.");
+                      return;
+                    }
+                    try {
+                      await toggleInterest();
+                    } catch (err) {
+                      showToast("error", err.message || "Възникна грешка при добавяне на интерес");
+                    }
+                  }}
+                  disabled={interestsLoading}
+                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-medium hover:shadow-color transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Heart className="w-5 h-5" />
+                  Интересувам се
+                </button>
+              )}
+              <span className="text-gray-700 font-medium">
+                {interestsCount} {interestsCount === 1 ? "човек се интересува" : "хора се интересуват"}
+              </span>
+            </div>
           </div>
 
           {/* Meta Information - Responsive Grid */}

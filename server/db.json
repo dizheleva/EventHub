@@ -127,8 +127,13 @@
   "interests": [
     {
       "id": 1,
-      "eventId": 1,
+      "eventId": "1",
       "userId": 1
+    },
+    {
+      "eventId": "1",
+      "userId": 2,
+      "id": 2
     }
   ]
 }

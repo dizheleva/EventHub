@@ -63,7 +63,7 @@ export async function addInterest(eventId, userId) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        eventId: Number(eventId),
+        eventId: String(eventId),
         userId: Number(userId),
       }),
     });
