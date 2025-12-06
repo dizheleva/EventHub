@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import { Modal } from "@/components/common/Modal";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
+import { EmptyState } from "@/components/common/EmptyState";
 import { Sorting } from "@/components/common/Sorting";
 import { Pagination } from "@/components/common/Pagination";
 import { SearchBar } from "@/components/common/SearchBar";
@@ -281,9 +282,22 @@ export function EventList() {
   return (
     <>
       {events.length === 0 ? (
-        <div className="text-center py-20">
-          <p className="text-gray-600">Няма намерени събития</p>
-        </div>
+        <EmptyState
+          title="Няма събития"
+          message="Все още няма добавени събития. Създай първото!"
+          icon="🎈"
+          action={
+            isAuthenticated ? (
+              <button
+                onClick={openCreateModalHandler}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-medium hover:shadow-color transition-all mx-auto"
+              >
+                <Plus className="w-5 h-5" />
+                Добави събитие
+              </button>
+            ) : null
+          }
+        />
       ) : (
         <>
           <SearchBar
@@ -316,9 +330,11 @@ export function EventList() {
           </div>
 
           {filteredAndSortedEvents.length === 0 ? (
-            <div className="text-center py-20">
-              <p className="text-gray-600">Няма събития по този критерий</p>
-            </div>
+            <EmptyState
+              title="Няма събития"
+              message="Няма събития по избраните филтри. Опитай с други критерии!"
+              icon="🔍"
+            />
           ) : (
             <>
               <div className="px-4 py-6">

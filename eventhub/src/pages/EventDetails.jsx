@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, ExternalLink, Edit, Trash2, Calendar } from "lucide-react";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
+import { EmptyState } from "@/components/common/EmptyState";
 import { Modal } from "@/components/common/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
@@ -175,16 +176,20 @@ export function EventDetails() {
   if (!event) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="text-center py-20">
-          <p className="text-gray-600 mb-4">Събитието не беше намерено</p>
-          <Link
-            to="/events"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-medium hover:shadow-color transition-all"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Назад към събитията
-          </Link>
-        </div>
+        <EmptyState
+          title="Събитието не беше намерено"
+          message="Съжаляваме, но събитието, което търсиш, не съществува или е било премахнато."
+          icon="🔍"
+          action={
+            <Link
+              to="/events"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-medium hover:shadow-color transition-all"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Назад към събитията
+            </Link>
+          }
+        />
       </div>
     );
   }
