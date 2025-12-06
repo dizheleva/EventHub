@@ -20,7 +20,7 @@ export function EventItem({ event, onEdit, onDelete }) {
   const organizer = event.organizer || "";
 
   return (
-    <div className="relative w-full max-w-md p-8 bg-white rounded-xl shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col group">
+    <div className="relative w-full max-w-md h-full p-8 bg-white rounded-xl shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col group">
       {/* Authorization: Edit/Delete buttons - ONLY visible to owner */}
       {/* For non-owners: buttons are completely hidden (no empty space) */}
       {isOwner && (

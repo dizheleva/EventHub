@@ -8,6 +8,39 @@ import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { EventItem } from "@/components/events/EventItem";
 import { CreateEventModal } from "@/components/events/CreateEventModal";
 import { Toast } from "@/components/common/Toast";
+import { SearchBar } from "@/components/common/SearchBar";
+import { Sorting } from "@/components/common/Sorting";
+import { EventsFilters } from "@/components/events/EventsFilters";
+import { Pagination } from "@/components/common/Pagination";
+
+// Helper function: Sort events
+function sortEvents(eventsList, sortByField, sortOrderValue) {
+  const sorted = [...eventsList].sort((a, b) => {
+    let aValue = a[sortByField];
+    let bValue = b[sortByField];
+
+    // Handle different data types
+    if (sortByField === "date") {
+      // Compare dates
+      aValue = new Date(aValue || 0);
+      bValue = new Date(bValue || 0);
+    } else {
+      // Compare strings (title, location)
+      aValue = (aValue || "").toString().toLowerCase();
+      bValue = (bValue || "").toString().toLowerCase();
+    }
+
+    if (aValue < bValue) {
+      return sortOrderValue === "asc" ? -1 : 1;
+    }
+    if (aValue > bValue) {
+      return sortOrderValue === "asc" ? 1 : -1;
+    }
+    return 0;
+  });
+
+  return sorted;
+}
 
 export function MyEventsPage() {
   const { user, isAuthenticated } = useAuth();
@@ -15,6 +48,22 @@ export function MyEventsPage() {
   const { events, isLoading, error, fetchEvents, createEvent } = useEvents(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [toast, setToast] = useState(null);
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  // Filter states
+  const [selectedCity, setSelectedCity] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedPrice, setSelectedPrice] = useState("");
+  
+  // Sort states
+  const [sortBy, setSortBy] = useState("date");
+  const [sortOrder, setSortOrder] = useState("asc");
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(6);
 
   // Scroll to top on component mount
   // This ensures the page starts at the top when navigating to MyEventsPage
@@ -46,6 +95,95 @@ export function MyEventsPage() {
       return eventOwnerId && eventOwnerId === user.id;
     });
   }, [events, user, isAuthenticated]);
+
+  // Compute unique cities from myEvents
+  const uniqueCities = useMemo(() => {
+    return [...new Set(myEvents.map(e => e.city).filter(Boolean))].sort();
+  }, [myEvents]);
+
+  // Handlers for sorting
+  function sortChangeHandler(newSortBy, newSortOrder) {
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+    setCurrentPage(1); // Reset to first page when sorting changes
+  }
+
+  // Handlers that reset pagination
+  function searchChangeHandler(query) {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  }
+
+  function filtersChangeHandler(updatedFilters) {
+    setSelectedCity(updatedFilters.city || "");
+    setSelectedCategory(updatedFilters.category || "");
+    setSelectedPrice(updatedFilters.price || "");
+    setCurrentPage(1);
+  }
+
+  function pageChangeHandler(newPage) {
+    setCurrentPage(newPage);
+    // Scroll to top when page changes
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function itemsPerPageChangeHandler(newItemsPerPage) {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  }
+
+  // Apply all filters and sorting using useMemo for optimization
+  // Pipeline: myEvents → search → city → category → price → sort
+  const filteredAndSortedEvents = useMemo(() => {
+    // Step 1: Apply search filter
+    let filtered = myEvents.filter(event => {
+      if (!searchQuery) return true;
+      const query = searchQuery.toLowerCase();
+      return (
+        event.title?.toLowerCase().includes(query) ||
+        event.location?.toLowerCase().includes(query)
+      );
+    });
+
+    // Step 2: Apply city filter (exact match)
+    if (selectedCity) {
+      filtered = filtered.filter(event => event.city === selectedCity);
+    }
+
+    // Step 3: Apply category filter (exact match)
+    if (selectedCategory) {
+      filtered = filtered.filter(event => event.category === selectedCategory);
+    }
+
+    // Step 4: Apply price filter
+    if (selectedPrice === "free") {
+      filtered = filtered.filter(event => {
+        const priceValue = event.price || "";
+        const priceLower = priceValue.toLowerCase();
+        return (
+          priceValue === "Безплатно" ||
+          priceLower.includes("безплат") ||
+          priceLower.includes("free")
+        );
+      });
+    }
+
+    // Step 5: Apply sorting
+    filtered = sortEvents(filtered, sortBy, sortOrder);
+
+    return filtered;
+  }, [myEvents, searchQuery, selectedCity, selectedCategory, selectedPrice, sortBy, sortOrder]);
+
+  // Calculate pagination
+  const totalItems = filteredAndSortedEvents.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  
+  // Apply pagination
+  const paginatedEvents = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredAndSortedEvents.slice(startIndex, endIndex);
+  }, [filteredAndSortedEvents, currentPage, itemsPerPage]);
 
   // Handle opening create modal
   function openCreateModalHandler() {
@@ -128,20 +266,11 @@ export function MyEventsPage() {
       {/* Toast Notification */}
       {toast && <Toast type={toast.type} message={toast.message} />}
 
-      {/* Header with title and create button */}
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-        <h2 className="text-4xl font-bold text-gray-900 text-center sm:text-left">
+      {/* Header with title */}
+      <div className="mb-8">
+        <h2 className="text-4xl font-bold text-gray-900 text-center">
           Моите събития
         </h2>
-        
-        {/* Create Event Button */}
-        <button
-          onClick={openCreateModalHandler}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-medium hover:shadow-color transition-all shadow-sm hover:shadow-md"
-        >
-          <Plus className="w-5 h-5" />
-          Създай събитие
-        </button>
       </div>
 
       {/* Events List or Empty State */}
@@ -162,16 +291,78 @@ export function MyEventsPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4 py-6 max-w-7xl mx-auto justify-items-center">
-          {myEvents.map(event => (
-            <EventItem
-              key={event.id}
-              event={event}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
+        <>
+          {/* Search Bar with Create Button */}
+          <SearchBar
+            value={searchQuery}
+            onChange={searchChangeHandler}
+          >
+            {/* Show "Add Event" button only for authenticated users - on the same level as search bar, far right */}
+            {isAuthenticated && (
+              <button
+                onClick={openCreateModalHandler}
+                className="flex items-center gap-2 px-4 h-[42px] bg-gradient-to-r from-primary to-secondary text-white rounded-lg text-sm font-medium hover:shadow-color transition-all border border-transparent whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4" />
+                Добави събитие
+              </button>
+            )}
+          </SearchBar>
+
+          {/* Sorting and Filters */}
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <Sorting
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSortChange={sortChangeHandler}
             />
-          ))}
-        </div>
+            <EventsFilters
+              filters={{ city: selectedCity, category: selectedCategory, price: selectedPrice }}
+              onChange={filtersChangeHandler}
+              cities={uniqueCities}
+            />
+          </div>
+
+          {/* Events Grid or Empty Filter State */}
+          {filteredAndSortedEvents.length === 0 ? (
+            <div className="text-center py-20">
+              <p className="text-gray-600">Няма събития по този критерий</p>
+            </div>
+          ) : (
+            <>
+              <div className="px-4 py-6 flex justify-center">
+                <div 
+                  className={`grid gap-6 max-w-7xl w-full justify-items-center items-stretch ${
+                    paginatedEvents.length < 3 
+                      ? 'grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(300px,max-content))] lg:grid-cols-[repeat(auto-fit,minmax(300px,max-content))]' 
+                      : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                  }`}
+                  style={paginatedEvents.length < 3 ? { justifyContent: 'center' } : {}}
+                >
+                  {paginatedEvents.map(event => (
+                    <div key={event.id} className="w-full max-w-md h-full">
+                      <EventItem
+                        event={event}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pagination */}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                itemsPerPage={itemsPerPage}
+                totalItems={totalItems}
+                onPageChange={pageChangeHandler}
+                onItemsPerPageChange={itemsPerPageChangeHandler}
+              />
+            </>
+          )}
+        </>
       )}
 
       {/* Create Event Modal */}

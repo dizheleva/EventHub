@@ -130,7 +130,7 @@ export function EventsFilters({ filters, onChange, cities = [] }) {
   }
 
   return (
-    <div ref={filtersRef} className="flex flex-wrap items-center gap-2 mb-6">
+    <div ref={filtersRef} className="flex flex-wrap items-center gap-2">
       <span className="text-sm font-medium text-gray-700">Филтрирай по:</span>
 
       {filterConfigs.map((config) => {

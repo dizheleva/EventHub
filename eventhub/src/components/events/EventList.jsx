@@ -332,33 +332,31 @@ export function EventList() {
           <SearchBar
             value={searchQuery}
             onChange={searchChangeHandler}
-          />
+          >
+            {/* Show "Add Event" button only for authenticated users - on the same level as search bar, far right */}
+            {isAuthenticated && (
+              <button
+                onClick={openCreateModalHandler}
+                className="flex items-center gap-2 px-4 h-[42px] bg-gradient-to-r from-primary to-secondary text-white rounded-lg text-sm font-medium hover:shadow-color transition-all border border-transparent whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4" />
+                Добави събитие
+              </button>
+            )}
+          </SearchBar>
 
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
-            <EventsFilters
-              filters={{ city: selectedCity, category: selectedCategory, price: selectedPrice }}
-              onChange={filtersChangeHandler}
-              cities={uniqueCities}
-            />
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <Sorting
               sortBy={sortBy}
               sortOrder={sortOrder}
               onSortChange={sortChangeHandler}
             />
+            <EventsFilters
+              filters={{ city: selectedCity, category: selectedCategory, price: selectedPrice }}
+              onChange={filtersChangeHandler}
+              cities={uniqueCities}
+            />
           </div>
-
-          {/* Show "Add Event" button only for authenticated users */}
-          {isAuthenticated && (
-            <div className="mb-6 flex justify-end">
-              <button
-                onClick={openCreateModalHandler}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg text-sm font-medium hover:shadow-color transition-all border border-transparent"
-              >
-                <Plus className="w-4 h-4" />
-                Добави събитие
-              </button>
-            </div>
-          )}
 
           {filteredAndSortedEvents.length === 0 ? (
             <div className="text-center py-20">
@@ -366,15 +364,24 @@ export function EventList() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4 py-6 max-w-7xl mx-auto justify-items-center">
-                {paginatedEvents.map(event => (
-                  <EventItem
-                    key={event.id}
-                    event={event}
-                    onEdit={editClickHandler}
-                    onDelete={deleteClickHandler}
-                  />
-                ))}
+              <div className="px-4 py-6">
+                <div 
+                  className={`grid gap-6 max-w-7xl mx-auto justify-items-center items-stretch ${
+                    paginatedEvents.length < 3 
+                      ? 'grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(300px,max-content))] lg:grid-cols-[repeat(auto-fit,minmax(300px,max-content))] justify-center' 
+                      : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                  }`}
+                >
+                  {paginatedEvents.map(event => (
+                    <div key={event.id} className="w-full max-w-md h-full">
+                      <EventItem
+                        event={event}
+                        onEdit={editClickHandler}
+                        onDelete={deleteClickHandler}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <Pagination
