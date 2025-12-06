@@ -1,4 +1,4 @@
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getCategoryDisplay } from "@/utils/categories";
 import { formatPrice } from "@/utils/priceFormatter";
@@ -20,7 +20,7 @@ export function EventItem({ event, onEdit, onDelete }) {
   const organizer = event.organizer || "";
 
   return (
-    <div className="relative w-full max-w-md h-full p-8 bg-white rounded-xl shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col group">
+    <div className="relative w-full h-full min-w-0 p-8 bg-white rounded-xl shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col group">
       {/* Authorization: Edit/Delete buttons - ONLY visible to owner */}
       {/* For non-owners: buttons are completely hidden (no empty space) */}
       {isOwner && (
@@ -41,18 +41,24 @@ export function EventItem({ event, onEdit, onDelete }) {
           </button>
         </div>
       )}
-      {event.imageUrl && (
+      <div className="mb-4 flex-shrink-0 w-full min-w-0">
         <Link 
           to={`/events/${event.id}`}
-          className="block focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 rounded-lg"
+          className="block focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 rounded-lg w-full min-w-0"
         >
-          <img 
-            src={event.imageUrl} 
-            alt={event.title} 
-            className="w-full h-48 object-cover rounded-lg mb-4 cursor-pointer hover:opacity-90 transition-opacity" 
-          />
+          {event.imageUrl ? (
+            <img 
+              src={event.imageUrl} 
+              alt={event.title} 
+              className="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity" 
+            />
+          ) : (
+            <div className="w-full h-48 min-w-0 bg-gradient-to-br from-primary/20 via-secondary/20 to-primary/10 rounded-lg flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity">
+              <Calendar className="w-16 h-16 text-primary/60" />
+            </div>
+          )}
         </Link>
-      )}
+      </div>
       <Link 
         to={`/events/${event.id}`} 
         className="hover:text-primary transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 rounded focus-visible:outline-dashed"

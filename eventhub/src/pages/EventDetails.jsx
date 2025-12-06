@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Edit, Trash2, Calendar } from "lucide-react";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { Modal } from "@/components/common/Modal";
@@ -198,9 +198,6 @@ export function EventDetails() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      {/* Toast Notification */}
-      {toast && <Toast type={toast.type} message={toast.message} />}
-
       {/* Back Button */}
       <button
         onClick={() => navigate("/events")}
@@ -212,15 +209,19 @@ export function EventDetails() {
 
       <article className="bg-white rounded-2xl shadow-lg overflow-hidden">
         {/* Hero Image */}
-        {event.imageUrl && (
-          <div className="w-full h-96 overflow-hidden rounded-t-2xl">
+        <div className="w-full h-96 overflow-hidden rounded-t-2xl">
+          {event.imageUrl ? (
             <img
               src={event.imageUrl}
               alt={event.title}
               className="w-full h-full object-cover"
             />
-          </div>
-        )}
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary/20 via-secondary/20 to-primary/10 flex items-center justify-center">
+              <Calendar className="w-24 h-24 text-primary/60" />
+            </div>
+          )}
+        </div>
 
         {/* Content */}
         <div className="p-6 md:p-10">

@@ -323,14 +323,10 @@ export function EventList() {
             <>
               <div className="px-4 py-6">
                 <div 
-                  className={`grid gap-6 max-w-7xl mx-auto justify-items-center items-stretch ${
-                    paginatedEvents.length < 3 
-                      ? 'grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(300px,max-content))] lg:grid-cols-[repeat(auto-fit,minmax(300px,max-content))] justify-center' 
-                      : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-                  }`}
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto"
                 >
                   {paginatedEvents.map(event => (
-                    <div key={event.id} className="w-full max-w-md h-full">
+                    <div key={event.id} className="w-full min-w-0 h-full">
                       <EventItem
                         event={event}
                         onEdit={editClickHandler}
