@@ -212,7 +212,7 @@ export function EventDetails() {
         <span className="font-medium">Назад към събитията</span>
       </button>
 
-      <article className="bg-white rounded-2xl shadow-lg overflow-hidden">
+      <article className="bg-white rounded-2xl shadow-lg overflow-hidden animate-fadeIn">
         {/* Hero Image */}
         <div className="w-full h-96 overflow-hidden rounded-t-2xl">
           {event.imageUrl ? (

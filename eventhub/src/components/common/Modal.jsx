@@ -33,14 +33,14 @@ export function Modal({ isOpen, onClose, title, children }) {
     >
       {/* Backdrop overlay */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Modal content */}
       <div
-        className="relative bg-white rounded-2xl shadow-soft w-full max-w-lg max-h-[90vh] overflow-hidden animate-zoom-in"
+        className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden animate-zoom-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
