@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { GuardedRoute } from "@/components/routing/GuardedRoute";
 import { EventItem } from "./EventItem";
+import { EventCardSkeleton } from "./EventCardSkeleton";
 import { EditEventForm } from "./EditEventForm";
 import { DeleteEventModal } from "./DeleteEventModal";
 import { CreateEventModal } from "./CreateEventModal";
@@ -273,11 +274,23 @@ export function EventList() {
     return filteredAndSortedEvents.slice(startIndex, endIndex);
   }, [filteredAndSortedEvents, currentPage, itemsPerPage]);
 
-  // Loading state
-  if (isLoading) return <LoadingSpinner />;
-
   // Error state
   if (error) return <ErrorMessage message={error} onRetry={fetchEvents} />;
+
+  // Loading state - show skeleton cards
+  if (isLoading) {
+    return (
+      <div className="px-4 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="w-full min-w-0 h-full">
+              <EventCardSkeleton />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

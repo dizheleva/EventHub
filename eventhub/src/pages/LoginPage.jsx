@@ -116,10 +116,7 @@ export function LoginPage() {
       await login(formData.email, formData.password);
       
       // Show success toast
-      setToast({
-        type: "success",
-        message: "Успешно влизане!",
-      });
+      showToast("success", "Успешно влизане!");
 
       // Redirect to original destination (or /events if no redirect param)
       // This preserves the user's intended destination after login
@@ -138,9 +135,6 @@ export function LoginPage() {
   return (
     <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        {/* Toast Notification */}
-        {toast && <Toast type={toast.type} message={toast.message} />}
-
         <div className="bg-white rounded-2xl shadow-lg p-8">
           {/* Header */}
           <div className="text-center mb-8">
