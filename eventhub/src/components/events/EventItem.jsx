@@ -5,6 +5,7 @@ import { getCategoryDisplay } from "@/utils/categories";
 import { formatPrice } from "@/utils/priceFormatter";
 import { formatDate } from "@/utils/dateFormatter";
 import { useAuth } from "@/contexts/AuthContext";
+import { useInterested } from "@/hooks/useInterested";
 
 export const EventItem = memo(function EventItem({ event, onEdit, onDelete }) {
   const { user, isAuthenticated } = useAuth();
@@ -19,6 +20,9 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete }) {
   const category = event.category || "";
   const price = formatPrice(event.price || "Безплатно");
   const organizer = event.organizer || "";
+  
+  // Get interests count for this event
+  const { interestsCount } = useInterested(event.id);
 
   return (
     <div className="relative w-full h-full min-w-0 p-8 bg-white rounded-xl shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col group">
@@ -42,7 +46,7 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete }) {
           </button>
         </div>
       )}
-      <div className="mb-4 flex-shrink-0 w-full min-w-0">
+      <div className="mb-4 flex-shrink-0 w-full min-w-0 relative">
         <Link 
           to={`/events/${event.id}`}
           className="block focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 rounded-lg w-full min-w-0"
@@ -59,6 +63,10 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete }) {
             </div>
           )}
         </Link>
+        {/* Interests Badge */}
+        <div className="absolute bottom-3 right-3 px-3 py-2 bg-gradient-to-r from-primary to-secondary text-white text-base font-semibold rounded-lg flex items-center gap-1.5 shadow-lg">
+          👁 {interestsCount}
+        </div>
       </div>
       <Link 
         to={`/events/${event.id}`} 
