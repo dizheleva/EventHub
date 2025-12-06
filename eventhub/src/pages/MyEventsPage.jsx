@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEvents } from "@/hooks/useEvents";
 import { useNavigate } from "react-router-dom";
@@ -102,35 +102,35 @@ export function MyEventsPage() {
   }, [myEvents]);
 
   // Handlers for sorting
-  function sortChangeHandler(newSortBy, newSortOrder) {
+  const sortChangeHandler = useCallback((newSortBy, newSortOrder) => {
     setSortBy(newSortBy);
     setSortOrder(newSortOrder);
     setCurrentPage(1); // Reset to first page when sorting changes
-  }
+  }, []);
 
   // Handlers that reset pagination
-  function searchChangeHandler(query) {
+  const searchChangeHandler = useCallback((query) => {
     setSearchQuery(query);
     setCurrentPage(1);
-  }
+  }, []);
 
-  function filtersChangeHandler(updatedFilters) {
+  const filtersChangeHandler = useCallback((updatedFilters) => {
     setSelectedCity(updatedFilters.city || "");
     setSelectedCategory(updatedFilters.category || "");
     setSelectedPrice(updatedFilters.price || "");
     setCurrentPage(1);
-  }
+  }, []);
 
-  function pageChangeHandler(newPage) {
+  const pageChangeHandler = useCallback((newPage) => {
     setCurrentPage(newPage);
     // Scroll to top when page changes
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+  }, []);
 
-  function itemsPerPageChangeHandler(newItemsPerPage) {
+  const itemsPerPageChangeHandler = useCallback((newItemsPerPage) => {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1); // Reset to first page when changing items per page
-  }
+  }, []);
 
   // Apply all filters and sorting using useMemo for optimization
   // Pipeline: myEvents → search → city → category → price → sort

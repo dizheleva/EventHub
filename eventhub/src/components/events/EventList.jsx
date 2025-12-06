@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { Modal } from "@/components/common/Modal";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
@@ -81,7 +81,7 @@ export function EventList() {
 
   // Authorization check before opening edit modal
   // Only owners can edit their events - prevent unauthorized access
-  async function editClickHandler(eventId) {
+  const editClickHandler = useCallback(async (eventId) => {
     if (!isAuthenticated) {
       showToast("error", "Моля, влезте в профила си.");
       return;
@@ -104,14 +104,14 @@ export function EventList() {
     // User is authorized - open edit modal
     setSelectedEventId(eventId);
     setShowEditModal(true);
-  }
+  }, [isAuthenticated, events, user, showToast]);
 
-  function closeEditModalHandler() {
+  const closeEditModalHandler = useCallback(() => {
     setShowEditModal(false);
     setSelectedEventId(null);
-  }
+  }, []);
 
-  async function eventUpdatedHandler(updatedEvent) {
+  const eventUpdatedHandler = useCallback(async (updatedEvent) => {
     try {
       // updateEvent already handles optimistic update
       await updateEvent(updatedEvent.id, updatedEvent);
@@ -120,11 +120,11 @@ export function EventList() {
     } catch (err) {
       showToast("error", err.message || "Възникна грешка при обновяване на събитие");
     }
-  }
+  }, [updateEvent, closeEditModalHandler, showToast]);
 
   // Authorization check before opening delete modal
   // Only owners can delete their events - prevent unauthorized access
-  function deleteClickHandler(event) {
+  const deleteClickHandler = useCallback((event) => {
     if (!isAuthenticated) {
       showToast("error", "Моля, влезте в профила си.");
       return;
@@ -142,37 +142,37 @@ export function EventList() {
     // User is authorized - open delete modal
     setDeletingEventId(event.id);
     setIsDeleteModalOpen(true);
-  }
+  }, [isAuthenticated, user, showToast]);
 
-  function closeDeleteModalHandler() {
+  const closeDeleteModalHandler = useCallback(() => {
     setIsDeleteModalOpen(false);
     setDeletingEventId(null);
-  }
+  }, []);
 
-  function eventDeletedHandler() {
+  const eventDeletedHandler = useCallback(() => {
     // This is called after successful deletion in DeleteEventModal
     // No additional action needed as deleteEvent hook handles everything
-  }
+  }, []);
 
-  function eventDeleteErrorHandler(eventId, error) {
+  const eventDeleteErrorHandler = useCallback((eventId, error) => {
     // Error handling is done in deleteEvent hook (revert state)
     // Show additional toast if needed
     showToast("error", error.message || "Възникна грешка при изтриване на събитие. Събитието беше възстановено.");
-  }
+  }, [showToast]);
 
-  function openCreateModalHandler() {
+  const openCreateModalHandler = useCallback(() => {
     if (!isAuthenticated) {
       showToast("error", "Моля, влезте в профила си.");
       return;
     }
     setShowCreateModal(true);
-  }
+  }, [isAuthenticated, showToast]);
 
-  function closeCreateModalHandler() {
+  const closeCreateModalHandler = useCallback(() => {
     setShowCreateModal(false);
-  }
+  }, []);
 
-  async function eventCreatedHandler(eventData) {
+  const eventCreatedHandler = useCallback(async (eventData) => {
     try {
       // createEvent already handles optimistic update
       // eventData includes creatorId automatically set by EventForm
@@ -184,37 +184,37 @@ export function EventList() {
       // Don't close modal on error so user can retry
       throw err; // Re-throw to let EventForm handle it
     }
-  }
+  }, [createEvent, closeCreateModalHandler, showToast]);
 
-  function pageChangeHandler(newPage) {
+  const pageChangeHandler = useCallback((newPage) => {
     setCurrentPage(newPage);
     // Scroll to top when page changes
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+  }, []);
 
-  function itemsPerPageChangeHandler(newItemsPerPage) {
+  const itemsPerPageChangeHandler = useCallback((newItemsPerPage) => {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1); // Reset to first page when changing items per page
-  }
+  }, []);
 
-  function sortChangeHandler(newSortBy, newSortOrder) {
+  const sortChangeHandler = useCallback((newSortBy, newSortOrder) => {
     setSortBy(newSortBy);
     setSortOrder(newSortOrder);
     setCurrentPage(1); // Reset to first page when sorting changes
-  }
+  }, []);
 
   // Handlers that reset pagination
-  function searchChangeHandler(query) {
+  const searchChangeHandler = useCallback((query) => {
     setSearchQuery(query);
     setCurrentPage(1);
-  }
+  }, []);
 
-  function filtersChangeHandler(updatedFilters) {
+  const filtersChangeHandler = useCallback((updatedFilters) => {
     setSelectedCity(updatedFilters.city || "");
     setSelectedCategory(updatedFilters.category || "");
     setSelectedPrice(updatedFilters.price || "");
     setCurrentPage(1);
-  }
+  }, []);
 
   // Compute unique cities safely
   const uniqueCities = useMemo(() => {

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Edit, Trash2, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getCategoryDisplay } from "@/utils/categories";
@@ -5,7 +6,7 @@ import { formatPrice } from "@/utils/priceFormatter";
 import { formatDate } from "@/utils/dateFormatter";
 import { useAuth } from "@/contexts/AuthContext";
 
-export function EventItem({ event, onEdit, onDelete }) {
+export const EventItem = memo(function EventItem({ event, onEdit, onDelete }) {
   const { user, isAuthenticated } = useAuth();
   
   // Authorization check: Verify current user is the owner (creator) of this event
@@ -117,5 +118,5 @@ export function EventItem({ event, onEdit, onDelete }) {
       </Link>
     </div>
   );
-}
+});
 
