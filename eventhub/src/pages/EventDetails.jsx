@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useEvents } from "@/hooks/useEvents";
 import { useInterested } from "@/hooks/useInterested";
+import { useComments } from "@/hooks/useComments";
 import { EditEventForm } from "@/components/events/EditEventForm";
 import { DeleteEventModal } from "@/components/events/DeleteEventModal";
 import { getCategoryDisplay } from "@/utils/categories";
@@ -25,16 +26,30 @@ export function EventDetails() {
   const [error, setError] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [users, setUsers] = useState([]);
   const { showToast } = useToast();
   
   // Use interest hook for this event
   const { toggleInterest, interestsCount, userInterested, loading: interestsLoading } = useInterested(event?.id);
+  
+  // Use comments hook for this event
+  const { comments, loading: commentsLoading, addComment, deleteComment } = useComments(event?.id);
+  const [newCommentText, setNewCommentText] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   // Authorization check: Verify current user is the owner (creator) of this event
   // Support both creatorId (new) and userId (legacy) for backward compatibility
   // This check determines if user can see/edit/delete this event
   const eventCreatorId = event?.creatorId || event?.userId;
   const isOwner = isAuthenticated && user && event && eventCreatorId === user.id;
+
+  // Load users for comment display
+  useEffect(() => {
+    fetch("http://localhost:5000/users")
+      .then(res => res.json())
+      .then(data => setUsers(data))
+      .catch(err => console.error("Error loading users:", err));
+  }, []);
 
   useEffect(() => {
     if (!id) {
@@ -204,6 +219,136 @@ export function EventDetails() {
   const price = formatPrice(event.price || "Безплатно");
   const organizer = event.organizer || "";
   const organizerUrl = event.organizerUrl || "";
+
+  // Helper function to get user name from email
+  function getUserName(userId) {
+    const user = users.find(u => u.id === userId);
+    if (!user) return "Анонимен";
+    if (user.username) return user.username;
+    if (user.email) return user.email.split("@")[0];
+    if (user.name) return user.name;
+    return "Анонимен";
+  }
+
+  // Helper function to format comment date
+  function formatCommentDate(dateString) {
+    if (!dateString) return "";
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return "току-що";
+      if (diffMins < 60) return `преди ${diffMins} ${diffMins === 1 ? "минута" : "минути"}`;
+      if (diffHours < 24) return `преди ${diffHours} ${diffHours === 1 ? "час" : "часа"}`;
+      if (diffDays < 7) return `преди ${diffDays} ${diffDays === 1 ? "ден" : "дни"}`;
+      
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const year = date.getFullYear();
+      return `${day}.${month}.${year}`;
+    } catch {
+      return dateString;
+    }
+  }
+
+  // Handle comment submission
+  async function handleAddComment(e) {
+    e.preventDefault();
+    if (!newCommentText.trim()) {
+      showToast("error", "Коментарът не може да бъде празен");
+      return;
+    }
+
+    setIsSubmittingComment(true);
+    try {
+      await addComment(newCommentText.trim());
+      setNewCommentText("");
+      showToast("success", "Коментарът беше публикуван успешно!");
+    } catch (err) {
+      showToast("error", err.message || "Възникна грешка при публикуване на коментар");
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  }
+
+  // Handle comment deletion
+  async function handleDeleteComment(commentId) {
+    try {
+      await deleteComment(commentId);
+      showToast("success", "Коментарът беше изтрит успешно!");
+    } catch (err) {
+      showToast("error", err.message || "Възникна грешка при изтриване на коментар");
+    }
+  }
+
+  // Helper function to get user name from email
+  function getUserName(userId) {
+    const user = users.find(u => u.id === userId);
+    if (!user) return "Анонимен";
+    if (user.username) return user.username;
+    if (user.email) return user.email.split("@")[0];
+    if (user.name) return user.name;
+    return "Анонимен";
+  }
+
+  // Helper function to format comment date
+  function formatCommentDate(dateString) {
+    if (!dateString) return "";
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return "току-що";
+      if (diffMins < 60) return `преди ${diffMins} ${diffMins === 1 ? "минута" : "минути"}`;
+      if (diffHours < 24) return `преди ${diffHours} ${diffHours === 1 ? "час" : "часа"}`;
+      if (diffDays < 7) return `преди ${diffDays} ${diffDays === 1 ? "ден" : "дни"}`;
+      
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const year = date.getFullYear();
+      return `${day}.${month}.${year}`;
+    } catch {
+      return dateString;
+    }
+  }
+
+  // Handle comment submission
+  async function handleAddComment(e) {
+    e.preventDefault();
+    if (!newCommentText.trim()) {
+      showToast("error", "Коментарът не може да бъде празен");
+      return;
+    }
+
+    setIsSubmittingComment(true);
+    try {
+      await addComment(newCommentText.trim());
+      setNewCommentText("");
+      showToast("success", "Коментарът беше публикуван успешно!");
+    } catch (err) {
+      showToast("error", err.message || "Възникна грешка при публикуване на коментар");
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  }
+
+  // Handle comment deletion
+  async function handleDeleteComment(commentId) {
+    try {
+      await deleteComment(commentId);
+      showToast("success", "Коментарът беше изтрит успешно!");
+    } catch (err) {
+      showToast("error", err.message || "Възникна грешка при изтриване на коментар");
+    }
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -385,13 +530,81 @@ export function EventDetails() {
           </div>
 
           {/* Description */}
-          <div className="prose max-w-none">
+          <div className="prose max-w-none mb-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6">Описание</h2>
             <div className="border-l-4 border-primary/20 pl-6">
               <p className="text-gray-700 text-base md:text-lg leading-relaxed md:leading-loose whitespace-pre-wrap">
                 {event.description}
               </p>
             </div>
+          </div>
+
+          {/* Comments Section */}
+          <div className="mt-8 pt-8 border-t border-gray-200">
+            <h2 className="text-xl font-bold text-gray-900 mb-6">Коментари</h2>
+
+            {/* Comment Form */}
+            {isAuthenticated ? (
+              <form onSubmit={handleAddComment} className="mb-8">
+                <textarea
+                  value={newCommentText}
+                  onChange={(e) => setNewCommentText(e.target.value)}
+                  placeholder="Напишете вашия коментар..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none mb-3"
+                  rows={4}
+                  disabled={isSubmittingComment}
+                />
+                <button
+                  type="submit"
+                  disabled={isSubmittingComment || !newCommentText.trim()}
+                  className="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-medium hover:shadow-color transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmittingComment ? "Публикуване..." : "Публикувай"}
+                </button>
+              </form>
+            ) : (
+              <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-gray-700">
+                За да оставите коментар, трябва да влезете в профила си.
+              </div>
+            )}
+
+            {/* Comments List */}
+            {commentsLoading ? (
+              <div className="text-center py-8 text-gray-500">Зареждане на коментари...</div>
+            ) : comments.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">Все още няма коментари. Бъдете първият!</div>
+            ) : (
+              <div className="space-y-6">
+                {comments.map((comment) => {
+                  const isOwnComment = user && comment.userId === user.id;
+                  return (
+                    <div key={comment.id} className="bg-gray-50 rounded-xl p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-gray-900">
+                              {getUserName(comment.userId)}
+                            </span>
+                            <span className="text-sm text-gray-500">
+                              {formatCommentDate(comment.createdAt)}
+                            </span>
+                          </div>
+                          <p className="text-gray-700 whitespace-pre-wrap">{comment.text}</p>
+                        </div>
+                        {isOwnComment && (
+                          <button
+                            onClick={() => handleDeleteComment(comment.id)}
+                            className="ml-4 px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                          >
+                            Изтрий
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </article>
