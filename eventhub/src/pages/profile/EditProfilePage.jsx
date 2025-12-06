@@ -2,19 +2,12 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Save } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@/hooks/useUser";
 import { useToast } from "@/contexts/ToastContext";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { FormField } from "@/components/common/FormField";
-
-// Email validation function
-function validateEmail(email) {
-  if (!email || email.trim().length === 0) {
-    return false;
-  }
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
+import { validators } from "@/utils/validators";
 
 /**
  * EditProfilePage - Edit user profile information
@@ -25,18 +18,18 @@ function validateEmail(email) {
 export function EditProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated, isAuthReady, login } = useAuth();
+  const { user: currentUser, isAuthenticated, isAuthReady, updateUser: updateAuthUser } = useAuth();
+  const { user: profileUser, isLoading: isLoadingUser, error: userError, fetchUser, updateUser } = useUser();
   const [formData, setFormData] = useState({
     username: "",
     email: "",
+    avatarUrl: "",
   });
   const [formErrors, setFormErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState(null);
   const { showToast } = useToast();
 
-  // Load user profile data
+  // Load user profile data and check authorization
   useEffect(() => {
     if (!isAuthReady) return;
 
@@ -46,44 +39,29 @@ export function EditProfilePage() {
       return;
     }
 
-    // If userId doesn't match current user, redirect to events
-    if (userId !== String(user?.id)) {
+    // Prevent editing another user's profile
+    if (currentUser?.id !== Number(userId)) {
       showToast("error", "Нямате права да редактирате този профил.");
       navigate("/events");
       return;
     }
 
-    // Load user profile
-    async function loadProfile() {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const response = await fetch(`http://localhost:5000/users/${userId}`);
-        
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Потребителят не е намерен");
-          }
-          throw new Error(`Грешка при зареждане на профила: ${response.status}`);
-        }
-
-        const userData = await response.json();
-        setFormData({
-          username: userData.username || "",
-          email: userData.email || "",
-        });
-      } catch (err) {
-        const errorMessage = err.message || "Възникна грешка при зареждане на профила";
-        setError(errorMessage);
-        showToast("error", errorMessage);
-      } finally {
-        setIsLoading(false);
-      }
+    // Load user profile using useUser hook
+    if (userId) {
+      fetchUser(userId);
     }
+  }, [userId, currentUser, isAuthenticated, isAuthReady, navigate, showToast, fetchUser]);
 
-    loadProfile();
-  }, [userId, user, isAuthenticated, isAuthReady, navigate, showToast]);
+  // Pre-fill form when user data is loaded
+  useEffect(() => {
+    if (profileUser) {
+      setFormData({
+        username: profileUser.username || "",
+        email: profileUser.email || "",
+        avatarUrl: profileUser.avatarUrl || "",
+      });
+    }
+  }, [profileUser]);
 
   // Handle input changes
   function handleChange(e) {
@@ -108,32 +86,17 @@ export function EditProfilePage() {
     validateField(name, value);
   }
 
-  // Validate single field
+  // Validate single field using validators.js
   function validateField(name, value) {
-    let error = "";
-
-    switch (name) {
-      case "email":
-        if (!value) {
-          error = "Имейлът е задължителен";
-        } else if (!validateEmail(value)) {
-          error = "Невалиден имейл адрес";
-        }
-        break;
-      case "username":
-        if (!value || value.trim().length === 0) {
-          error = "Потребителското име е задължително";
-        } else if (value.trim().length < 3) {
-          error = "Потребителското име трябва да е поне 3 символа";
-        }
-        break;
-      default:
-        break;
+    const validator = validators[name];
+    if (!validator) {
+      return true; // No validator for this field
     }
 
+    const error = validator(value);
     setFormErrors(prev => ({
       ...prev,
-      [name]: error,
+      [name]: error || "",
     }));
 
     return !error;
@@ -144,22 +107,27 @@ export function EditProfilePage() {
     const errors = {};
     let isValid = true;
 
-    // Validate email
-    if (!formData.email) {
-      errors.email = "Имейлът е задължителен";
-      isValid = false;
-    } else if (!validateEmail(formData.email)) {
-      errors.email = "Невалиден имейл адрес";
+    // Validate username
+    const usernameError = validators.username(formData.username);
+    if (usernameError) {
+      errors.username = usernameError;
       isValid = false;
     }
 
-    // Validate username
-    if (!formData.username || formData.username.trim().length === 0) {
-      errors.username = "Потребителското име е задължително";
+    // Validate email
+    const emailError = validators.email(formData.email);
+    if (emailError) {
+      errors.email = emailError;
       isValid = false;
-    } else if (formData.username.trim().length < 3) {
-      errors.username = "Потребителското име трябва да е поне 3 символа";
-      isValid = false;
+    }
+
+    // Validate avatarUrl (optional, but if provided must be valid URL)
+    if (formData.avatarUrl && formData.avatarUrl.trim().length > 0) {
+      const avatarUrlError = validators.avatarUrl(formData.avatarUrl);
+      if (avatarUrlError) {
+        errors.avatarUrl = avatarUrlError;
+        isValid = false;
+      }
     }
 
     setFormErrors(errors);
@@ -176,7 +144,6 @@ export function EditProfilePage() {
     }
 
     setIsSubmitting(true);
-    setError(null);
 
     try {
       // Check if email is already taken by another user
@@ -196,35 +163,26 @@ export function EditProfilePage() {
         return;
       }
 
-      // Update user profile
-      const response = await fetch(`http://localhost:5000/users/${userId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...formData,
-          id: Number(userId),
-          // Keep password if it exists (don't update it)
-          password: user?.password || "",
-        }),
-      });
+      // Prepare update data (trim strings, handle empty avatarUrl)
+      const updateData = {
+        username: formData.username.trim(),
+        email: formData.email.trim(),
+        avatarUrl: formData.avatarUrl.trim() || "",
+      };
 
-      if (!response.ok) {
-        throw new Error(`Грешка при обновяване на профила: ${response.status}`);
-      }
+      // Update user using useUser hook
+      const updatedUser = await updateUser(userId, updateData);
 
-      await response.json();
+      // Automatically update AuthContext.user
+      updateAuthUser(updatedUser);
 
-      // Update auth context with new user data
-      // Re-login to update the user in context and localStorage
-      await login(formData.email, user?.password || "");
-
+      // Show success toast
       showToast("success", "Профилът беше обновен успешно!");
+
+      // Redirect to profile page
       navigate(`/profile/${userId}`);
     } catch (err) {
       const errorMessage = err.message || "Възникна грешка при обновяване на профила";
-      setError(errorMessage);
       showToast("error", errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -232,7 +190,7 @@ export function EditProfilePage() {
   }
 
   // Show loading while auth is initializing or profile is loading
-  if (!isAuthReady || isLoading) {
+  if (!isAuthReady || isLoadingUser) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <LoadingSpinner message="Зареждане на профил..." />
@@ -240,11 +198,11 @@ export function EditProfilePage() {
     );
   }
 
-  // Show error if profile failed to load (only if we haven't loaded any data yet)
-  if (error && isLoading === false && !formData.email && !formData.username) {
+  // Show error if profile failed to load
+  if (userError && !profileUser) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <ErrorMessage message={error} onRetry={() => window.location.reload()} />
+        <ErrorMessage message={userError} onRetry={() => fetchUser(userId)} />
       </div>
     );
   }
@@ -261,42 +219,54 @@ export function EditProfilePage() {
       </button>
 
       {/* Form Card */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+      <article className="bg-white rounded-2xl shadow-lg overflow-hidden animate-fadeIn">
         <div className="px-8 py-6 border-b border-gray-200">
           <h1 className="text-3xl font-bold text-gray-900">Редактирай профил</h1>
         </div>
 
         <form onSubmit={handleSubmit} className="p-8">
           {/* Username Field */}
-          <FormField
-            label="Потребителско име"
-            name="username"
-            type="text"
-            value={formData.username}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            error={formErrors.username}
-            placeholder="Минимум 3 символа"
-          />
+          <div className="mb-6">
+            <FormField
+              label="Потребителско име"
+              name="username"
+              type="text"
+              value={formData.username}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={formErrors.username}
+              placeholder="Минимум 3 символа"
+            />
+          </div>
 
           {/* Email Field */}
-          <FormField
-            label="Имейл"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            error={formErrors.email}
-            placeholder="Въведете вашия имейл"
-          />
+          <div className="mb-6">
+            <FormField
+              label="Имейл"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={formErrors.email}
+              placeholder="Въведете вашия имейл"
+            />
+          </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
-              {error}
-            </div>
-          )}
+          {/* Avatar URL Field */}
+          <div className="mb-6">
+            <FormField
+              label="URL на аватар"
+              name="avatarUrl"
+              type="url"
+              value={formData.avatarUrl}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={formErrors.avatarUrl}
+              placeholder="https://example.com/avatar.jpg"
+              optional={true}
+            />
+          </div>
 
           {/* Submit Button */}
           <div className="flex items-center justify-end gap-4 mt-8">
@@ -326,8 +296,7 @@ export function EditProfilePage() {
             </button>
           </div>
         </form>
-      </div>
+      </article>
     </div>
   );
 }
-

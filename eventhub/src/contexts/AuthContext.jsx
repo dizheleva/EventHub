@@ -134,6 +134,13 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("authUser");
   }
 
+  // Update user function - allows updating user data in context
+  // Used when profile is updated
+  function updateUser(updatedUserData) {
+    setUser(updatedUserData);
+    localStorage.setItem("authUser", JSON.stringify(updatedUserData));
+  }
+
   // Context value
   const value = {
     user,
@@ -142,6 +149,7 @@ export function AuthProvider({ children }) {
     login,
     register,
     logout,
+    updateUser, // Expose updateUser for external updates
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

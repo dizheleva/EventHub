@@ -91,5 +91,35 @@ export const validators = {
     }
     return null;
   },
+  username: (value) => {
+    if (!value || value.trim().length === 0) {
+      return "Потребителското име е задължително";
+    }
+    if (value.trim().length < 3) {
+      return "Потребителското име трябва да е поне 3 символа";
+    }
+    return null;
+  },
+  email: (value) => {
+    if (!value || value.trim().length === 0) {
+      return "Имейлът е задължителен";
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(value)) {
+      return "Моля, въведете валиден имейл адрес";
+    }
+    return null;
+  },
+  avatarUrl: (value) => {
+    if (!value || value.trim().length === 0) {
+      return null; // Optional field
+    }
+    try {
+      new URL(value);
+      return null;
+    } catch {
+      return "Моля, въведете валиден URL адрес";
+    }
+  },
 };
 
