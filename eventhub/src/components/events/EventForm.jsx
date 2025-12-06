@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { validators } from "@/utils/validators";
-import { Toast } from "@/components/common/Toast";
 import { FormField } from "@/components/common/FormField";
 import { CategorySelect } from "@/components/common/CategorySelect";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 
 // Initial form state
 const INITIAL_FORM_STATE = {
@@ -21,10 +21,10 @@ const INITIAL_FORM_STATE = {
 
 export function EventForm({ mode = "create", onEventCreated, onClose }) {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toast, setToast] = useState(null);
 
   // Validate single field
   function validateField(name, value) {
@@ -104,13 +104,7 @@ export function EventForm({ mode = "create", onEventCreated, onClose }) {
     try {
       // Check if user is authenticated (required for creating events)
       if (!user || !user.id) {
-        setToast({
-          type: "error",
-          message: "Моля, влезте в профила си, за да създадете събитие.",
-        });
-        setTimeout(() => {
-          setToast(null);
-        }, 3000);
+        showToast("error", "Моля, влезте в профила си, за да създадете събитие.");
         setIsSubmitting(false);
         return;
       }
@@ -139,13 +133,7 @@ export function EventForm({ mode = "create", onEventCreated, onClose }) {
           setIsSubmitting(false);
         } catch (err) {
           // If parent callback throws error, show it and keep form data
-          setToast({
-            type: "error",
-            message: err.message || "Възникна грешка при създаване на събитие",
-          });
-          setTimeout(() => {
-            setToast(null);
-          }, 3000);
+          showToast("error", err.message || "Възникна грешка при създаване на събитие");
           setIsSubmitting(false);
         }
         return;
@@ -179,18 +167,10 @@ export function EventForm({ mode = "create", onEventCreated, onClose }) {
         onEventCreated(newEvent);
       }
 
-      // Hide toast after 3 seconds
-      setTimeout(() => {
-        setToast(null);
-      }, 3000);
+      // Show success toast
+      showToast("success", "Събитието е създадено успешно!");
     } catch (err) {
-      setToast({
-        type: "error",
-        message: err.message || "Възникна грешка при създаване на събитие",
-      });
-      setTimeout(() => {
-        setToast(null);
-      }, 3000);
+      showToast("error", err.message || "Възникна грешка при създаване на събитие");
     } finally {
       setIsSubmitting(false);
     }

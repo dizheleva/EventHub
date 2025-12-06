@@ -3,12 +3,12 @@ import { Plus } from "lucide-react";
 import { Modal } from "@/components/common/Modal";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
-import { Toast } from "@/components/common/Toast";
 import { Sorting } from "@/components/common/Sorting";
 import { Pagination } from "@/components/common/Pagination";
 import { SearchBar } from "@/components/common/SearchBar";
 import { useEvents } from "@/hooks/useEvents";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 import { GuardedRoute } from "@/components/routing/GuardedRoute";
 import { EventItem } from "./EventItem";
 import { EditEventForm } from "./EditEventForm";
@@ -48,6 +48,7 @@ function sortEvents(eventsList, sortByField, sortOrderValue) {
 export function EventList() {
   const { events, isLoading, error, fetchEvents, createEvent, updateEvent, deleteEvent } = useEvents(true);
   const { isAuthenticated, user } = useAuth();
+  const { showToast } = useToast();
   
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -70,7 +71,6 @@ export function EventList() {
   const [deletingEventId, setDeletingEventId] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     fetchEvents();
@@ -81,11 +81,7 @@ export function EventList() {
   // Only owners can edit their events - prevent unauthorized access
   async function editClickHandler(eventId) {
     if (!isAuthenticated) {
-      setToast({
-        type: "error",
-        message: "Моля, влезте в профила си.",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("error", "Моля, влезте в профила си.");
       return;
     }
 
@@ -96,11 +92,7 @@ export function EventList() {
       const eventCreatorId = event?.creatorId || event?.userId;
       if (event && eventCreatorId !== user?.id) {
         // User is NOT the owner - prevent unauthorized access
-        setToast({
-          type: "error",
-          message: "Нямате права да редактирате това събитие",
-        });
-        setTimeout(() => setToast(null), 3000);
+        showToast("error", "Нямате права да редактирате това събитие");
         return; // Prevent opening modal for non-owners
       }
     } catch (err) {
@@ -122,17 +114,9 @@ export function EventList() {
       // updateEvent already handles optimistic update
       await updateEvent(updatedEvent.id, updatedEvent);
       closeEditModalHandler();
-      setToast({
-        type: "success",
-        message: "Събитието беше обновено успешно!",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("success", "Събитието беше обновено успешно!");
     } catch (err) {
-      setToast({
-        type: "error",
-        message: err.message || "Възникна грешка при обновяване на събитие",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("error", err.message || "Възникна грешка при обновяване на събитие");
     }
   }
 
@@ -140,11 +124,7 @@ export function EventList() {
   // Only owners can delete their events - prevent unauthorized access
   function deleteClickHandler(event) {
     if (!isAuthenticated) {
-      setToast({
-        type: "error",
-        message: "Моля, влезте в профила си.",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("error", "Моля, влезте в профила си.");
       return;
     }
 
@@ -153,11 +133,7 @@ export function EventList() {
     const eventCreatorId = event.creatorId || event.userId;
     if (eventCreatorId !== user?.id) {
       // User is NOT the owner - prevent unauthorized access
-      setToast({
-        type: "error",
-        message: "Нямате права да изтривате това събитие",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("error", "Нямате права да изтривате това събитие");
       return; // Prevent opening modal for non-owners
     }
 
@@ -179,20 +155,12 @@ export function EventList() {
   function eventDeleteErrorHandler(eventId, error) {
     // Error handling is done in deleteEvent hook (revert state)
     // Show additional toast if needed
-    setToast({
-      type: "error",
-      message: error.message || "Възникна грешка при изтриване на събитие. Събитието беше възстановено.",
-    });
-    setTimeout(() => setToast(null), 3000);
+    showToast("error", error.message || "Възникна грешка при изтриване на събитие. Събитието беше възстановено.");
   }
 
   function openCreateModalHandler() {
     if (!isAuthenticated) {
-      setToast({
-        type: "error",
-        message: "Моля, влезте в профила си.",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("error", "Моля, влезте в профила си.");
       return;
     }
     setShowCreateModal(true);
@@ -208,17 +176,9 @@ export function EventList() {
       // eventData includes creatorId automatically set by EventForm
       await createEvent(eventData);
       closeCreateModalHandler();
-      setToast({
-        type: "success",
-        message: "Събитието е създадено успешно!",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("success", "Събитието е създадено успешно!");
     } catch (err) {
-      setToast({
-        type: "error",
-        message: err.message || "Възникна грешка при създаване на събитие",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("error", err.message || "Възникна грешка при създаване на събитие");
       // Don't close modal on error so user can retry
       throw err; // Re-throw to let EventForm handle it
     }
@@ -320,9 +280,6 @@ export function EventList() {
 
   return (
     <>
-      {/* Toast Notification */}
-      {toast && <Toast type={toast.type} message={toast.message} />}
-
       {events.length === 0 ? (
         <div className="text-center py-20">
           <p className="text-gray-600">Няма намерени събития</p>

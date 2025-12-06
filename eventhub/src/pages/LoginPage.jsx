@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 import { FormField } from "@/components/common/FormField";
-import { Toast } from "@/components/common/Toast";
 
 // Validation functions
 function validateEmail(email) {
@@ -41,7 +41,7 @@ export function LoginPage() {
   
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toast, setToast] = useState(null);
+  const { showToast } = useToast();
 
   // Validate single field
   function validateField(name, value) {
@@ -127,13 +127,7 @@ export function LoginPage() {
         navigate(redirectPath, { replace: true });
       }, 500);
     } catch (error) {
-      setToast({
-        type: "error",
-        message: error.message || "Възникна грешка при влизане",
-      });
-      setTimeout(() => {
-        setToast(null);
-      }, 3000);
+      showToast("error", error.message || "Възникна грешка при влизане");
     } finally {
       setIsSubmitting(false);
     }

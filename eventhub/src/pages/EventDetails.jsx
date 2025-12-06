@@ -4,8 +4,8 @@ import { ArrowLeft, ExternalLink, Edit, Trash2 } from "lucide-react";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { Modal } from "@/components/common/Modal";
-import { Toast } from "@/components/common/Toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 import { useEvents } from "@/hooks/useEvents";
 import { EditEventForm } from "@/components/events/EditEventForm";
 import { DeleteEventModal } from "@/components/events/DeleteEventModal";
@@ -23,7 +23,7 @@ export function EventDetails() {
   const [error, setError] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [toast, setToast] = useState(null);
+  const { showToast } = useToast();
 
   // Authorization check: Verify current user is the owner (creator) of this event
   // Support both creatorId (new) and userId (legacy) for backward compatibility
@@ -84,22 +84,14 @@ export function EventDetails() {
   // Only owners can edit their events
   function handleEdit() {
     if (!isAuthenticated) {
-      setToast({
-        type: "error",
-        message: "Моля, влезте в профила си.",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("error", "Моля, влезте в профила си.");
       return;
     }
 
     // Double-check ownership before opening modal
     // This prevents unauthorized access even if UI is manipulated
     if (!isOwner) {
-      setToast({
-        type: "error",
-        message: "Нямате права да редактирате това събитие",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("error", "Нямате права да редактирате това събитие");
       return; // Prevent opening modal for non-owners
     }
 
@@ -110,22 +102,14 @@ export function EventDetails() {
   // Only owners can delete their events
   function handleDelete() {
     if (!isAuthenticated) {
-      setToast({
-        type: "error",
-        message: "Моля, влезте в профила си.",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("error", "Моля, влезте в профила си.");
       return;
     }
 
     // Double-check ownership before opening modal
     // This prevents unauthorized access even if UI is manipulated
     if (!isOwner) {
-      setToast({
-        type: "error",
-        message: "Нямате права да изтривате това събитие",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("error", "Нямате права да изтривате това събитие");
       return; // Prevent opening modal for non-owners
     }
 
@@ -137,17 +121,9 @@ export function EventDetails() {
       await updateEvent(updatedEvent.id, updatedEvent);
       setShowEditModal(false);
       refreshEvent();
-      setToast({
-        type: "success",
-        message: "Събитието беше обновено успешно!",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("success", "Събитието беше обновено успешно!");
     } catch (err) {
-      setToast({
-        type: "error",
-        message: err.message || "Възникна грешка при обновяване на събитие",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("error", err.message || "Възникна грешка при обновяване на събитие");
     }
   }
 
@@ -156,21 +132,13 @@ export function EventDetails() {
       if (id) {
         await deleteEvent(id);
         setShowDeleteModal(false);
-        setToast({
-          type: "success",
-          message: "Събитието беше изтрито успешно!",
-        });
+        showToast("success", "Събитието беше изтрито успешно!");
         setTimeout(() => {
-          setToast(null);
           navigate("/events");
         }, 1500);
       }
     } catch (err) {
-      setToast({
-        type: "error",
-        message: err.message || "Възникна грешка при изтриване на събитие",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("error", err.message || "Възникна грешка при изтриване на събитие");
     }
   }
 
@@ -397,11 +365,7 @@ export function EventDetails() {
           onClose={() => setShowDeleteModal(false)}
           onDeleted={handleEventDeleted}
           onError={(eventId, error) => {
-            setToast({
-              type: "error",
-              message: error.message || "Възникна грешка при изтриване на събитие",
-            });
-            setTimeout(() => setToast(null), 3000);
+            showToast("error", error.message || "Възникна грешка при изтриване на събитие");
           }}
           deleteEvent={deleteEvent}
         />

@@ -5,9 +5,9 @@ import { useNavigate } from "react-router-dom";
 import { Plus, CalendarX } from "lucide-react";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
+import { useToast } from "@/contexts/ToastContext";
 import { EventItem } from "@/components/events/EventItem";
 import { CreateEventModal } from "@/components/events/CreateEventModal";
-import { Toast } from "@/components/common/Toast";
 import { SearchBar } from "@/components/common/SearchBar";
 import { Sorting } from "@/components/common/Sorting";
 import { EventsFilters } from "@/components/events/EventsFilters";
@@ -47,7 +47,7 @@ export function MyEventsPage() {
   const navigate = useNavigate();
   const { events, isLoading, error, fetchEvents, createEvent } = useEvents(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [toast, setToast] = useState(null);
+  const { showToast } = useToast();
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -188,11 +188,7 @@ export function MyEventsPage() {
   // Handle opening create modal
   function openCreateModalHandler() {
     if (!isAuthenticated) {
-      setToast({
-        type: "error",
-        message: "Моля, влезте в профила си.",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("error", "Моля, влезте в профила си.");
       return;
     }
     setShowCreateModal(true);
@@ -208,17 +204,9 @@ export function MyEventsPage() {
       // createEvent already handles optimistic update
       await createEvent(eventData);
       closeCreateModalHandler();
-      setToast({
-        type: "success",
-        message: "Събитието е създадено успешно!",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("success", "Събитието е създадено успешно!");
     } catch (err) {
-      setToast({
-        type: "error",
-        message: err.message || "Възникна грешка при създаване на събитие",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("error", err.message || "Възникна грешка при създаване на събитие");
     }
   }
 
@@ -263,9 +251,6 @@ export function MyEventsPage() {
 
   return (
     <section className="max-w-7xl mx-auto px-8 py-12">
-      {/* Toast Notification */}
-      {toast && <Toast type={toast.type} message={toast.message} />}
-
       {/* Header with title */}
       <div className="mb-8">
         <h2 className="text-4xl font-bold text-gray-900 text-center">

@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { validators } from "@/utils/validators";
-import { Toast } from "@/components/common/Toast";
 import { FormField } from "@/components/common/FormField";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { CategorySelect } from "@/components/common/CategorySelect";
 import { formatDateForInput } from "@/utils/dateFormatter";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 
 export function EditEventForm({ eventId, onEventUpdated, onClose }) {
   const { user } = useAuth();
@@ -24,7 +24,7 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [toast, setToast] = useState(null);
+  const { showToast } = useToast();
 
   // Fetch event data when component mounts or eventId changes
   useEffect(() => {
@@ -48,12 +48,8 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
         if (user && eventCreatorId !== user.id) {
           // User is NOT the owner - prevent unauthorized access
           // Close modal immediately and show error message
-          setToast({
-            type: "error",
-            message: "Нямате права да редактирате това събитие",
-          });
+          showToast("error", "Нямате права да редактирате това събитие");
           setTimeout(() => {
-            setToast(null);
             if (onClose) onClose();
           }, 2000);
           setIsLoading(false);
@@ -76,11 +72,7 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
       })
       .catch(err => {
         console.error("Error fetching event:", err);
-        setToast({
-          type: "error",
-          message: err.message || "Възникна грешка при зареждане на събитието",
-        });
-        setTimeout(() => setToast(null), 3000);
+        showToast("error", err.message || "Възникна грешка при зареждане на събитието");
         setIsLoading(false);
       });
   }, [eventId, user, onClose]);
@@ -152,11 +144,7 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
     e.preventDefault();
 
     if (!eventId) {
-      setToast({
-        type: "error",
-        message: "Грешка: Липсва ID на събитието",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("error", "Грешка: Липсва ID на събитието");
       return;
     }
 
@@ -228,10 +216,7 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
       }
       
       // Show success toast
-      setToast({
-        type: "success",
-        message: "Събитието беше обновено успешно!",
-      });
+      showToast("success", "Събитието беше обновено успешно!");
 
       // Clear errors
       setErrors({});
@@ -247,19 +232,8 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
           onClose();
         }
       }, 1500);
-
-      // Hide toast after 3 seconds
-      setTimeout(() => {
-        setToast(null);
-      }, 3000);
     } catch (err) {
-      setToast({
-        type: "error",
-        message: err.message || "Възникна грешка при обновяване на събитие",
-      });
-      setTimeout(() => {
-        setToast(null);
-      }, 3000);
+      showToast("error", err.message || "Възникна грешка при обновяване на събитие");
     } finally {
       setIsSubmitting(false);
     }

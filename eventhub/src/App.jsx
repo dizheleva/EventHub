@@ -10,6 +10,7 @@ import { Features } from "@/components/home/Features"
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 import { GuestRoute } from "@/components/auth/GuestRoute"
 import { LoadingSpinner } from "@/components/common/LoadingSpinner"
+import { Toast } from "@/components/common/Toast"
 import { useAuth } from "@/contexts/AuthContext"
 
 function AppRoutes() {
@@ -74,6 +75,8 @@ export default function App() {
       <Layout>
         <AppRoutes />
       </Layout>
+      {/* Global Toast - reads from ToastContext */}
+      <Toast />
     </Router>    
   )
 }

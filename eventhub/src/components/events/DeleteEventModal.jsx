@@ -1,21 +1,17 @@
 import { useState } from "react";
 import { Modal } from "@/components/common/Modal";
-import { Toast } from "@/components/common/Toast";
 import { Loader2, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 
 export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted, onError, deleteEvent }) {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
-  const [toast, setToast] = useState(null);
 
   async function deleteHandler() {
     if (!eventId) {
-      setToast({
-        type: "error",
-        message: "Грешка: Липсва ID на събитието",
-      });
-      setTimeout(() => setToast(null), 3000);
+      showToast("error", "Грешка: Липсва ID на събитието");
       return;
     }
 
@@ -36,12 +32,8 @@ export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted, onError,
         // User is NOT the owner - prevent unauthorized deletion
         // Close modal immediately and show error message
         // Do NOT make backend call when unauthorized
-        setToast({
-          type: "error",
-          message: "Нямате права да изтривате това събитие",
-        });
+        showToast("error", "Нямате права да изтривате това събитие");
         setTimeout(() => {
-          setToast(null);
           if (onClose) onClose();
         }, 2000);
         setIsDeleting(false);
@@ -61,17 +53,13 @@ export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted, onError,
       }
 
       // Show success toast
-      setToast({
-        type: "success",
-        message: "Събитието беше изтрито успешно!",
-      });
+      showToast("success", "Събитието беше изтрито успешно!");
 
       // Close modal after successful deletion
       setTimeout(() => {
         if (onClose) {
           onClose();
         }
-        setToast(null);
       }, 1500);
     } catch (err) {
       // Call onError callback for additional error handling
@@ -79,13 +67,7 @@ export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted, onError,
         onError(eventId, err);
       }
       // Show error toast
-      setToast({
-        type: "error",
-        message: err.message || "Възникна грешка при изтриване на събитие. Събитието беше възстановено.",
-      });
-      setTimeout(() => {
-        setToast(null);
-      }, 3000);
+      showToast("error", err.message || "Възникна грешка при изтриване на събитие. Събитието беше възстановено.");
     } finally {
       setIsDeleting(false);
     }
@@ -93,9 +75,6 @@ export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted, onError,
 
   return (
     <>
-      {/* Toast Notification */}
-      {toast && <Toast type={toast.type} message={toast.message} />}
-
       <Modal
         isOpen={isOpen}
         onClose={onClose}
