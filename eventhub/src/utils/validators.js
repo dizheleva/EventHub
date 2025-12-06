@@ -92,10 +92,8 @@ export const validators = {
     return null;
   },
   username: (value) => {
-    if (!value || value.trim().length === 0) {
-      return "Потребителското име е задължително";
-    }
-    if (value.trim().length < 3) {
+    // Username is optional, but if provided must be at least 3 characters
+    if (value && value.trim().length > 0 && value.trim().length < 3) {
       return "Потребителското име трябва да е поне 3 символа";
     }
     return null;
@@ -120,6 +118,15 @@ export const validators = {
     } catch {
       return "Моля, въведете валиден URL адрес";
     }
+  },
+  confirmPassword: (password, confirmPassword) => {
+    if (!confirmPassword || confirmPassword.trim().length === 0) {
+      return "Моля, потвърдете паролата";
+    }
+    if (password !== confirmPassword) {
+      return "Паролите не съвпадат";
+    }
+    return null;
   },
 };
 

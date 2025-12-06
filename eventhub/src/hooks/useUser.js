@@ -77,8 +77,8 @@ export function useUser() {
         ...currentUser,
         ...data,
         id: Number(userId),
-        // Ensure password is preserved
-        password: currentUser.password || "",
+        // If password is provided in data, use it; otherwise preserve current password
+        password: data.password || currentUser.password || "",
       };
 
       const response = await fetch(`${API_BASE_URL}/${userId}`, {

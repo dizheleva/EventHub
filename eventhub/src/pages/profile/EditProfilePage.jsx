@@ -24,6 +24,8 @@ export function EditProfilePage() {
     username: "",
     email: "",
     avatarUrl: "",
+    password: "",
+    confirmPassword: "",
   });
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,18 +41,28 @@ export function EditProfilePage() {
       return;
     }
 
+    // Wait for currentUser to be available
+    if (!currentUser) {
+      return;
+    }
+
     // Prevent editing another user's profile
-    if (currentUser?.id !== Number(userId)) {
+    const userIdNum = Number(userId);
+    if (currentUser.id !== userIdNum) {
       showToast("error", "Нямате права да редактирате този профил.");
       navigate("/events");
       return;
     }
 
-    // Load user profile using useUser hook
-    if (userId) {
-      fetchUser(userId);
+    // Load user profile using useUser hook only if authorized
+    if (userId && currentUser.id === userIdNum) {
+      fetchUser(userId).catch((err) => {
+        console.error("Error fetching user:", err);
+        // Error is handled by useUser hook
+      });
     }
-  }, [userId, currentUser, isAuthenticated, isAuthReady, navigate, showToast, fetchUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, currentUser?.id, isAuthenticated, isAuthReady]);
 
   // Pre-fill form when user data is loaded
   useEffect(() => {
@@ -59,6 +71,8 @@ export function EditProfilePage() {
         username: profileUser.username || "",
         email: profileUser.email || "",
         avatarUrl: profileUser.avatarUrl || "",
+        password: "", // Password fields are always empty (not pre-filled for security)
+        confirmPassword: "",
       });
     }
   }, [profileUser]);
@@ -66,17 +80,64 @@ export function EditProfilePage() {
   // Handle input changes
   function handleChange(e) {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
+    const newFormData = {
+      ...formData,
       [name]: value,
-    }));
+    };
     
-    // Clear error for this field when user starts typing
-    if (formErrors[name]) {
-      setFormErrors(prev => ({
-        ...prev,
-        [name]: "",
-      }));
+    setFormData(newFormData);
+    
+    // For password fields, validate immediately without clearing error first
+    if (name === "password") {
+      // If password changes, re-validate confirmPassword immediately if it has a value
+      if (newFormData.confirmPassword && newFormData.confirmPassword.trim().length > 0) {
+        const confirmError = validators.confirmPassword(value, newFormData.confirmPassword);
+        setFormErrors(prev => {
+          if (confirmError) {
+            return { ...prev, confirmPassword: confirmError };
+          }
+          const newErrors = { ...prev };
+          delete newErrors.confirmPassword;
+          return newErrors;
+        });
+      }
+      // Clear password error when user starts typing
+      if (formErrors.password) {
+        setFormErrors(prev => ({
+          ...prev,
+          password: "",
+        }));
+      }
+    } else if (name === "confirmPassword") {
+      // If confirmPassword changes, validate it immediately against password
+      if (newFormData.password && newFormData.password.trim().length > 0) {
+        const confirmError = validators.confirmPassword(newFormData.password, value);
+        setFormErrors(prev => {
+          if (confirmError) {
+            return { ...prev, confirmPassword: confirmError };
+          }
+          const newErrors = { ...prev };
+          delete newErrors.confirmPassword;
+          return newErrors;
+        });
+      } else {
+        // Clear confirmPassword error if password is not set
+        if (formErrors.confirmPassword) {
+          setFormErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors.confirmPassword;
+            return newErrors;
+          });
+        }
+      }
+    } else {
+      // For other fields, clear error when user starts typing
+      if (formErrors[name]) {
+        setFormErrors(prev => ({
+          ...prev,
+          [name]: "",
+        }));
+      }
     }
   }
 
@@ -88,12 +149,28 @@ export function EditProfilePage() {
 
   // Validate single field using validators.js
   function validateField(name, value) {
-    const validator = validators[name];
-    if (!validator) {
-      return true; // No validator for this field
+    let error = null;
+
+    if (name === "confirmPassword") {
+      // Special handling for confirmPassword - needs password value
+      if (formData.password && formData.password.trim().length > 0) {
+        error = validators.confirmPassword(formData.password, value);
+      } else if (value && value.trim().length > 0) {
+        // If confirmPassword is provided but password is not
+        error = "Моля, въведете парола";
+      }
+    } else {
+      const validator = validators[name];
+      if (validator) {
+        // For optional fields (username, password), only validate if value is provided
+        if ((name === "username" || name === "password") && !value) {
+          error = null; // Optional fields are not required
+        } else {
+          error = validator(value);
+        }
+      }
     }
 
-    const error = validator(value);
     setFormErrors(prev => ({
       ...prev,
       [name]: error || "",
@@ -107,11 +184,13 @@ export function EditProfilePage() {
     const errors = {};
     let isValid = true;
 
-    // Validate username
-    const usernameError = validators.username(formData.username);
-    if (usernameError) {
-      errors.username = usernameError;
-      isValid = false;
+    // Validate username (optional, but if provided must be valid)
+    if (formData.username && formData.username.trim().length > 0) {
+      const usernameError = validators.username(formData.username);
+      if (usernameError) {
+        errors.username = usernameError;
+        isValid = false;
+      }
     }
 
     // Validate email
@@ -128,6 +207,31 @@ export function EditProfilePage() {
         errors.avatarUrl = avatarUrlError;
         isValid = false;
       }
+    }
+
+    // Validate password (optional when editing, but if provided must be valid and match confirmation)
+    if (formData.password && formData.password.trim().length > 0) {
+      const passwordError = validators.password(formData.password);
+      if (passwordError) {
+        errors.password = passwordError;
+        isValid = false;
+      }
+
+      // If password is provided, confirmPassword is required and must match
+      if (!formData.confirmPassword || formData.confirmPassword.trim().length === 0) {
+        errors.confirmPassword = "Моля, потвърдете паролата";
+        isValid = false;
+      } else {
+        const confirmPasswordError = validators.confirmPassword(formData.password, formData.confirmPassword);
+        if (confirmPasswordError) {
+          errors.confirmPassword = confirmPasswordError;
+          isValid = false;
+        }
+      }
+    } else if (formData.confirmPassword && formData.confirmPassword.trim().length > 0) {
+      // If confirmPassword is provided but password is not, show error
+      errors.confirmPassword = "Моля, въведете парола";
+      isValid = false;
     }
 
     setFormErrors(errors);
@@ -170,6 +274,22 @@ export function EditProfilePage() {
         avatarUrl: formData.avatarUrl.trim() || "",
       };
 
+      // Only include password if it's provided AND matches confirmation (optional when editing)
+      if (formData.password && formData.password.trim().length > 0) {
+        // Double-check that passwords match before updating
+        if (formData.password !== formData.confirmPassword) {
+          setFormErrors(prev => ({
+            ...prev,
+            confirmPassword: "Паролите не съвпадат",
+          }));
+          showToast("error", "Паролите не съвпадат. Моля, проверете отново.");
+          setIsSubmitting(false);
+          return;
+        }
+        // Only update password if they match
+        updateData.password = formData.password;
+      }
+
       // Update user using useUser hook
       const updatedUser = await updateUser(userId, updateData);
 
@@ -189,8 +309,17 @@ export function EditProfilePage() {
     }
   }
 
-  // Show loading while auth is initializing or profile is loading
-  if (!isAuthReady || isLoadingUser) {
+  // Show loading while auth is initializing
+  if (!isAuthReady) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <LoadingSpinner message="Зареждане..." />
+      </div>
+    );
+  }
+
+  // Show loading while profile is loading (but auth is ready)
+  if (isLoadingUser) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <LoadingSpinner message="Зареждане на профил..." />
@@ -203,6 +332,15 @@ export function EditProfilePage() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
         <ErrorMessage message={userError} onRetry={() => fetchUser(userId)} />
+      </div>
+    );
+  }
+
+  // If no profile user and not loading, show loading (might still be loading)
+  if (!profileUser) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <LoadingSpinner message="Зареждане на профил..." />
       </div>
     );
   }
@@ -235,7 +373,8 @@ export function EditProfilePage() {
               onChange={handleChange}
               onBlur={handleBlur}
               error={formErrors.username}
-              placeholder="Минимум 3 символа"
+              placeholder="Минимум 3 символа (опционално)"
+              optional={true}
             />
           </div>
 
@@ -268,6 +407,39 @@ export function EditProfilePage() {
             />
           </div>
 
+          {/* Password Field */}
+          <div className="mb-6">
+            <FormField
+              label="Нова парола"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={formErrors.password}
+              placeholder="Оставете празно, за да запазите текущата парола"
+              optional={true}
+              disabled={isSubmitting}
+            />
+          </div>
+
+          {/* Confirm Password Field - Always visible when password is entered */}
+          {formData.password && formData.password.trim().length > 0 && (
+            <div className="mb-6">
+              <FormField
+                label="Повтори новата парола"
+                name="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={formErrors.confirmPassword}
+                placeholder="Въведете паролата отново"
+                disabled={isSubmitting}
+              />
+            </div>
+          )}
+
           {/* Submit Button */}
           <div className="flex items-center justify-end gap-4 mt-8">
             <button
@@ -279,7 +451,7 @@ export function EditProfilePage() {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || Object.keys(formErrors).some(key => formErrors[key])}
               className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-medium hover:shadow-color hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {isSubmitting ? (

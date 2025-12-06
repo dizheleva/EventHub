@@ -37,11 +37,6 @@ export function Navbar() {
         {/* Desktop menu */}
         <ul className="hidden md:flex items-center space-x-1">
           <li>
-            <Link to="/" className="px-4 py-2 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors">
-              Начало
-            </Link>
-          </li>
-          <li>
             <Link to="/events" className="px-4 py-2 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors">
               Събития
             </Link>
@@ -63,22 +58,6 @@ export function Navbar() {
             </li>
           )}
           
-          {/* Profile link - only visible when authenticated */}
-          {isAuthenticated && user && (
-            <li>
-              <Link 
-                to={`/profile/${user.id}`} 
-                className={`px-4 py-2 rounded-xl font-medium transition-colors ${
-                  isActive(`/profile/${user.id}`) || isActive(`/profile/${user.id}/edit`)
-                    ? "bg-primary/10 text-primary font-semibold"
-                    : "text-gray-700 hover:bg-pink-50 hover:text-primary"
-                }`}
-              >
-                Профил
-              </Link>
-            </li>
-          )}
-          
           {/* Auth buttons */}
           {!isAuthenticated ? (
             <>
@@ -96,9 +75,16 @@ export function Navbar() {
           ) : (
             <>
               <li>
-                <span className="px-4 py-2 rounded-xl text-gray-700 font-medium">
+                <Link 
+                  to={`/profile/${user.id}`}
+                  className={`px-4 py-2 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors ${
+                    isActive(`/profile/${user.id}`) || isActive(`/profile/${user.id}/edit`)
+                      ? "bg-primary/10 text-primary font-semibold"
+                      : ""
+                  }`}
+                >
                   Добре дошли, <span className="text-primary font-semibold">{user?.username || user?.email}</span>
-                </span>
+                </Link>
               </li>
               <li>
                 <button
@@ -127,11 +113,6 @@ export function Navbar() {
         <div className="md:hidden border-t border-pink-100 bg-white/95 backdrop-blur-sm">
           <ul className="flex flex-col px-4 py-4 space-y-2">
             <li>
-              <Link to="/" className="block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors" onClick={() => setMenuOpen(false)}>
-                Начало
-              </Link>
-            </li>
-            <li>
               <Link to="/events" className="block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors" onClick={() => setMenuOpen(false)}>
                 Събития
               </Link>
@@ -154,23 +135,6 @@ export function Navbar() {
               </li>
             )}
             
-            {/* Profile link - only visible when authenticated */}
-            {isAuthenticated && user && (
-              <li>
-                <Link 
-                  to={`/profile/${user.id}`} 
-                  className={`block px-4 py-3 rounded-xl font-medium transition-colors ${
-                    isActive(`/profile/${user.id}`) || isActive(`/profile/${user.id}/edit`)
-                      ? "bg-primary/10 text-primary font-semibold"
-                      : "text-gray-700 hover:bg-pink-50 hover:text-primary"
-                  }`}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  Профил
-                </Link>
-              </li>
-            )}
-            
             {/* Auth buttons */}
             {!isAuthenticated ? (
               <>
@@ -188,9 +152,17 @@ export function Navbar() {
             ) : (
               <>
                 <li>
-                  <div className="block px-4 py-3 rounded-xl text-gray-700 font-medium">
+                  <Link 
+                    to={`/profile/${user.id}`}
+                    className={`block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors ${
+                      isActive(`/profile/${user.id}`) || isActive(`/profile/${user.id}/edit`)
+                        ? "bg-primary/10 text-primary font-semibold"
+                        : ""
+                    }`}
+                    onClick={() => setMenuOpen(false)}
+                  >
                     Добре дошли, <span className="text-primary font-semibold">{user?.username || user?.email}</span>
-                  </div>
+                  </Link>
                 </li>
                 <li>
                   <button

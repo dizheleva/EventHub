@@ -55,19 +55,32 @@ export function UserProfilePage() {
       return;
     }
 
+    // Wait for currentUser to be available
+    if (!currentUser) {
+      return;
+    }
+
     // If userId doesn't match current user, redirect to events
-    if (userId !== String(currentUser?.id)) {
+    const userIdNum = Number(userId);
+    if (currentUser.id !== userIdNum) {
       showToast("error", "Нямате права да виждате този профил.");
       navigate("/events");
       return;
     }
 
-    // Load user profile and events
+    // Load user profile and events only if authorized
     if (userId) {
-      fetchUser(userId);
-      fetchEvents();
+      fetchUser(userId).catch((err) => {
+        console.error("Error fetching user:", err);
+        // Error is handled by useUser hook
+      });
+      fetchEvents().catch((err) => {
+        console.error("Error fetching events:", err);
+        // Error is handled by useEvents hook
+      });
     }
-  }, [userId, currentUser, isAuthenticated, isAuthReady, navigate, showToast, fetchUser, fetchEvents]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, currentUser?.id, isAuthenticated, isAuthReady]);
 
   // Calculate number of events created by this user
   const userEventsCount = useMemo(() => {
@@ -79,8 +92,17 @@ export function UserProfilePage() {
     }).length;
   }, [events, profileUser, userId]);
 
-  // Show loading while auth is initializing or profile is loading
-  if (!isAuthReady || isLoadingUser) {
+  // Show loading while auth is initializing
+  if (!isAuthReady) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <LoadingSpinner message="Зареждане..." />
+      </div>
+    );
+  }
+
+  // Show loading while profile is loading (but auth is ready)
+  if (isLoadingUser) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <LoadingSpinner message="Зареждане на профил..." />
@@ -97,9 +119,13 @@ export function UserProfilePage() {
     );
   }
 
-  // If no profile user, don't render (redirect will happen)
+  // If no profile user and not loading, show loading (might still be loading or redirect will happen)
   if (!profileUser) {
-    return null;
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <LoadingSpinner message="Зареждане на профил..." />
+      </div>
+    );
   }
 
   const memberSince = formatMemberSince(profileUser.createdAt);
