@@ -18,7 +18,7 @@ import { validators } from "@/utils/validators";
 export function EditProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
-  const { user: currentUser, isAuthenticated, isAuthReady, updateUser: updateAuthUser } = useAuth();
+  const { user: currentUser, isAuthenticated, isAuthReady, updateUserInAuth } = useAuth();
   const { user: profileUser, isLoading: isLoadingUser, error: userError, fetchUser, updateUser } = useUser();
   const [formData, setFormData] = useState({
     username: "",
@@ -173,8 +173,8 @@ export function EditProfilePage() {
       // Update user using useUser hook
       const updatedUser = await updateUser(userId, updateData);
 
-      // Automatically update AuthContext.user
-      updateAuthUser(updatedUser);
+      // Automatically update AuthContext.user and persist in localStorage
+      updateUserInAuth(updatedUser);
 
       // Show success toast
       showToast("success", "Профилът беше обновен успешно!");

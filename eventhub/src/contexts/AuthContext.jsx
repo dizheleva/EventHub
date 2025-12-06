@@ -134,11 +134,13 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("authUser");
   }
 
-  // Update user function - allows updating user data in context
-  // Used when profile is updated
-  function updateUser(updatedUserData) {
-    setUser(updatedUserData);
-    localStorage.setItem("authUser", JSON.stringify(updatedUserData));
+  // Update user in auth context and localStorage
+  // Used when profile is updated - persists the updated user object
+  function updateUserInAuth(updatedUser) {
+    // Update state
+    setUser(updatedUser);
+    // Persist new user object in localStorage
+    localStorage.setItem("authUser", JSON.stringify(updatedUser));
   }
 
   // Context value
@@ -149,13 +151,14 @@ export function AuthProvider({ children }) {
     login,
     register,
     logout,
-    updateUser, // Expose updateUser for external updates
+    updateUserInAuth, // Expose updateUserInAuth for external updates
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 // Custom hook for easy access to auth context
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   
