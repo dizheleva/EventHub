@@ -1,14 +1,14 @@
-import { Star } from "lucide-react";
+import { Heart } from "lucide-react";
 
 /**
- * StarButton - Reusable component for liking/unliking users
+ * LikeButton - Reusable component for liking/unliking users
  * 
  * @param {Object} props
  * @param {boolean} props.isLiked - Whether the user is currently liked
  * @param {Function} props.onToggle - Callback function when button is clicked
  * @param {boolean} props.disabled - Whether the button is disabled
  */
-export function StarButton({ isLiked, onToggle, disabled = false }) {
+export function LikeButton({ isLiked, onToggle, disabled = false }) {
   return (
     <button
       onClick={onToggle}
@@ -22,20 +22,20 @@ export function StarButton({ isLiked, onToggle, disabled = false }) {
         hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2
         ${
           isLiked
-            ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border-2 border-yellow-300 focus-visible:outline-yellow-500"
+            ? "bg-red-100 text-red-700 hover:bg-red-200 border-2 border-red-300 focus-visible:outline-red-500"
             : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300 focus-visible:outline-gray-500"
         }
       `}
     >
       {isLiked ? (
         <>
-          <Star className="w-5 h-5 fill-yellow-500 text-yellow-500" aria-hidden="true" />
+          <Heart className="w-5 h-5 fill-red-500 text-red-500" aria-hidden="true" />
           <span>Харесано</span>
         </>
       ) : (
         <>
-          <Star className="w-5 h-5" aria-hidden="true" />
-          <span>Хересай</span>
+          <Heart className="w-5 h-5 text-gray-600" aria-hidden="true" />
+          <span>Харесай</span>
         </>
       )}
     </button>
