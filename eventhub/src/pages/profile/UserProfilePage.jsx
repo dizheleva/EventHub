@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Edit, Mail, User, Calendar, CalendarDays, Star, ArrowLeft } from "lucide-react";
+import { Edit, Mail, User, Calendar, CalendarDays, Star, ArrowLeft, Heart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/hooks/useUser";
 import { useEvents } from "@/hooks/useEvents";
@@ -9,7 +9,7 @@ import { getUserLikes, hasUserLiked, giveLike, removeLike } from "@/api/userLike
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { EventItem } from "@/components/events/EventItem";
-import { StarButton } from "@/components/profile/StarButton";
+import { LikeButton } from "@/components/profile/LikeButton";
 import { useToast } from "@/contexts/ToastContext";
 
 /**
@@ -244,9 +244,9 @@ export function UserProfilePage() {
                 <h1 className="text-4xl font-bold text-gray-900">
                   {userName}
                 </h1>
-                {/* Stars count */}
-                <div className="flex items-center gap-1 text-yellow-500">
-                  <Star className="w-6 h-6 fill-yellow-500" />
+                {/* Likes count */}
+                <div className="flex items-center gap-1 text-red-500">
+                  <Heart className="w-6 h-6 fill-red-500" />
                   <span className="text-xl font-bold text-gray-700">{isLoadingLikes ? "..." : likesCount}</span>
                 </div>
               </div>
@@ -279,9 +279,9 @@ export function UserProfilePage() {
                 </button>
               )}
 
-              {/* Star Button - Only show if viewing someone else's profile */}
+              {/* Like Button - Only show if viewing someone else's profile */}
               {!isOwnProfile && isAuthenticated && currentUser?.id && (
-                <StarButton
+                <LikeButton
                   isLiked={hasLiked}
                   onToggle={handleToggleLike}
                   disabled={isTogglingLike}
