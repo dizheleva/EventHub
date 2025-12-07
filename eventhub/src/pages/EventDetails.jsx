@@ -12,13 +12,13 @@ import { useInterested } from "@/hooks/useInterested";
 import { useComments } from "@/hooks/useComments";
 import { useFavorites } from "@/hooks/useFavorites";
 import { getUserLikes } from "@/api/userLikesApi";
+import { getUserDisplayName, getUserNameFromId } from "@/utils/userHelpers";
 import { EditEventForm } from "@/components/events/EditEventForm";
 import { DeleteEventModal } from "@/components/events/DeleteEventModal";
 import { getCategoryDisplay } from "@/utils/categories";
 import { formatPrice } from "@/utils/priceFormatter";
 import { formatDate } from "@/utils/dateFormatter";
 import { API_BASE_URL } from "@/config/api";
-import { getUserNameFromId } from "@/utils/userHelpers";
 
 const USERS_API_URL = `${API_BASE_URL}/users`;
 const EVENTS_API_URL = `${API_BASE_URL}/events`;
@@ -60,9 +60,18 @@ export function EventDetails() {
   // Load users for comment display
   useEffect(() => {
     fetch(USERS_API_URL)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`Failed to load users: ${res.status}`);
+        }
+        return res.json();
+      })
       .then(data => setUsers(data))
-      .catch(err => console.error("Error loading users:", err));
+      .catch(err => {
+        console.error("Error loading users:", err);
+        // Set empty array on error to prevent crashes
+        setUsers([]);
+      });
   }, []);
 
   // Load author data when event is loaded
@@ -83,7 +92,7 @@ export function EventDetails() {
                 return res.json();
               })
               .then(userData => {
-                return userData.username || userData.name || userData.email?.split("@")[0] || "Неизвестен";
+                return getUserDisplayName(userData, "Неизвестен");
               })
               .catch(err => {
                 console.error("Error loading author:", err);

@@ -79,10 +79,10 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete, auth
             }
             return res.json();
           })
-          .then(userData => {
-            const username = userData.username || userData.name || userData.email?.split("@")[0] || "Неизвестен";
-            setAuthorName(username);
-          })
+            .then(userData => {
+              const username = getUserDisplayName(userData, "Неизвестен");
+              setAuthorName(username);
+            })
           .catch(err => {
             console.error("Error loading author:", err);
             setAuthorName("Неизвестен");
