@@ -4,7 +4,6 @@ import {
   getFavoritesByUserId,
   addFavorite,
   removeFavorite,
-  isFavorite,
 } from "@/api/favoritesApi";
 
 /**

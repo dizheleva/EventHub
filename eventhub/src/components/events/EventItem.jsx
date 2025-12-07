@@ -7,6 +7,10 @@ import { formatDate } from "@/utils/dateFormatter";
 import { useAuth } from "@/contexts/AuthContext";
 import { useInterested } from "@/hooks/useInterested";
 import { getUserLikes } from "@/api/userLikesApi";
+import { API_BASE_URL } from "@/config/api";
+import { getUserDisplayName } from "@/utils/userHelpers";
+
+const USERS_API_URL = `${API_BASE_URL}/users`;
 import { useFavorites } from "@/hooks/useFavorites";
 import { useToast } from "@/contexts/ToastContext";
 
@@ -68,7 +72,7 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete, auth
         setAuthorName(event.creatorName);
       } else {
         setIsLoadingAuthor(true);
-        fetch(`http://localhost:5000/users/${eventCreatorId}`)
+        fetch(`${USERS_API_URL}/${eventCreatorId}`)
           .then(res => {
             if (!res.ok) {
               throw new Error("Failed to fetch author");

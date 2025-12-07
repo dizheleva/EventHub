@@ -5,6 +5,9 @@ import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { CategorySelect } from "@/components/common/CategorySelect";
 import { formatDateForInput } from "@/utils/dateFormatter";
 import { useAuth } from "@/contexts/AuthContext";
+import { API_BASE_URL } from "@/config/api";
+
+const EVENTS_API_URL = `${API_BASE_URL}/events`;
 import { useToast } from "@/contexts/ToastContext";
 
 export function EditEventForm({ eventId, onEventUpdated, onClose }) {
@@ -34,7 +37,7 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
     }
 
     setIsLoading(true);
-    fetch(`http://localhost:5000/events/${eventId}`)
+    fetch(`${EVENTS_API_URL}/${eventId}`)
       .then(res => {
         if (!res.ok) {
           throw new Error(`Failed to fetch event: ${res.status} ${res.statusText}`);
@@ -160,7 +163,7 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
     try {
       // Fetch original event to preserve creatorId
       // This ensures the creatorId is not overwritten during edit
-      const originalEventResponse = await fetch(`http://localhost:5000/events/${eventId}`);
+      const originalEventResponse = await fetch(`${EVENTS_API_URL}/${eventId}`);
       if (!originalEventResponse.ok) {
         throw new Error("Грешка при зареждане на събитието");
       }
@@ -176,7 +179,7 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
         updatedAt: new Date().toISOString(),
       };
 
-      const res = await fetch(`http://localhost:5000/events/${eventId}`, {
+      const res = await fetch(`${EVENTS_API_URL}/${eventId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updateData),

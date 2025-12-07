@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { API_BASE_URL } from "@/config/api";
 
-const API_BASE_URL = "http://localhost:5000/events";
+const EVENTS_API_URL = `${API_BASE_URL}/events`;
 
 export function useEvents(initialLoading = false) {
   const [events, setEvents] = useState([]);
@@ -17,7 +18,7 @@ export function useEvents(initialLoading = false) {
       setIsLoading(true);
       // GET request returns events with creatorId field (if available)
       // Older events may have userId instead - UI handles both gracefully
-      const res = await fetch(API_BASE_URL);      
+      const res = await fetch(EVENTS_API_URL);      
       if (!res.ok) throw new Error(`Failed to fetch events: ${res.status} ${res.statusText}`);
       const data = await res.json();
       setEvents(data);
@@ -58,7 +59,7 @@ export function useEvents(initialLoading = false) {
       // Step 2: Call POST /events to create event on server
       // POST request includes ownerId/creatorId in eventData
       // ownerId/creatorId is automatically added by EventForm from authenticated user
-      const res = await fetch(API_BASE_URL, {
+      const res = await fetch(EVENTS_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(eventData), // Includes ownerId/creatorId field
@@ -177,7 +178,7 @@ export function useEvents(initialLoading = false) {
         updatedAt: new Date().toISOString(),
       };
 
-      const res = await fetch(`${API_BASE_URL}/${id}`, {
+      const res = await fetch(`${EVENTS_API_URL}/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updateData),
@@ -261,7 +262,7 @@ export function useEvents(initialLoading = false) {
 
     try {
       // Step 3: Call DELETE /events/:id to delete event on server
-      const res = await fetch(`${API_BASE_URL}/${id}`, {
+      const res = await fetch(`${EVENTS_API_URL}/${id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
       });

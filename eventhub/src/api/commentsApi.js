@@ -1,4 +1,6 @@
-const API_BASE_URL = "http://localhost:5000/comments";
+import { API_BASE_URL } from "@/config/api";
+
+const COMMENTS_API_URL = `${API_BASE_URL}/comments`;
 
 /**
  * Get all comments for a specific event, sorted by creation date (newest first)
@@ -8,7 +10,7 @@ const API_BASE_URL = "http://localhost:5000/comments";
  */
 export async function getCommentsByEvent(eventId) {
   try {
-    const response = await fetch(`${API_BASE_URL}?eventId=${eventId}&_sort=createdAt&_order=desc`);
+    const response = await fetch(`${COMMENTS_API_URL}?eventId=${eventId}&_sort=createdAt&_order=desc`);
     
     if (!response.ok) {
       throw new Error(`Грешка при зареждане на коментарите: ${response.status} ${response.statusText}`);
@@ -33,7 +35,7 @@ export async function getCommentsByEvent(eventId) {
  */
 export async function createComment({ eventId, userId, text }) {
   try {
-    const response = await fetch(API_BASE_URL, {
+    const response = await fetch(COMMENTS_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -66,7 +68,7 @@ export async function createComment({ eventId, userId, text }) {
  */
 export async function getCommentsByUser(userId) {
   try {
-    const response = await fetch(`${API_BASE_URL}?userId=${userId}`);
+    const response = await fetch(`${COMMENTS_API_URL}?userId=${userId}`);
     
     if (!response.ok) {
       throw new Error(`Грешка при зареждане на коментарите: ${response.status} ${response.statusText}`);
@@ -88,7 +90,7 @@ export async function getCommentsByUser(userId) {
  */
 export async function deleteComment(commentId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/${commentId}`, {
+    const response = await fetch(`${COMMENTS_API_URL}/${commentId}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",

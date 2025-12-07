@@ -1,4 +1,6 @@
-const API_BASE_URL = "http://localhost:5000/interests";
+import { API_BASE_URL } from "@/config/api";
+
+const INTERESTS_API_URL = `${API_BASE_URL}/interests`;
 
 /**
  * Get all interests for a specific event
@@ -8,7 +10,7 @@ const API_BASE_URL = "http://localhost:5000/interests";
  */
 export async function getInterestsByEvent(eventId) {
   try {
-    const response = await fetch(`${API_BASE_URL}?eventId=${eventId}`);
+    const response = await fetch(`${INTERESTS_API_URL}?eventId=${eventId}`);
     
     if (!response.ok) {
       throw new Error(`Грешка при зареждане на интересите: ${response.status} ${response.statusText}`);
@@ -32,7 +34,7 @@ export async function getInterestsByEvent(eventId) {
  */
 export async function getUserInterest(eventId, userId) {
   try {
-    const response = await fetch(`${API_BASE_URL}?eventId=${eventId}&userId=${userId}`);
+    const response = await fetch(`${INTERESTS_API_URL}?eventId=${eventId}&userId=${userId}`);
     
     if (!response.ok) {
       throw new Error(`Грешка при зареждане на интереса: ${response.status} ${response.statusText}`);
@@ -57,7 +59,7 @@ export async function getUserInterest(eventId, userId) {
  */
 export async function addInterest(eventId, userId) {
   try {
-    const response = await fetch(API_BASE_URL, {
+    const response = await fetch(INTERESTS_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -88,7 +90,7 @@ export async function addInterest(eventId, userId) {
  */
 export async function removeInterest(interestId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/${interestId}`, {
+    const response = await fetch(`${INTERESTS_API_URL}/${interestId}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",

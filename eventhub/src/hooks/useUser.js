@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getUserLikes, hasUserLiked as checkHasUserLiked, giveLike, removeLike } from "@/api/userLikesApi";
+import { API_BASE_URL } from "@/config/api";
 
-const API_BASE_URL = "http://localhost:5000/users";
+const USERS_API_URL = `${API_BASE_URL}/users`;
 
 /**
  * useUser - Custom hook for user operations
@@ -32,7 +33,7 @@ export function useUser() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/${userId}`);
+      const response = await fetch(`${USERS_API_URL}/${userId}`);
 
       if (!response.ok) {
         if (response.status === 404) {

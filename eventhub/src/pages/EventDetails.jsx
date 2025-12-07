@@ -17,6 +17,11 @@ import { DeleteEventModal } from "@/components/events/DeleteEventModal";
 import { getCategoryDisplay } from "@/utils/categories";
 import { formatPrice } from "@/utils/priceFormatter";
 import { formatDate } from "@/utils/dateFormatter";
+import { API_BASE_URL } from "@/config/api";
+import { getUserNameFromId } from "@/utils/userHelpers";
+
+const USERS_API_URL = `${API_BASE_URL}/users`;
+const EVENTS_API_URL = `${API_BASE_URL}/events`;
 
 export function EventDetails() {
   const { id } = useParams();
@@ -54,7 +59,7 @@ export function EventDetails() {
 
   // Load users for comment display
   useEffect(() => {
-    fetch("http://localhost:5000/users")
+    fetch(USERS_API_URL)
       .then(res => res.json())
       .then(data => setUsers(data))
       .catch(err => console.error("Error loading users:", err));
@@ -70,7 +75,7 @@ export function EventDetails() {
         // Load author name
         const loadAuthorName = event.creatorName 
           ? Promise.resolve(event.creatorName)
-          : fetch(`http://localhost:5000/users/${creatorId}`)
+          : fetch(`${USERS_API_URL}/${creatorId}`)
               .then(res => {
                 if (!res.ok) {
                   throw new Error("Failed to fetch author");
@@ -114,7 +119,7 @@ export function EventDetails() {
     setIsLoading(true);
     setError(null);
 
-    fetch(`http://localhost:5000/events/${id}`)
+    fetch(`${EVENTS_API_URL}/${id}`)
       .then(res => {
         if (!res.ok) {
           if (res.status === 404) {
@@ -137,7 +142,7 @@ export function EventDetails() {
   // Refresh event data after update
   function refreshEvent() {
     if (id) {
-      fetch(`http://localhost:5000/events/${id}`)
+      fetch(`${EVENTS_API_URL}/${id}`)
         .then(res => {
           if (!res.ok) {
             throw new Error(`Грешка при зареждане: ${res.status}`);
@@ -219,7 +224,7 @@ export function EventDetails() {
     if (id) {
       setIsLoading(true);
       setError(null);
-      fetch(`http://localhost:5000/events/${id}`)
+      fetch(`${EVENTS_API_URL}/${id}`)
         .then(res => {
           if (!res.ok) {
             throw new Error(`Грешка при зареждане: ${res.status}`);
@@ -273,14 +278,9 @@ export function EventDetails() {
   const organizer = event.organizer || "";
   const organizerUrl = event.organizerUrl || "";
 
-  // Helper function to get user name from email
+  // Helper function to get user name (using utility function)
   function getUserName(userId) {
-    const user = users.find(u => u.id === userId);
-    if (!user) return "Анонимен";
-    if (user.username) return user.username;
-    if (user.email) return user.email.split("@")[0];
-    if (user.name) return user.name;
-    return "Анонимен";
+    return getUserNameFromId(userId, users, "Анонимен");
   }
 
   // Helper function to format comment date

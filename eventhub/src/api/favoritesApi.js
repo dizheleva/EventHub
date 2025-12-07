@@ -1,4 +1,6 @@
-const API_BASE_URL = "http://localhost:5000/favorites";
+import { API_BASE_URL } from "@/config/api";
+
+const FAVORITES_API_URL = `${API_BASE_URL}/favorites`;
 
 /**
  * Get all favorites for a specific user
@@ -8,7 +10,7 @@ const API_BASE_URL = "http://localhost:5000/favorites";
  */
 export async function getFavoritesByUserId(userId) {
   try {
-    const response = await fetch(`${API_BASE_URL}?userId=${userId}`);
+    const response = await fetch(`${FAVORITES_API_URL}?userId=${userId}`);
     
     if (!response.ok) {
       throw new Error(`Грешка при зареждане на любимите: ${response.status} ${response.statusText}`);
@@ -31,7 +33,7 @@ export async function getFavoritesByUserId(userId) {
  */
 export async function addFavorite(userId, eventId) {
   try {
-    const response = await fetch(API_BASE_URL, {
+    const response = await fetch(FAVORITES_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -63,7 +65,7 @@ export async function addFavorite(userId, eventId) {
  */
 export async function removeFavorite(favoriteId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/${favoriteId}`, {
+    const response = await fetch(`${FAVORITES_API_URL}/${favoriteId}`, {
       method: "DELETE",
     });
 
@@ -121,7 +123,7 @@ export async function toggleFavorite(userId, eventId) {
  */
 export async function isFavorite(userId, eventId) {
   try {
-    const response = await fetch(`${API_BASE_URL}?userId=${userId}&eventId=${eventId}`);
+    const response = await fetch(`${FAVORITES_API_URL}?userId=${userId}&eventId=${eventId}`);
     
     if (!response.ok) {
       throw new Error(`Грешка при проверка на любимо: ${response.status} ${response.statusText}`);

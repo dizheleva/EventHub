@@ -1,4 +1,6 @@
-const API_BASE_URL = "http://localhost:5000/userLikes";
+import { API_BASE_URL } from "@/config/api";
+
+const USER_LIKES_API_URL = `${API_BASE_URL}/userLikes`;
 
 /**
  * Get all likes for a specific user (where toUserId = userId)
@@ -8,7 +10,7 @@ const API_BASE_URL = "http://localhost:5000/userLikes";
  */
 export async function getUserLikes(userId) {
   try {
-    const response = await fetch(`${API_BASE_URL}?toUserId=${userId}`);
+    const response = await fetch(`${USER_LIKES_API_URL}?toUserId=${userId}`);
     
     if (!response.ok) {
       throw new Error(`Грешка при зареждане на харесванията: ${response.status} ${response.statusText}`);
@@ -31,7 +33,7 @@ export async function getUserLikes(userId) {
  */
 export async function hasUserLiked(fromUserId, toUserId) {
   try {
-    const response = await fetch(`${API_BASE_URL}?fromUserId=${fromUserId}&toUserId=${toUserId}`);
+    const response = await fetch(`${USER_LIKES_API_URL}?fromUserId=${fromUserId}&toUserId=${toUserId}`);
     
     if (!response.ok) {
       throw new Error(`Грешка при проверка на харесването: ${response.status} ${response.statusText}`);
@@ -55,7 +57,7 @@ export async function hasUserLiked(fromUserId, toUserId) {
  */
 export async function giveLike(fromUserId, toUserId) {
   try {
-    const response = await fetch(API_BASE_URL, {
+    const response = await fetch(USER_LIKES_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -105,7 +107,7 @@ export async function removeLike(fromUserId, toUserId) {
     const likeId = likes[0].id;
 
     // Delete the like by ID
-    const deleteResponse = await fetch(`${API_BASE_URL}/${likeId}`, {
+    const deleteResponse = await fetch(`${USER_LIKES_API_URL}/${likeId}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",

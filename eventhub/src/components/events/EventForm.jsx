@@ -3,6 +3,9 @@ import { validators } from "@/utils/validators";
 import { FormField } from "@/components/common/FormField";
 import { CategorySelect } from "@/components/common/CategorySelect";
 import { useAuth } from "@/contexts/AuthContext";
+import { API_BASE_URL } from "@/config/api";
+
+const EVENTS_API_URL = `${API_BASE_URL}/events`;
 import { useToast } from "@/contexts/ToastContext";
 
 // Initial form state
@@ -140,7 +143,7 @@ export function EventForm({ mode = "create", onEventCreated, onClose }) {
       }
 
       // Fallback: If no callback, make API call directly (shouldn't happen in normal flow)
-      const res = await fetch("http://localhost:5000/events", {
+      const res = await fetch(EVENTS_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(eventDataWithUser),

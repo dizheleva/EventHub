@@ -1,4 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { API_BASE_URL } from "@/config/api";
+
+const USERS_API_URL = `${API_BASE_URL}/users`;
 
 // Create the Auth Context
 const AuthContext = createContext(null);
@@ -39,7 +42,7 @@ export function AuthProvider({ children }) {
   async function login(email, password) {
     try {
       // Fetch all users from the backend
-      const response = await fetch("http://localhost:5000/users");
+      const response = await fetch(USERS_API_URL);
       
       if (!response.ok) {
         throw new Error("Грешка при зареждане на потребителите");
@@ -77,7 +80,7 @@ export function AuthProvider({ children }) {
   async function register(userData) {
     try {
       // Check if email already exists
-      const response = await fetch("http://localhost:5000/users");
+      const response = await fetch(USERS_API_URL);
       
       if (!response.ok) {
         throw new Error("Грешка при зареждане на потребителите");
@@ -91,7 +94,7 @@ export function AuthProvider({ children }) {
       }
 
       // Create new user with required fields
-      const newUserResponse = await fetch("http://localhost:5000/users", {
+      const newUserResponse = await fetch(USERS_API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

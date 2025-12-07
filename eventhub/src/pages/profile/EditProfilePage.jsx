@@ -4,6 +4,9 @@ import { ArrowLeft, Save } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/hooks/useUser";
 import { useToast } from "@/contexts/ToastContext";
+import { API_BASE_URL } from "@/config/api";
+
+const USERS_API_URL = `${API_BASE_URL}/users`;
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { FormField } from "@/components/common/FormField";
@@ -251,7 +254,7 @@ export function EditProfilePage() {
 
     try {
       // Check if email is already taken by another user
-      const usersResponse = await fetch("http://localhost:5000/users");
+      const usersResponse = await fetch(USERS_API_URL);
       if (!usersResponse.ok) {
         throw new Error("Грешка при проверка на имейла");
       }

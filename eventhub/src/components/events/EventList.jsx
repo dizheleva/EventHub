@@ -10,7 +10,7 @@ import { SearchBar } from "@/components/common/SearchBar";
 import { useEvents } from "@/hooks/useEvents";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
-import { GuardedRoute } from "@/components/routing/GuardedRoute";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { EventItem } from "./EventItem";
 import { EventCardSkeleton } from "./EventCardSkeleton";
 import { EditEventForm } from "./EditEventForm";
@@ -383,9 +383,9 @@ export function EventList() {
         </>
       )}
 
-      {/* Edit Modal - Only render GuardedRoute when modal is open */}
+      {/* Edit Modal - Only render ProtectedRoute when modal is open */}
       {showEditModal && (
-        <GuardedRoute>
+        <ProtectedRoute>
           <Modal
             isOpen={showEditModal}
             onClose={closeEditModalHandler}
@@ -399,12 +399,12 @@ export function EventList() {
               />
             )}
           </Modal>
-        </GuardedRoute>
+        </ProtectedRoute>
       )}
 
-      {/* Delete Modal - Only render GuardedRoute when modal is open */}
+      {/* Delete Modal - Only render ProtectedRoute when modal is open */}
       {isDeleteModalOpen && (
-        <GuardedRoute>
+        <ProtectedRoute>
           <DeleteEventModal
             eventId={deletingEventId}
             isOpen={isDeleteModalOpen}
@@ -413,18 +413,18 @@ export function EventList() {
             onError={eventDeleteErrorHandler}
             deleteEvent={deleteEvent}
           />
-        </GuardedRoute>
+        </ProtectedRoute>
       )}
 
-      {/* Create Event Modal - Only render GuardedRoute when modal is open */}
+      {/* Create Event Modal - Only render ProtectedRoute when modal is open */}
       {showCreateModal && (
-        <GuardedRoute>
+        <ProtectedRoute>
           <CreateEventModal
             isOpen={showCreateModal}
             onClose={closeCreateModalHandler}
             onEventCreated={eventCreatedHandler}
           />
-        </GuardedRoute>
+        </ProtectedRoute>
       )}
     </>
   );

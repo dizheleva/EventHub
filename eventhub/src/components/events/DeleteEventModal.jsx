@@ -3,6 +3,9 @@ import { Modal } from "@/components/common/Modal";
 import { Loader2, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
+import { API_BASE_URL } from "@/config/api";
+
+const EVENTS_API_URL = `${API_BASE_URL}/events`;
 
 export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted, onError, deleteEvent }) {
   const { user } = useAuth();
@@ -19,7 +22,7 @@ export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted, onError,
 
     try {
       // First, fetch the event to check ownership
-      const eventResponse = await fetch(`http://localhost:5000/events/${eventId}`);
+      const eventResponse = await fetch(`${EVENTS_API_URL}/${eventId}`);
       if (!eventResponse.ok) {
         throw new Error("Грешка при зареждане на събитието");
       }
