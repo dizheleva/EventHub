@@ -6,8 +6,9 @@ import { formatPrice } from "@/utils/priceFormatter";
 import { formatDate } from "@/utils/dateFormatter";
 import { useAuth } from "@/contexts/AuthContext";
 import { useInterested } from "@/hooks/useInterested";
+import { getUserLikes } from "@/api/userLikesApi";
 
-export const EventItem = memo(function EventItem({ event, onEdit, onDelete }) {
+export const EventItem = memo(function EventItem({ event, onEdit, onDelete, authorLikesCount: externalAuthorLikesCount }) {
   const { user, isAuthenticated } = useAuth();
   
   // Authorization check: Verify current user is the owner (creator) of this event
@@ -26,36 +27,55 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete }) {
 
   // Author data
   const [authorName, setAuthorName] = useState(event.creatorName || null);
-  const [authorStars, setAuthorStars] = useState(0);
+  const [authorLikesCount, setAuthorLikesCount] = useState(externalAuthorLikesCount ?? 0);
   const [isLoadingAuthor, setIsLoadingAuthor] = useState(false);
 
-  // Load author data if creatorId exists
+  // Load author name if creatorId exists
   useEffect(() => {
-    if (eventCreatorId && !event.creatorName) {
-      setIsLoadingAuthor(true);
-      fetch(`http://localhost:5000/users/${eventCreatorId}`)
-        .then(res => {
-          if (!res.ok) {
-            throw new Error("Failed to fetch author");
-          }
-          return res.json();
-        })
-        .then(userData => {
-          const username = userData.username || userData.name || userData.email?.split("@")[0] || "Неизвестен";
-          setAuthorName(username);
-          setAuthorStars(userData.stars || 0);
-        })
-        .catch(err => {
-          console.error("Error loading author:", err);
-          setAuthorName("Неизвестен");
-          setAuthorStars(0);
-        })
-        .finally(() => setIsLoadingAuthor(false));
-    } else if (event.creatorName) {
-      setAuthorName(event.creatorName);
-      setAuthorStars(event.creatorStars || 0);
+    if (eventCreatorId) {
+      if (event.creatorName) {
+        setAuthorName(event.creatorName);
+      } else {
+        setIsLoadingAuthor(true);
+        fetch(`http://localhost:5000/users/${eventCreatorId}`)
+          .then(res => {
+            if (!res.ok) {
+              throw new Error("Failed to fetch author");
+            }
+            return res.json();
+          })
+          .then(userData => {
+            const username = userData.username || userData.name || userData.email?.split("@")[0] || "Неизвестен";
+            setAuthorName(username);
+          })
+          .catch(err => {
+            console.error("Error loading author:", err);
+            setAuthorName("Неизвестен");
+          })
+          .finally(() => setIsLoadingAuthor(false));
+      }
     }
-  }, [eventCreatorId, event.creatorName, event.creatorStars]);
+  }, [eventCreatorId, event.creatorName]);
+
+  // Load or update author likes
+  useEffect(() => {
+    if (eventCreatorId) {
+      if (externalAuthorLikesCount !== undefined) {
+        // Use external value if provided
+        setAuthorLikesCount(externalAuthorLikesCount);
+      } else {
+        // Load from API if not provided
+        getUserLikes(Number(eventCreatorId))
+          .then(likes => {
+            setAuthorLikesCount(likes.length);
+          })
+          .catch(err => {
+            console.error("Error loading author likes:", err);
+            setAuthorLikesCount(0);
+          });
+      }
+    }
+  }, [eventCreatorId, externalAuthorLikesCount]);
 
   return (
     <div className="relative w-full h-full min-w-0 p-8 bg-white rounded-xl shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col group">
@@ -164,18 +184,13 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete }) {
               >
                 {authorName || "Неизвестен"}
               </Link>
-              {" "}
-              <span className="inline-flex items-center gap-1">
-                {authorStars > 0 && (
-                  <>
-                    {Array.from({ length: Math.min(authorStars, 5) }).map((_, i) => (
-                      <Star key={i} className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                    ))}
-                    {authorStars > 5 && <span className="text-yellow-500">({authorStars})</span>}
-                  </>
-                )}
-                {authorStars === 0 && <span className="text-gray-400">(0)</span>}
-              </span>
+              {/* Show star icon and likes count only if there are likes */}
+              {authorLikesCount > 0 && (
+                <span className="inline-flex items-center gap-1 ml-1">
+                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                  <span className="text-yellow-500">{authorLikesCount}</span>
+                </span>
+              )}
             </>
           )}
         </div>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Edit, Mail, User, Calendar, CalendarDays, Star } from "lucide-react";
+import { Edit, Mail, User, Calendar, CalendarDays, Star, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/hooks/useUser";
 import { useEvents } from "@/hooks/useEvents";
@@ -212,6 +212,15 @@ export function UserProfilePage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* Back Button */}
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-2 mb-8 text-gray-600 hover:text-primary transition-colors"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        <span className="font-medium">Назад</span>
+      </button>
+
       {/* Section 1: Profile Header */}
       <article className="bg-white rounded-2xl shadow-lg overflow-hidden animate-fadeIn mb-8">
         <div className="bg-gradient-to-br from-primary/10 via-secondary/10 to-primary/5 px-8 py-12">
@@ -340,6 +349,7 @@ export function UserProfilePage() {
                 event={event}
                 onEdit={() => {}}
                 onDelete={() => {}}
+                authorLikesCount={likesCount}
               />
             ))}
           </div>
