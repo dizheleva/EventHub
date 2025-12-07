@@ -162,6 +162,11 @@
       "eventId": "4grobts",
       "userId": 2,
       "id": 3
+    },
+    {
+      "eventId": "HQh3lH6",
+      "userId": 3,
+      "id": 4
     }
   ],
   "comments": [
@@ -184,6 +189,14 @@
     {
       "fromUserId": 3,
       "toUserId": 2,
+      "id": 1
+    }
+  ],
+  "favorites": [
+    {
+      "userId": 3,
+      "eventId": "HQh3lH6",
+      "createdAt": "2025-12-07T22:24:51.759Z",
       "id": 1
     }
   ]

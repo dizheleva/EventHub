@@ -1,5 +1,5 @@
 import { memo, useState, useEffect } from "react";
-import { Edit, Trash2, Calendar, Star } from "lucide-react";
+import { Edit, Trash2, Calendar, Star, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getCategoryDisplay } from "@/utils/categories";
 import { formatPrice } from "@/utils/priceFormatter";
@@ -7,9 +7,14 @@ import { formatDate } from "@/utils/dateFormatter";
 import { useAuth } from "@/contexts/AuthContext";
 import { useInterested } from "@/hooks/useInterested";
 import { getUserLikes } from "@/api/userLikesApi";
+import { useFavorites } from "@/hooks/useFavorites";
+import { useToast } from "@/contexts/ToastContext";
 
 export const EventItem = memo(function EventItem({ event, onEdit, onDelete, authorLikesCount: externalAuthorLikesCount }) {
   const { user, isAuthenticated } = useAuth();
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const { showToast } = useToast();
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   
   // Authorization check: Verify current user is the owner (creator) of this event
   // Support both creatorId (new) and userId (legacy) for backward compatibility
@@ -24,6 +29,32 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete, auth
   
   // Get interests count for this event
   const { interestsCount } = useInterested(event.id);
+  
+  // Check if this event is favorite
+  const eventIsFavorite = isFavorite(event.id);
+  
+  // Handle favorite toggle
+  async function handleToggleFavorite(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!isAuthenticated) {
+      showToast("error", "Трябва да сте влезли в профила си, за да добавяте любими");
+      return;
+    }
+    
+    if (isTogglingFavorite) return;
+    
+    setIsTogglingFavorite(true);
+    try {
+      const wasAdded = await toggleFavorite(event.id);
+      showToast("success", wasAdded ? "Събитието беше добавено в любими" : "Събитието беше премахнато от любими");
+    } catch (err) {
+      showToast("error", err.message || "Възникна грешка при промяна на любимото");
+    } finally {
+      setIsTogglingFavorite(false);
+    }
+  }
 
   // Author data
   const [authorName, setAuthorName] = useState(event.creatorName || null);
@@ -79,10 +110,28 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete, auth
 
   return (
     <div className="relative w-full h-full min-w-0 p-8 bg-white rounded-xl shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col group">
+      {/* Favorite button - visible for authenticated users */}
+      {isAuthenticated && (
+        <div className="absolute top-2 right-2 z-10">
+          <button
+            onClick={handleToggleFavorite}
+            disabled={isTogglingFavorite}
+            className={`p-2 rounded-lg transition-all bg-white/90 backdrop-blur-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 ${
+              eventIsFavorite
+                ? "text-yellow-500 hover:bg-yellow-50 focus-visible:outline-yellow-500"
+                : "text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 focus-visible:outline-yellow-500"
+            } ${isTogglingFavorite ? "opacity-50 cursor-not-allowed" : ""}`}
+            aria-label={eventIsFavorite ? "Премахни от любими" : "Добави в любими"}
+          >
+            <Star className={`w-5 h-5 ${eventIsFavorite ? "fill-yellow-500" : ""}`} />
+          </button>
+        </div>
+      )}
+      
       {/* Authorization: Edit/Delete buttons - ONLY visible to owner */}
       {/* For non-owners: buttons are completely hidden (no empty space) */}
       {isOwner && (
-        <div className="absolute top-2 right-2 flex gap-2 z-10">
+        <div className="absolute top-2 right-2 flex gap-2 z-10" style={{ right: isAuthenticated ? "3.5rem" : "0.5rem" }}>
           <button
             onClick={() => onEdit(event.id)}
             className="p-2 text-gray-500 hover:text-yellow-500 hover:bg-yellow-50 rounded-lg transition-colors bg-white/90 backdrop-blur-sm shadow-sm focus-visible:outline-2 focus-visible:outline-yellow-500 focus-visible:outline-offset-2"
@@ -184,11 +233,11 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete, auth
               >
                 {authorName || "Неизвестен"}
               </Link>
-              {/* Show star icon and likes count only if there are likes */}
+              {/* Show heart icon and likes count only if there are likes */}
               {authorLikesCount > 0 && (
                 <span className="inline-flex items-center gap-1 ml-1">
-                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                  <span className="text-yellow-500">{authorLikesCount}</span>
+                  <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                  <span className="text-red-500">{authorLikesCount}</span>
                 </span>
               )}
             </>

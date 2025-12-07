@@ -8,6 +8,7 @@ import { LoginPage } from "@/pages/LoginPage"
 import { RegisterPage } from "@/pages/RegisterPage"
 import { UserProfilePage } from "@/pages/profile/UserProfilePage"
 import { EditProfilePage } from "@/pages/profile/EditProfilePage"
+import { FavoritesPage } from "@/pages/FavoritesPage"
 import { Features } from "@/components/home/Features"
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 import { GuestRoute } from "@/components/auth/GuestRoute"
@@ -34,6 +35,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <MyEventsPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/favorites" 
+        element={
+          <ProtectedRoute>
+            <FavoritesPage />
           </ProtectedRoute>
         } 
       />

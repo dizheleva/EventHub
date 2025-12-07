@@ -10,6 +10,8 @@ import { useToast } from "@/contexts/ToastContext";
 import { useEvents } from "@/hooks/useEvents";
 import { useInterested } from "@/hooks/useInterested";
 import { useComments } from "@/hooks/useComments";
+import { useFavorites } from "@/hooks/useFavorites";
+import { getUserLikes } from "@/api/userLikesApi";
 import { EditEventForm } from "@/components/events/EditEventForm";
 import { DeleteEventModal } from "@/components/events/DeleteEventModal";
 import { getCategoryDisplay } from "@/utils/categories";
@@ -28,7 +30,7 @@ export function EventDetails() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [users, setUsers] = useState([]);
   const [authorName, setAuthorName] = useState(null);
-  const [authorStars, setAuthorStars] = useState(0);
+  const [authorLikesCount, setAuthorLikesCount] = useState(0);
   const [isLoadingAuthor, setIsLoadingAuthor] = useState(false);
   const { showToast } = useToast();
   
@@ -39,6 +41,10 @@ export function EventDetails() {
   const { comments, loading: commentsLoading, addComment, deleteComment } = useComments(event?.id);
   const [newCommentText, setNewCommentText] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  
+  // Use favorites hook
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
 
   // Authorization check: Verify current user is the owner (creator) of this event
   // Support both creatorId (new) and userId (legacy) for backward compatibility
@@ -59,30 +65,41 @@ export function EventDetails() {
     if (event) {
       const creatorId = event.creatorId || event.userId;
       if (creatorId) {
-        if (event.creatorName) {
-          setAuthorName(event.creatorName);
-          setAuthorStars(event.creatorStars || 0);
-        } else {
-          setIsLoadingAuthor(true);
-          fetch(`http://localhost:5000/users/${creatorId}`)
-            .then(res => {
-              if (!res.ok) {
-                throw new Error("Failed to fetch author");
-              }
-              return res.json();
-            })
-            .then(userData => {
-              const username = userData.username || userData.name || userData.email?.split("@")[0] || "Неизвестен";
-              setAuthorName(username);
-              setAuthorStars(userData.stars || 0);
-            })
-            .catch(err => {
-              console.error("Error loading author:", err);
-              setAuthorName("Неизвестен");
-              setAuthorStars(0);
-            })
-            .finally(() => setIsLoadingAuthor(false));
-        }
+        setIsLoadingAuthor(true);
+        
+        // Load author name
+        const loadAuthorName = event.creatorName 
+          ? Promise.resolve(event.creatorName)
+          : fetch(`http://localhost:5000/users/${creatorId}`)
+              .then(res => {
+                if (!res.ok) {
+                  throw new Error("Failed to fetch author");
+                }
+                return res.json();
+              })
+              .then(userData => {
+                return userData.username || userData.name || userData.email?.split("@")[0] || "Неизвестен";
+              })
+              .catch(err => {
+                console.error("Error loading author:", err);
+                return "Неизвестен";
+              });
+
+        // Load author likes
+        const loadAuthorLikes = getUserLikes(Number(creatorId))
+          .then(likes => likes.length)
+          .catch(err => {
+            console.error("Error loading author likes:", err);
+            return 0;
+          });
+
+        // Load both in parallel
+        Promise.all([loadAuthorName, loadAuthorLikes])
+          .then(([name, likesCount]) => {
+            setAuthorName(name);
+            setAuthorLikesCount(likesCount);
+          })
+          .finally(() => setIsLoadingAuthor(false));
       }
     }
   }, [event]);
@@ -350,11 +367,40 @@ export function EventDetails() {
 
         {/* Content */}
         <div className="p-6 md:p-10">
-          {/* Title with Action Bar - Action bar only visible to owner */}
+          {/* Title with Favorite and Action Bar */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 flex-1">
-              {event.title}
-            </h1>
+            <div className="flex items-center gap-3 flex-1">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 flex-1">
+                {event.title}
+              </h1>
+              
+              {/* Favorite Star Button - visible for authenticated users */}
+              {isAuthenticated && (
+                <button
+                  onClick={async () => {
+                    if (isTogglingFavorite) return;
+                    setIsTogglingFavorite(true);
+                    try {
+                      const wasAdded = await toggleFavorite(event.id);
+                      showToast("success", wasAdded ? "Събитието беше добавено в любими" : "Събитието беше премахнато от любими");
+                    } catch (err) {
+                      showToast("error", err.message || "Възникна грешка при промяна на любимото");
+                    } finally {
+                      setIsTogglingFavorite(false);
+                    }
+                  }}
+                  disabled={isTogglingFavorite}
+                  className={`p-2 rounded-lg transition-all ${
+                    isFavorite(event.id)
+                      ? "text-yellow-500 hover:bg-yellow-50"
+                      : "text-gray-400 hover:text-yellow-500 hover:bg-yellow-50"
+                  } ${isTogglingFavorite ? "opacity-50 cursor-not-allowed" : ""}`}
+                  aria-label={isFavorite(event.id) ? "Премахни от любими" : "Добави в любими"}
+                >
+                  <Star className={`w-6 h-6 ${isFavorite(event.id) ? "fill-yellow-500" : ""}`} />
+                </button>
+              )}
+            </div>
             
             {/* Action Bar - Only render if user is owner */}
             {isOwner && (
@@ -474,17 +520,13 @@ export function EventDetails() {
                         {authorName || "Неизвестен"}
                       </Link>
                       {" "}
-                      <span className="inline-flex items-center gap-1 text-sm">
-                        {authorStars > 0 && (
-                          <>
-                            {Array.from({ length: Math.min(authorStars, 5) }).map((_, i) => (
-                              <Star key={i} className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                            ))}
-                            {authorStars > 5 && <span className="text-yellow-500">({authorStars})</span>}
-                          </>
-                        )}
-                        {authorStars === 0 && <span className="text-gray-400">(0)</span>}
-                      </span>
+                      {/* Show heart icon and likes count only if there are likes */}
+                      {authorLikesCount > 0 && (
+                        <span className="inline-flex items-center gap-1 text-sm ml-1">
+                          <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                          <span className="text-red-500">{authorLikesCount}</span>
+                        </span>
+                      )}
                     </>
                   )}
                 </div>

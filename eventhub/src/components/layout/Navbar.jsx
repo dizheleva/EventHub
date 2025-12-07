@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, useNavigate, useLocation } from "react-router-dom"
-import { CalendarDays, Menu, X } from "lucide-react"
+import { CalendarDays, Menu, X, Star } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 
 export function Navbar() {
@@ -44,18 +44,33 @@ export function Navbar() {
           
           {/* My Events link - only visible when authenticated */}
           {isAuthenticated && (
-            <li>
-              <Link 
-                to="/my-events" 
-                className={`px-4 py-2 rounded-xl font-medium transition-colors ${
-                  isActive("/my-events")
-                    ? "bg-primary/10 text-primary font-semibold"
-                    : "text-gray-700 hover:bg-pink-50 hover:text-primary"
-                }`}
-              >
-                Моите събития
-              </Link>
-            </li>
+            <>
+              <li>
+                <Link 
+                  to="/my-events" 
+                  className={`px-4 py-2 rounded-xl font-medium transition-colors ${
+                    isActive("/my-events")
+                      ? "bg-primary/10 text-primary font-semibold"
+                      : "text-gray-700 hover:bg-pink-50 hover:text-primary"
+                  }`}
+                >
+                  Моите събития
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  to="/favorites" 
+                  className={`px-4 py-2 rounded-xl font-medium transition-colors flex items-center gap-2 ${
+                    isActive("/favorites")
+                      ? "bg-primary/10 text-primary font-semibold"
+                      : "text-gray-700 hover:bg-pink-50 hover:text-primary"
+                  }`}
+                >
+                  <Star className="w-4 h-4" />
+                  Любими
+                </Link>
+              </li>
+            </>
           )}
           
           {/* Auth buttons */}
@@ -120,19 +135,35 @@ export function Navbar() {
             
             {/* My Events link - only visible when authenticated */}
             {isAuthenticated && (
-              <li>
-                <Link 
-                  to="/my-events" 
-                  className={`block px-4 py-3 rounded-xl font-medium transition-colors ${
-                    isActive("/my-events")
-                      ? "bg-primary/10 text-primary font-semibold"
-                      : "text-gray-700 hover:bg-pink-50 hover:text-primary"
-                  }`}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  Моите събития
-                </Link>
-              </li>
+              <>
+                <li>
+                  <Link 
+                    to="/my-events" 
+                    className={`block px-4 py-3 rounded-xl font-medium transition-colors ${
+                      isActive("/my-events")
+                        ? "bg-primary/10 text-primary font-semibold"
+                        : "text-gray-700 hover:bg-pink-50 hover:text-primary"
+                    }`}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Моите събития
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/favorites" 
+                    className={`block px-4 py-3 rounded-xl font-medium transition-colors flex items-center gap-2 ${
+                      isActive("/favorites")
+                        ? "bg-primary/10 text-primary font-semibold"
+                        : "text-gray-700 hover:bg-pink-50 hover:text-primary"
+                    }`}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <Star className="w-4 h-4" />
+                    Любими
+                  </Link>
+                </li>
+              </>
             )}
             
             {/* Auth buttons */}
