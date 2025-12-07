@@ -38,14 +38,10 @@ function AppRoutes() {
         } 
       />
       
-      {/* Profile routes - protected, only owner can access */}
+      {/* Profile routes - public, but edit button only visible to owner */}
       <Route 
         path="/profile/:userId" 
-        element={
-          <ProtectedRoute>
-            <UserProfilePage />
-          </ProtectedRoute>
-        } 
+        element={<UserProfilePage />}
       />
       <Route 
         path="/profile/:userId/edit" 

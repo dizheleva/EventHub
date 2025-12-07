@@ -59,6 +59,28 @@ export async function createComment({ eventId, userId, text }) {
 }
 
 /**
+ * Get all comments by a specific user
+ * 
+ * @param {number|string} userId - User ID
+ * @returns {Promise<Array>} List of comment objects
+ */
+export async function getCommentsByUser(userId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}?userId=${userId}`);
+    
+    if (!response.ok) {
+      throw new Error(`Грешка при зареждане на коментарите: ${response.status} ${response.statusText}`);
+    }
+
+    const comments = await response.json();
+    return comments;
+  } catch (err) {
+    const errorMessage = err.message || "Възникна грешка при зареждане на коментарите";
+    throw new Error(errorMessage);
+  }
+}
+
+/**
  * Delete a comment by ID
  * 
  * @param {number|string} commentId - Comment ID to delete
