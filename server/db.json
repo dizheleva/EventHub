@@ -15,6 +15,14 @@
       "id": 2,
       "username": "Диляна",
       "avatarUrl": ""
+    },
+    {
+      "username": "test",
+      "email": "test@mail.com",
+      "password": "test123",
+      "avatarUrl": "",
+      "createdAt": "2025-12-07T21:50:17.589Z",
+      "id": 3
     }
   ],
   "events": [
@@ -122,6 +130,21 @@
       "ownerId": 2,
       "creatorId": 2,
       "id": "HQh3lH6"
+    },
+    {
+      "title": "Test event",
+      "date": "2025-12-26",
+      "location": "Test location",
+      "description": "Test test test",
+      "imageUrl": "",
+      "city": "Test",
+      "category": "Деца",
+      "organizer": "",
+      "organizerUrl": "",
+      "price": "",
+      "ownerId": 3,
+      "creatorId": 3,
+      "id": "ZuuJKla"
     }
   ],
   "interests": [
@@ -157,5 +180,11 @@
       "id": 2
     }
   ],
-  "userLikes": []
+  "userLikes": [
+    {
+      "fromUserId": 3,
+      "toUserId": 2,
+      "id": 1
+    }
+  ]
 }

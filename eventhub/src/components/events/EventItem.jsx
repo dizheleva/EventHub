@@ -1,5 +1,5 @@
-import { memo } from "react";
-import { Edit, Trash2, Calendar } from "lucide-react";
+import { memo, useState, useEffect } from "react";
+import { Edit, Trash2, Calendar, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getCategoryDisplay } from "@/utils/categories";
 import { formatPrice } from "@/utils/priceFormatter";
@@ -23,6 +23,39 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete }) {
   
   // Get interests count for this event
   const { interestsCount } = useInterested(event.id);
+
+  // Author data
+  const [authorName, setAuthorName] = useState(event.creatorName || null);
+  const [authorStars, setAuthorStars] = useState(0);
+  const [isLoadingAuthor, setIsLoadingAuthor] = useState(false);
+
+  // Load author data if creatorId exists
+  useEffect(() => {
+    if (eventCreatorId && !event.creatorName) {
+      setIsLoadingAuthor(true);
+      fetch(`http://localhost:5000/users/${eventCreatorId}`)
+        .then(res => {
+          if (!res.ok) {
+            throw new Error("Failed to fetch author");
+          }
+          return res.json();
+        })
+        .then(userData => {
+          const username = userData.username || userData.name || userData.email?.split("@")[0] || "Неизвестен";
+          setAuthorName(username);
+          setAuthorStars(userData.stars || 0);
+        })
+        .catch(err => {
+          console.error("Error loading author:", err);
+          setAuthorName("Неизвестен");
+          setAuthorStars(0);
+        })
+        .finally(() => setIsLoadingAuthor(false));
+    } else if (event.creatorName) {
+      setAuthorName(event.creatorName);
+      setAuthorStars(event.creatorStars || 0);
+    }
+  }, [eventCreatorId, event.creatorName, event.creatorStars]);
 
   return (
     <div className="relative w-full h-full min-w-0 p-8 bg-white rounded-xl shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col group">
@@ -114,6 +147,37 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete }) {
       {organizer && (
         <div className="mb-4 flex-shrink-0 text-sm text-gray-700">
           <span className="font-medium">Организатор:</span> {organizer}
+        </div>
+      )}
+
+      {/* Author - Автор */}
+      {eventCreatorId && (
+        <div className="mb-4 flex-shrink-0 text-sm text-gray-700">
+          <span className="font-medium">Автор:</span>{" "}
+          {isLoadingAuthor ? (
+            <span className="text-gray-400">Зареждане...</span>
+          ) : (
+            <>
+              <Link
+                to={`/profile/${eventCreatorId}`}
+                className="text-primary hover:underline"
+              >
+                {authorName || "Неизвестен"}
+              </Link>
+              {" "}
+              <span className="inline-flex items-center gap-1">
+                {authorStars > 0 && (
+                  <>
+                    {Array.from({ length: Math.min(authorStars, 5) }).map((_, i) => (
+                      <Star key={i} className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                    ))}
+                    {authorStars > 5 && <span className="text-yellow-500">({authorStars})</span>}
+                  </>
+                )}
+                {authorStars === 0 && <span className="text-gray-400">(0)</span>}
+              </span>
+            </>
+          )}
         </div>
       )}
 

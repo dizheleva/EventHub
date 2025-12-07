@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Edit, Trash2, Calendar, Heart } from "lucide-react";
+import { ArrowLeft, ExternalLink, Edit, Trash2, Calendar, Heart, Star } from "lucide-react";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -27,6 +27,9 @@ export function EventDetails() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [users, setUsers] = useState([]);
+  const [authorName, setAuthorName] = useState(null);
+  const [authorStars, setAuthorStars] = useState(0);
+  const [isLoadingAuthor, setIsLoadingAuthor] = useState(false);
   const { showToast } = useToast();
   
   // Use interest hook for this event
@@ -50,6 +53,39 @@ export function EventDetails() {
       .then(data => setUsers(data))
       .catch(err => console.error("Error loading users:", err));
   }, []);
+
+  // Load author data when event is loaded
+  useEffect(() => {
+    if (event) {
+      const creatorId = event.creatorId || event.userId;
+      if (creatorId) {
+        if (event.creatorName) {
+          setAuthorName(event.creatorName);
+          setAuthorStars(event.creatorStars || 0);
+        } else {
+          setIsLoadingAuthor(true);
+          fetch(`http://localhost:5000/users/${creatorId}`)
+            .then(res => {
+              if (!res.ok) {
+                throw new Error("Failed to fetch author");
+              }
+              return res.json();
+            })
+            .then(userData => {
+              const username = userData.username || userData.name || userData.email?.split("@")[0] || "Неизвестен";
+              setAuthorName(username);
+              setAuthorStars(userData.stars || 0);
+            })
+            .catch(err => {
+              console.error("Error loading author:", err);
+              setAuthorName("Неизвестен");
+              setAuthorStars(0);
+            })
+            .finally(() => setIsLoadingAuthor(false));
+        }
+      }
+    }
+  }, [event]);
 
   useEffect(() => {
     if (!id) {
@@ -285,71 +321,6 @@ export function EventDetails() {
     }
   }
 
-  // Helper function to get user name from email
-  function getUserName(userId) {
-    const user = users.find(u => u.id === userId);
-    if (!user) return "Анонимен";
-    if (user.username) return user.username;
-    if (user.email) return user.email.split("@")[0];
-    if (user.name) return user.name;
-    return "Анонимен";
-  }
-
-  // Helper function to format comment date
-  function formatCommentDate(dateString) {
-    if (!dateString) return "";
-    try {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffMs = now - date;
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHours = Math.floor(diffMs / 3600000);
-      const diffDays = Math.floor(diffMs / 86400000);
-
-      if (diffMins < 1) return "току-що";
-      if (diffMins < 60) return `преди ${diffMins} ${diffMins === 1 ? "минута" : "минути"}`;
-      if (diffHours < 24) return `преди ${diffHours} ${diffHours === 1 ? "час" : "часа"}`;
-      if (diffDays < 7) return `преди ${diffDays} ${diffDays === 1 ? "ден" : "дни"}`;
-      
-      const day = String(date.getDate()).padStart(2, "0");
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const year = date.getFullYear();
-      return `${day}.${month}.${year}`;
-    } catch {
-      return dateString;
-    }
-  }
-
-  // Handle comment submission
-  async function handleAddComment(e) {
-    e.preventDefault();
-    if (!newCommentText.trim()) {
-      showToast("error", "Коментарът не може да бъде празен");
-      return;
-    }
-
-    setIsSubmittingComment(true);
-    try {
-      await addComment(newCommentText.trim());
-      setNewCommentText("");
-      showToast("success", "Коментарът беше публикуван успешно!");
-    } catch (err) {
-      showToast("error", err.message || "Възникна грешка при публикуване на коментар");
-    } finally {
-      setIsSubmittingComment(false);
-    }
-  }
-
-  // Handle comment deletion
-  async function handleDeleteComment(commentId) {
-    try {
-      await deleteComment(commentId);
-      showToast("success", "Коментарът беше изтрит успешно!");
-    } catch (err) {
-      showToast("error", err.message || "Възникна грешка при изтриване на коментар");
-    }
-  }
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Back Button */}
@@ -485,6 +456,40 @@ export function EventDetails() {
                 )}
               </div>
             </div>
+
+            {/* Author on one row */}
+            {eventCreatorId && (
+              <div className="flex items-center gap-3 text-gray-700">
+                <span className="text-xl flex-shrink-0">👤</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-medium">Автор:</span>{" "}
+                  {isLoadingAuthor ? (
+                    <span className="text-gray-400 text-sm">Зареждане...</span>
+                  ) : (
+                    <>
+                      <Link
+                        to={`/profile/${eventCreatorId}`}
+                        className="text-primary hover:underline text-sm"
+                      >
+                        {authorName || "Неизвестен"}
+                      </Link>
+                      {" "}
+                      <span className="inline-flex items-center gap-1 text-sm">
+                        {authorStars > 0 && (
+                          <>
+                            {Array.from({ length: Math.min(authorStars, 5) }).map((_, i) => (
+                              <Star key={i} className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                            ))}
+                            {authorStars > 5 && <span className="text-yellow-500">({authorStars})</span>}
+                          </>
+                        )}
+                        {authorStars === 0 && <span className="text-gray-400">(0)</span>}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Price and Organizer - Structured Info Layout */}

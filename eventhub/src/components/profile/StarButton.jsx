@@ -30,12 +30,12 @@ export function StarButton({ isLiked, onToggle, disabled = false }) {
       {isLiked ? (
         <>
           <Star className="w-5 h-5 fill-yellow-500 text-yellow-500" aria-hidden="true" />
-          <span>⭐ Liked</span>
+          <span>Харесано</span>
         </>
       ) : (
         <>
           <Star className="w-5 h-5" aria-hidden="true" />
-          <span>☆ Give star</span>
+          <span>Хересай</span>
         </>
       )}
     </button>
