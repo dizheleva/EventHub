@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Edit, Mail, User, Calendar, CalendarDays } from "lucide-react";
+import { Edit, Mail, User, Calendar, CalendarDays, Star } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/hooks/useUser";
 import { useEvents } from "@/hooks/useEvents";
 import { getCommentsByUser } from "@/api/commentsApi";
+import { getUserLikes, hasUserLiked, giveLike, removeLike } from "@/api/userLikesApi";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { EventItem } from "@/components/events/EventItem";
+import { useToast } from "@/contexts/ToastContext";
 
 /**
  * UserProfilePage - Display user profile information
@@ -18,13 +20,18 @@ import { EventItem } from "@/components/events/EventItem";
 export function UserProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isAuthenticated } = useAuth();
   const { user: profileUser, isLoading: isLoadingUser, error: userError, fetchUser } = useUser();
   const { events, isLoading: isLoadingEvents, fetchEvents } = useEvents();
   const [comments, setComments] = useState([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [likes, setLikes] = useState([]);
+  const [isLoadingLikes, setIsLoadingLikes] = useState(false);
+  const [hasLiked, setHasLiked] = useState(false);
+  const [isTogglingLike, setIsTogglingLike] = useState(false);
+  const { showToast } = useToast();
 
-  // Load user profile, events, and comments
+  // Load user profile, events, comments, and likes
   useEffect(() => {
     if (!userId) return;
 
@@ -49,8 +56,32 @@ export function UserProfilePage() {
         setComments([]);
       })
       .finally(() => setIsLoadingComments(false));
+
+    // Load likes for this user
+    setIsLoadingLikes(true);
+    getUserLikes(Number(userId))
+      .then(data => {
+        setLikes(data);
+      })
+      .catch(err => {
+        console.error("Error fetching likes:", err);
+        setLikes([]);
+      })
+      .finally(() => setIsLoadingLikes(false));
+
+    // Check if current user has liked this profile
+    if (isAuthenticated && currentUser?.id && Number(userId) !== currentUser.id) {
+      hasUserLiked(currentUser.id, Number(userId))
+        .then(liked => {
+          setHasLiked(liked);
+        })
+        .catch(err => {
+          console.error("Error checking like status:", err);
+          setHasLiked(false);
+        });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [userId, isAuthenticated, currentUser?.id]);
 
   // Calculate number of events created by this user
   const userEvents = useMemo(() => {
@@ -64,6 +95,7 @@ export function UserProfilePage() {
 
   const userEventsCount = userEvents.length;
   const commentsCount = comments.length;
+  const likesCount = likes.length;
   
   // Get user display name
   const userName = profileUser?.username || (profileUser?.email ? profileUser.email.split("@")[0] : "Потребител");
@@ -119,6 +151,64 @@ export function UserProfilePage() {
 
   const isOwnProfile = currentUser && Number(userId) === currentUser.id;
 
+  // Handle like/unlike toggle
+  async function handleToggleLike() {
+    if (!isAuthenticated || !currentUser?.id || isOwnProfile || isTogglingLike) {
+      return;
+    }
+
+    setIsTogglingLike(true);
+    const previousLiked = hasLiked;
+    let removedLike = null;
+
+    // Optimistic update
+    setHasLiked(!previousLiked);
+    setLikes(prev => {
+      if (!previousLiked) {
+        // Adding a like - add optimistic entry
+        return [...prev, { id: `temp-${Date.now()}`, fromUserId: currentUser.id, toUserId: Number(userId) }];
+      } else {
+        // Removing a like - find and store the entry, then remove it
+        const likeToRemove = prev.find(like => like.fromUserId === currentUser.id && like.toUserId === Number(userId));
+        removedLike = likeToRemove || null;
+        return prev.filter(like => !(like.fromUserId === currentUser.id && like.toUserId === Number(userId)));
+      }
+    });
+
+    try {
+      if (previousLiked) {
+        await removeLike(currentUser.id, Number(userId));
+        showToast("success", "Харесването беше премахнато");
+      } else {
+        await giveLike(currentUser.id, Number(userId));
+        showToast("success", "Харесването беше добавено");
+      }
+      // Reload likes to get fresh data from server
+      const updatedLikes = await getUserLikes(Number(userId));
+      setLikes(updatedLikes);
+      // Update like status
+      setHasLiked(!previousLiked);
+    } catch (err) {
+      // Rollback on error
+      setHasLiked(previousLiked);
+      setLikes(prev => {
+        if (!previousLiked) {
+          // Remove the optimistic entry we added (find by temp ID pattern)
+          return prev.filter(like => !(typeof like.id === 'string' && like.id.startsWith('temp-') && like.fromUserId === currentUser.id && like.toUserId === Number(userId)));
+        } else {
+          // Restore the like we removed
+          if (removedLike) {
+            return [...prev, removedLike];
+          }
+          return prev;
+        }
+      });
+      showToast("error", err.message || "Възникна грешка при промяна на харесването");
+    } finally {
+      setIsTogglingLike(false);
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Section 1: Profile Header */}
@@ -140,9 +230,16 @@ export function UserProfilePage() {
             
             {/* User Info */}
             <div className="flex-1 text-center sm:text-left">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                {userName}
-              </h1>
+              <div className="flex items-center gap-3 justify-center sm:justify-start mb-4">
+                <h1 className="text-4xl font-bold text-gray-900">
+                  {userName}
+                </h1>
+                {/* Stars count */}
+                <div className="flex items-center gap-1 text-yellow-500">
+                  <Star className="w-6 h-6 fill-yellow-500" />
+                  <span className="text-xl font-bold text-gray-700">{isLoadingLikes ? "..." : likesCount}</span>
+                </div>
+              </div>
               <div className="flex flex-col gap-3 text-gray-700">
                 <div className="flex items-center gap-2 justify-center sm:justify-start">
                   <CalendarDays className="w-5 h-5" />
@@ -159,16 +256,44 @@ export function UserProfilePage() {
               </div>
             </div>
 
-            {/* Edit Button - Only show if it's own profile */}
-            {isOwnProfile && (
-              <button
-                onClick={() => navigate(`/profile/${userId}/edit`)}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-medium hover:shadow-color hover:scale-105 transition-all duration-200"
-              >
-                <Edit className="w-5 h-5" />
-                Редактирай профил
-              </button>
-            )}
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-3">
+              {/* Edit Button - Only show if it's own profile */}
+              {isOwnProfile && (
+                <button
+                  onClick={() => navigate(`/profile/${userId}/edit`)}
+                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-medium hover:shadow-color hover:scale-105 transition-all duration-200"
+                >
+                  <Edit className="w-5 h-5" />
+                  Редактирай профил
+                </button>
+              )}
+
+              {/* Star Button - Only show if viewing someone else's profile */}
+              {!isOwnProfile && isAuthenticated && currentUser?.id && (
+                <button
+                  onClick={handleToggleLike}
+                  disabled={isTogglingLike}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                    hasLiked
+                      ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border-2 border-yellow-300"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {hasLiked ? (
+                    <>
+                      <Star className="w-5 h-5 fill-yellow-500 text-yellow-500" />
+                      <span>⭐ Liked</span>
+                    </>
+                  ) : (
+                    <>
+                      <Star className="w-5 h-5" />
+                      <span>☆ Give star</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
