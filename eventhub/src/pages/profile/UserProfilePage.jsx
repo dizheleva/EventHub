@@ -9,6 +9,7 @@ import { getUserLikes, hasUserLiked, giveLike, removeLike } from "@/api/userLike
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { EventItem } from "@/components/events/EventItem";
+import { StarButton } from "@/components/profile/StarButton";
 import { useToast } from "@/contexts/ToastContext";
 
 /**
@@ -271,27 +272,11 @@ export function UserProfilePage() {
 
               {/* Star Button - Only show if viewing someone else's profile */}
               {!isOwnProfile && isAuthenticated && currentUser?.id && (
-                <button
-                  onClick={handleToggleLike}
+                <StarButton
+                  isLiked={hasLiked}
+                  onToggle={handleToggleLike}
                   disabled={isTogglingLike}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-                    hasLiked
-                      ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border-2 border-yellow-300"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {hasLiked ? (
-                    <>
-                      <Star className="w-5 h-5 fill-yellow-500 text-yellow-500" />
-                      <span>⭐ Liked</span>
-                    </>
-                  ) : (
-                    <>
-                      <Star className="w-5 h-5" />
-                      <span>☆ Give star</span>
-                    </>
-                  )}
-                </button>
+                />
               )}
             </div>
           </div>
