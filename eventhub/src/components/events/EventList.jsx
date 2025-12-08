@@ -132,7 +132,7 @@ export function EventList() {
 
     // Check if user is the author (creator) - authorization check
     // Support both creatorId (new) and userId (legacy) for backward compatibility
-    const eventCreatorId = event.creatorId || event.userId;
+    const eventCreatorId = event.creatorId;
     if (eventCreatorId !== user?.id) {
       // User is NOT the owner - prevent unauthorized access
       showToast("error", "Нямате права да изтривате това събитие");
@@ -218,7 +218,7 @@ export function EventList() {
 
   // Compute unique cities safely
   const uniqueCities = useMemo(() => {
-    return [...new Set(events.map(e => e.city).filter(Boolean))].sort();
+    return [...new Set(events.map(e => e.location?.city).filter(Boolean))].sort();
   }, [events]);
 
   // Apply all filters and sorting using useMemo for optimization
@@ -230,13 +230,14 @@ export function EventList() {
       const query = searchQuery.toLowerCase();
       return (
         event.title?.toLowerCase().includes(query) ||
-        event.location?.toLowerCase().includes(query)
+        event.location?.address?.toLowerCase().includes(query) ||
+        event.location?.city?.toLowerCase().includes(query)
       );
     });
 
     // Step 2: Apply city filter (exact match)
     if (selectedCity) {
-      filtered = filtered.filter(event => event.city === selectedCity);
+      filtered = filtered.filter(event => event.location?.city === selectedCity);
     }
 
     // Step 3: Apply category filter (exact match)
@@ -357,7 +358,7 @@ export function EventList() {
                   {paginatedEvents.map((event, index) => (
                     <div 
                       key={event.id} 
-                      className="w-full min-w-0 h-full opacity-0 animate-fade-in-up"
+                      className="w-full min-w-0 h-full flex opacity-0 animate-fade-in-up"
                       style={{ animationDelay: `${index * 0.1}s` }}
                     >
                       <EventItem

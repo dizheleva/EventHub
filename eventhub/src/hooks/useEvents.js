@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { API_BASE_URL } from "@/config/api";
+import { normalizeEvent } from "@/utils/eventHelpers";
 
 const EVENTS_API_URL = `${API_BASE_URL}/events`;
 
@@ -16,13 +17,13 @@ export function useEvents(initialLoading = false) {
 
     try {        
       setIsLoading(true);
-      // GET request returns events with creatorId field (if available)
-      // Older events may have userId instead - UI handles both gracefully
       const res = await fetch(EVENTS_API_URL);      
       if (!res.ok) throw new Error(`Failed to fetch events: ${res.status} ${res.statusText}`);
       const data = await res.json();
-      setEvents(data);
-      return data;
+      // Normalize all events to new format
+      const normalizedEvents = data.map(event => normalizeEvent(event));
+      setEvents(normalizedEvents);
+      return normalizedEvents;
     } catch (err) {
       const errorMessage = err.message || "Възникна грешка при зареждане на събитията";
       setError(errorMessage);

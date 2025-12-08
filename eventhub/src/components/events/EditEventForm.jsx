@@ -3,31 +3,46 @@ import { validators } from "@/utils/validators";
 import { FormField } from "@/components/common/FormField";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { CategorySelect } from "@/components/common/CategorySelect";
-import { formatDateForInput } from "@/utils/dateFormatter";
+import { normalizeEvent } from "@/utils/eventHelpers";
+import { calculateDurationMinutes } from "@/utils/eventHelpers";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_BASE_URL } from "@/config/api";
+import { useToast } from "@/contexts/ToastContext";
 
 const EVENTS_API_URL = `${API_BASE_URL}/events`;
-import { useToast } from "@/contexts/ToastContext";
 
 export function EditEventForm({ eventId, onEventUpdated, onClose }) {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     title: "",
-    date: "",
-    location: "",
     description: "",
-    imageUrl: "",
-    city: "",
     category: "",
-    organizer: "",
-    organizerUrl: "",
-    price: "",
+    startDate: "",
+    endDate: "",
+    durationMinutes: null,
+    isOnline: false,
+    address: "",
+    city: "",
+    imageUrl: "",
+    websiteUrl: "",
+    price: 0,
+    tags: "",
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { showToast } = useToast();
+
+  // Calculate duration when dates change
+  useEffect(() => {
+    if (formData.startDate && formData.endDate) {
+      const duration = calculateDurationMinutes(formData.startDate, formData.endDate);
+      setFormData(prev => ({ ...prev, durationMinutes: duration }));
+    } else {
+      // If endDate is removed, clear duration
+      setFormData(prev => ({ ...prev, durationMinutes: null }));
+    }
+  }, [formData.startDate, formData.endDate]);
 
   // Fetch event data when component mounts or eventId changes
   useEffect(() => {
@@ -45,31 +60,48 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
         return res.json();
       })
       .then(event => {
-        // Authorization check: Verify current user is the owner (creator) of this event
-        // Support both creatorId (new) and userId (legacy) for backward compatibility
-        const eventCreatorId = event.creatorId || event.userId;
+        // Normalize event to new format
+        const normalized = normalizeEvent(event);
+        
+        // Authorization check
+        const eventCreatorId = normalized.creatorId;
         if (user && eventCreatorId !== user.id) {
-          // User is NOT the owner - prevent unauthorized access
-          // Close modal immediately and show error message
           showToast("error", "Нямате права да редактирате това събитие");
           setTimeout(() => {
             if (onClose) onClose();
           }, 2000);
           setIsLoading(false);
-          return; // Prevent further execution - do NOT allow editing
+          return;
         }
 
+        // Format dates for datetime-local input
+        const formatDateTimeLocal = (dateString) => {
+          if (!dateString) return "";
+          const date = new Date(dateString);
+          if (isNaN(date.getTime())) return "";
+          // Format as YYYY-MM-DDTHH:mm
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          return `${year}-${month}-${day}T${hours}:${minutes}`;
+        };
+
         setFormData({
-          title: event.title || "",
-          date: formatDateForInput(event.date),
-          location: event.location || "",
-          description: event.description || "",
-          imageUrl: event.imageUrl || "",
-          city: event.city || "",
-          category: event.category || "",
-          organizer: event.organizer || "",
-          organizerUrl: event.organizerUrl || "",
-          price: event.price || "",
+          title: normalized.title || "",
+          description: normalized.description || "",
+          category: normalized.category || "",
+          startDate: formatDateTimeLocal(normalized.startDate),
+          endDate: formatDateTimeLocal(normalized.endDate),
+          durationMinutes: normalized.durationMinutes || null,
+          isOnline: normalized.isOnline || false,
+          address: normalized.location?.address || "",
+          city: normalized.location?.city || "",
+          imageUrl: normalized.imageUrl || "",
+          websiteUrl: normalized.websiteUrl || "",
+          price: normalized.price || 0,
+          tags: Array.isArray(normalized.tags) ? normalized.tags.join(", ") : "",
         });
         setIsLoading(false);
       })
@@ -78,7 +110,7 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
         showToast("error", err.message || "Възникна грешка при зареждане на събитието");
         setIsLoading(false);
       });
-  }, [eventId, user, onClose]);
+  }, [eventId, user, onClose, showToast]);
 
   // Validate single field
   function validateField(name, value) {
@@ -87,36 +119,77 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
     return validator(value);
   }
 
-  // Validate all fields - only validate fields that exist in the form
+  // Validate all fields
   function validateForm(data) {
     const newErrors = {};
-    // Only validate fields that are in the form data
+    
     Object.keys(data).forEach((field) => {
       if (validators[field]) {
-        const error = validateField(field, data[field]);
+        let error = null;
+        
+        if (field === "endDate") {
+          error = validators.endDate(data[field], data.startDate);
+        } else if (field === "address") {
+          error = validators.address(data[field], data.isOnline);
+        } else if (field === "city") {
+          error = validators.city(data[field], data.isOnline);
+        } else if (field === "price") {
+          error = validators.price(data[field]);
+        } else {
+          error = validateField(field, data[field]);
+        }
+        
         if (error) {
           newErrors[field] = error;
         }
       }
     });
+    
     return newErrors;
   }
 
-  // Check if form has errors
-  const hasErrors = Object.keys(errors).length > 0;
-
-  // Handle input change with validation
+  // Handle input change
   function changeHandler(e) {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    let newValue = value;
+    if (type === "checkbox") {
+      newValue = checked;
+    } else if (type === "number") {
+      newValue = value === "" ? null : Number(value);
+    }
+    
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        [name]: newValue,
+      };
+      
+      if (name === "isOnline" && newValue === true) {
+        updated.address = "";
+        updated.city = "";
+      }
+      
+      return updated;
+    });
 
-    // Validate on change (after first blur)
+    // Validate on change
     if (errors[name]) {
-      const error = validateField(name, value);
+      let error = null;
+      const currentData = { ...formData, [name]: newValue };
+      
+      if (name === "endDate") {
+        error = validators.endDate(newValue, currentData.startDate);
+      } else if (name === "address") {
+        error = validators.address(newValue, currentData.isOnline);
+      } else if (name === "city") {
+        error = validators.city(newValue, currentData.isOnline);
+      } else if (name === "price") {
+        error = validators.price(newValue);
+      } else {
+        error = validateField(name, newValue);
+      }
+      
       setErrors((prev) => {
         if (error) {
           return { ...prev, [name]: error };
@@ -128,10 +201,24 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
     }
   }
 
-  // Handle blur - validate field
+  // Handle blur
   function blurHandler(e) {
     const { name, value } = e.target;
-    const error = validateField(name, value);
+    let error = null;
+    const currentData = { ...formData, [name]: value };
+    
+    if (name === "endDate") {
+      error = validators.endDate(value, currentData.startDate);
+    } else if (name === "address") {
+      error = validators.address(value, currentData.isOnline);
+    } else if (name === "city") {
+      error = validators.city(value, currentData.isOnline);
+    } else if (name === "price") {
+      error = validators.price(value);
+    } else {
+      error = validateField(name, value);
+    }
+    
     setErrors((prev) => {
       if (error) {
         return { ...prev, [name]: error };
@@ -146,12 +233,6 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
   async function submitHandler(e) {
     e.preventDefault();
 
-    if (!eventId) {
-      showToast("error", "Грешка: Липсва ID на събитието");
-      return;
-    }
-
-    // Validate all fields
     const formErrors = validateForm(formData);
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
@@ -161,257 +242,281 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
     setIsSubmitting(true);
 
     try {
-      // Fetch original event to preserve creatorId
-      // This ensures the creatorId is not overwritten during edit
-      const originalEventResponse = await fetch(`${EVENTS_API_URL}/${eventId}`);
-      if (!originalEventResponse.ok) {
-        throw new Error("Грешка при зареждане на събитието");
-      }
-      const originalEvent = await originalEventResponse.json();
+      // Parse tags
+      const tags = formData.tags
+        ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+        : [];
 
-      // Prepare data for PUT request - preserve creatorId from original event
-      // Support both creatorId (new) and userId (legacy) for backward compatibility
-      const originalCreatorId = originalEvent.creatorId || originalEvent.userId;
-      const updateData = {
-        id: eventId,
-        ...formData,
-        creatorId: originalCreatorId, // Preserve creatorId - do NOT overwrite
+      // Prepare location object (country is always Bulgaria)
+      const location = {
+        address: formData.isOnline ? null : (formData.address || null),
+        city: formData.isOnline ? null : (formData.city || null),
+        country: "България",
+        coordinates: null
+      };
+
+      // Prepare event data
+      const eventData = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        location: location,
+        startDate: formData.startDate,
+        endDate: formData.endDate || null,
+        durationMinutes: formData.durationMinutes,
+        imageUrl: formData.imageUrl || null,
+        websiteUrl: formData.websiteUrl || null,
+        price: formData.price || 0,
+        isOnline: formData.isOnline,
+        tags: tags,
         updatedAt: new Date().toISOString(),
+        // Keep creatorId
+        creatorId: user.id,
       };
 
       const res = await fetch(`${EVENTS_API_URL}/${eventId}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updateData),
+        body: JSON.stringify(eventData),
       });
 
       if (!res.ok) {
-        // Try to get error message from response
-        let errorMessage = "Грешка при обновяване на събитие";
-        try {
-          const errorText = await res.text();
-          if (errorText) {
-            try {
-              const errorData = JSON.parse(errorText);
-              errorMessage = errorData.message || errorData.error || errorMessage;
-            } catch {
-              errorMessage = errorText || errorMessage;
-            }
-          }
-        } catch (parseError) {
-          console.error("Error parsing response:", parseError);
-        }
-        errorMessage = `Грешка ${res.status}: ${errorMessage}`;
-        throw new Error(errorMessage);
+        throw new Error("Грешка при обновяване на събитието");
       }
 
-      // Handle response
-      let updatedEvent;
-      const responseText = await res.text();
-      if (responseText) {
-        try {
-          updatedEvent = JSON.parse(responseText);
-        } catch {
-          updatedEvent = { id: eventId, ...updateData };
-        }
-      } else {
-        updatedEvent = { id: eventId, ...updateData };
-      }
+      const updatedEvent = await res.json();
       
-      // Show success toast
-      showToast("success", "Събитието беше обновено успешно!");
-
-      // Clear errors
-      setErrors({});
-
-      // Callback to parent
       if (onEventUpdated) {
         onEventUpdated(updatedEvent);
       }
 
-      // Close modal after successful update
-      setTimeout(() => {
-        if (onClose) {
-          onClose();
-        }
-      }, 1500);
+      showToast("success", "Събитието е обновено успешно!");
+      
+      if (onClose) {
+        onClose();
+      }
     } catch (err) {
-      showToast("error", err.message || "Възникна грешка при обновяване на събитие");
+      showToast("error", err.message || "Възникна грешка при обновяване на събитието");
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  // Show loading spinner while fetching event data
   if (isLoading) {
     return (
-      <div className="py-8">
+      <div className="p-8">
         <LoadingSpinner message="Зареждане на данни..." />
       </div>
     );
   }
 
+  const hasErrors = Object.keys(errors).length > 0;
+
   return (
-    <>
-      {/* Toast Notification */}
-      {toast && <Toast type={toast.type} message={toast.message} />}
+    <form onSubmit={submitHandler} className="space-y-4 max-h-[80vh] overflow-y-auto px-1">
+      {/* Title */}
+      <FormField
+        label="Заглавие"
+        name="title"
+        type="text"
+        placeholder="Въведете заглавие на събитието"
+        value={formData.title}
+        error={errors.title}
+        onChange={changeHandler}
+        onBlur={blurHandler}
+        disabled={isSubmitting}
+      />
 
-      <form onSubmit={submitHandler} className="space-y-4">
-        {/* Title Field */}
+      {/* Category */}
+      <CategorySelect
+        value={formData.category}
+        onChange={changeHandler}
+        onBlur={blurHandler}
+        error={errors.category}
+        disabled={isSubmitting}
+      />
+
+      {/* Description */}
+      <FormField
+        label="Описание"
+        name="description"
+        type="textarea"
+        placeholder="Въведете описание на събитието (по избор)"
+        rows={4}
+        value={formData.description}
+        error={errors.description}
+        onChange={changeHandler}
+        onBlur={blurHandler}
+        disabled={isSubmitting}
+        optional={true}
+      />
+
+      {/* Schedule Section */}
+      <div className="space-y-4 p-4 bg-gray-50 rounded-xl">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">График</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            label="Начална дата и час"
+            name="startDate"
+            type="datetime-local"
+            value={formData.startDate}
+            error={errors.startDate}
+            onChange={changeHandler}
+            onBlur={blurHandler}
+            disabled={isSubmitting}
+          />
+          
+          <FormField
+            label="Крайна дата и час"
+            name="endDate"
+            type="datetime-local"
+            value={formData.endDate}
+            error={errors.endDate}
+            onChange={changeHandler}
+            onBlur={blurHandler}
+            disabled={isSubmitting}
+            min={formData.startDate}
+            optional={true}
+          />
+        </div>
+        
+        <div className="text-sm text-gray-600">
+          Продължителност: {formData.durationMinutes 
+            ? `${Math.floor(formData.durationMinutes / 60)}ч ${formData.durationMinutes % 60}м`
+            : "неизвестно"}
+        </div>
+      </div>
+
+      {/* Location Section */}
+      <div className="space-y-4 p-4 bg-gray-50 rounded-xl">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">Локация</h3>
+        
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              name="isOnline"
+              checked={formData.isOnline}
+              onChange={changeHandler}
+              disabled={isSubmitting}
+              className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+            />
+            <span className="text-sm font-medium text-gray-700">Онлайн събитие</span>
+          </label>
+        </div>
+        
+        {!formData.isOnline && (
+          <>
+            <FormField
+              label="Адрес"
+              name="address"
+              type="text"
+              placeholder="Въведете пълен адрес"
+              value={formData.address}
+              error={errors.address}
+              onChange={changeHandler}
+              onBlur={blurHandler}
+              disabled={isSubmitting}
+            />
+            <FormField
+              label="Град"
+              name="city"
+              type="text"
+              placeholder="Въведете град"
+              value={formData.city}
+              error={errors.city}
+              onChange={changeHandler}
+              onBlur={blurHandler}
+              disabled={isSubmitting}
+            />
+          </>
+        )}
+      </div>
+
+      {/* Tickets */}
+      <div className="space-y-4 p-4 bg-gray-50 rounded-xl">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">Билети</h3>
+        
         <FormField
-          label="Заглавие"
-          name="title"
-          type="text"
-          placeholder="Въведете заглавие на събитието"
-          value={formData.title}
-          error={errors.title}
-          onChange={changeHandler}
-          onBlur={blurHandler}
-          disabled={isSubmitting}
-        />
-
-        {/* Date Field */}
-        <FormField
-          label="Дата"
-          name="date"
-          type="date"
-          value={formData.date}
-          error={errors.date}
-          onChange={changeHandler}
-          onBlur={blurHandler}
-          disabled={isSubmitting}
-          min={new Date().toISOString().split("T")[0]}
-        />
-
-        {/* City Field */}
-        <FormField
-          label="Град"
-          name="city"
-          type="text"
-          placeholder="Въведете град"
-          value={formData.city}
-          error={errors.city}
-          onChange={changeHandler}
-          onBlur={blurHandler}
-          disabled={isSubmitting}
-        />
-
-        {/* Location Field */}
-        <FormField
-          label="Локация"
-          name="location"
-          type="text"
-          placeholder="Въведете локация на събитието"
-          value={formData.location}
-          error={errors.location}
-          onChange={changeHandler}
-          onBlur={blurHandler}
-          disabled={isSubmitting}
-        />
-
-        {/* Category Field */}
-        <CategorySelect
-          value={formData.category}
-          onChange={changeHandler}
-          onBlur={blurHandler}
-          error={errors.category}
-          disabled={isSubmitting}
-        />
-
-        {/* Description Field */}
-        <FormField
-          label="Описание"
-          name="description"
-          type="textarea"
-          placeholder="Въведете описание на събитието (минимум 10 символа)"
-          rows={4}
-          value={formData.description}
-          error={errors.description}
-          onChange={changeHandler}
-          onBlur={blurHandler}
-          disabled={isSubmitting}
-        />
-
-        {/* Image URL Field */}
-        <FormField
-          label="Снимка (URL)"
-          name="imageUrl"
-          type="url"
-          placeholder="https://example.com/image.jpg"
-          value={formData.imageUrl}
-          error={errors.imageUrl}
-          onChange={changeHandler}
-          onBlur={blurHandler}
-          disabled={isSubmitting}
-          optional={true}
-        />
-
-        {/* Organizer Field */}
-        <FormField
-          label="Организатор"
-          name="organizer"
-          type="text"
-          placeholder="Въведете име на организатор"
-          value={formData.organizer}
-          error={errors.organizer}
-          onChange={changeHandler}
-          onBlur={blurHandler}
-          disabled={isSubmitting}
-          optional={true}
-        />
-
-        {/* Organizer URL Field */}
-        <FormField
-          label="Уебсайт на организатор (URL)"
-          name="organizerUrl"
-          type="url"
-          placeholder="https://example.com"
-          value={formData.organizerUrl}
-          error={errors.organizerUrl}
-          onChange={changeHandler}
-          onBlur={blurHandler}
-          disabled={isSubmitting}
-          optional={true}
-        />
-
-        {/* Price Field */}
-        <FormField
-          label="Цена"
+          label="Цена (0 = безплатно)"
           name="price"
-          type="text"
-          placeholder="Напр. Безплатно, 10 лв, 25 BGN"
-          value={formData.price}
+          type="number"
+          placeholder="0"
+          value={formData.price || ""}
           error={errors.price}
           onChange={changeHandler}
           onBlur={blurHandler}
           disabled={isSubmitting}
-          optional={true}
+          min="0"
+          step="0.01"
         />
+      </div>
 
-        {/* Submit Button */}
-        <div className="flex gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 py-3 px-6 rounded-xl font-medium transition-all bg-gray-100 text-gray-700 hover:bg-gray-200"
-            disabled={isSubmitting}
-          >
-            Отказ
-          </button>
-          <button
-            type="submit"
-            disabled={hasErrors || isSubmitting}
-            className={`flex-1 py-3 px-6 rounded-xl font-medium transition-all ${
-              hasErrors || isSubmitting
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-gradient-to-r from-primary to-secondary text-white hover:shadow-color hover:scale-[1.02]"
-            }`}
-          >
-            {isSubmitting ? "Запазване..." : "Запази промените"}
-          </button>
-        </div>
-      </form>
-    </>
+      {/* Tags */}
+      <FormField
+        label="Тагове"
+        name="tags"
+        type="text"
+        placeholder="Разделете таговете със запетая"
+        value={formData.tags}
+        error={errors.tags}
+        onChange={changeHandler}
+        onBlur={blurHandler}
+        disabled={isSubmitting}
+        optional={true}
+      />
+
+      {/* Image URL */}
+      <FormField
+        label="Снимка (URL)"
+        name="imageUrl"
+        type="url"
+        placeholder="https://example.com/image.jpg"
+        value={formData.imageUrl}
+        error={errors.imageUrl}
+        onChange={changeHandler}
+        onBlur={blurHandler}
+        disabled={isSubmitting}
+        optional={true}
+      />
+
+      {/* Website URL */}
+      <FormField
+        label="Официална страница / Повече информация (URL)"
+        name="websiteUrl"
+        type="url"
+        placeholder="https://example.com/event"
+        value={formData.websiteUrl}
+        error={errors.websiteUrl}
+        onChange={changeHandler}
+        onBlur={blurHandler}
+        disabled={isSubmitting}
+        optional={true}
+      />
+
+      {/* Submit Buttons */}
+      <div className="flex gap-3 pt-2">
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex-1 py-3 px-6 rounded-xl font-medium transition-all bg-gray-100 text-gray-700 hover:bg-gray-200"
+          disabled={isSubmitting}
+        >
+          Отказ
+        </button>
+        <button
+          type="submit"
+          disabled={hasErrors || isSubmitting}
+          className={`flex-1 py-3 px-6 rounded-xl font-medium transition-all ${
+            hasErrors || isSubmitting
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+              : "bg-gradient-to-r from-primary to-secondary text-white hover:shadow-color hover:scale-[1.02]"
+          }`}
+        >
+          {isSubmitting ? "Запазване..." : "Запази промените"}
+        </button>
+      </div>
+    </form>
   );
 }
-

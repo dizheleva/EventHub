@@ -30,7 +30,7 @@ export function DeleteEventModal({ eventId, isOpen, onClose, onDeleted, onError,
 
       // Authorization check: Verify current user is the owner (creator) of this event
       // Support both creatorId (new) and userId (legacy) for backward compatibility
-      const eventCreatorId = event.creatorId || event.userId;
+      const eventCreatorId = event.creatorId;
       if (user && eventCreatorId !== user.id) {
         // User is NOT the owner - prevent unauthorized deletion
         // Close modal immediately and show error message

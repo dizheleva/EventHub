@@ -87,18 +87,14 @@ export function MyEventsPage() {
     }
 
     return events.filter(event => {
-      // Get ownerId (required field), creatorId (new field), or userId (legacy field) for backward compatibility
-      const eventOwnerId = event.ownerId || event.creatorId || event.userId;
-      
-      // Only include events that have an ownerId/creatorId/userId and match current user
-      // Safely ignore events without ownerId/creatorId/userId (backward compatibility)
-      return eventOwnerId && eventOwnerId === user.id;
+      // Only include events that have creatorId and match current user
+      return event.creatorId && event.creatorId === user.id;
     });
   }, [events, user, isAuthenticated]);
 
   // Compute unique cities from myEvents
   const uniqueCities = useMemo(() => {
-    return [...new Set(myEvents.map(e => e.city).filter(Boolean))].sort();
+    return [...new Set(myEvents.map(e => e.location?.city).filter(Boolean))].sort();
   }, [myEvents]);
 
   // Handlers for sorting
@@ -141,13 +137,14 @@ export function MyEventsPage() {
       const query = searchQuery.toLowerCase();
       return (
         event.title?.toLowerCase().includes(query) ||
-        event.location?.toLowerCase().includes(query)
+        event.location?.address?.toLowerCase().includes(query) ||
+        event.location?.city?.toLowerCase().includes(query)
       );
     });
 
     // Step 2: Apply city filter (exact match)
     if (selectedCity) {
-      filtered = filtered.filter(event => event.city === selectedCity);
+      filtered = filtered.filter(event => event.location?.city === selectedCity);
     }
 
     // Step 3: Apply category filter (exact match)
@@ -322,7 +319,7 @@ export function MyEventsPage() {
                   {paginatedEvents.map((event, index) => (
                     <div 
                       key={event.id} 
-                      className="w-full min-w-0 h-full opacity-0 animate-fade-in-up"
+                      className="w-full min-w-0 h-full flex opacity-0 animate-fade-in-up"
                       style={{ animationDelay: `${index * 0.1}s` }}
                     >
                       <EventItem

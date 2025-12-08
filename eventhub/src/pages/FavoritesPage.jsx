@@ -88,7 +88,7 @@ export function FavoritesPage() {
 
   // Compute unique cities from favoriteEvents
   const uniqueCities = useMemo(() => {
-    return [...new Set(favoriteEvents.map(e => e.city).filter(Boolean))].sort();
+    return [...new Set(favoriteEvents.map(e => e.location?.city).filter(Boolean))].sort();
   }, [favoriteEvents]);
 
   // Handlers for sorting
@@ -131,13 +131,14 @@ export function FavoritesPage() {
       const query = searchQuery.toLowerCase();
       return (
         event.title?.toLowerCase().includes(query) ||
-        event.location?.toLowerCase().includes(query)
+        event.location?.address?.toLowerCase().includes(query) ||
+        event.location?.city?.toLowerCase().includes(query)
       );
     });
 
     // Step 2: Apply city filter (exact match)
     if (selectedCity) {
-      filtered = filtered.filter(event => event.city === selectedCity);
+      filtered = filtered.filter(event => event.location?.city === selectedCity);
     }
 
     // Step 3: Apply category filter (exact match)
@@ -261,7 +262,7 @@ export function FavoritesPage() {
                   {paginatedEvents.map((event, index) => (
                     <div 
                       key={event.id} 
-                      className="w-full min-w-0 h-full opacity-0 animate-fade-in-up"
+                      className="w-full min-w-0 h-full flex opacity-0 animate-fade-in-up"
                       style={{ animationDelay: `${index * 0.1}s` }}
                     >
                       <EventItem

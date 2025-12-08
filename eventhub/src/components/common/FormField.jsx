@@ -30,10 +30,11 @@ export function FormField({
 
   return (
     <div>
-      <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1">
+      <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1 min-h-[1.5rem]">
         {label}{" "}
         {!optional && <span className="text-red-500">*</span>}
         {optional && <span className="text-gray-400 text-xs">(незадължително)</span>}
+        {!optional && <span className="invisible text-xs">(незадължително)</span>}
       </label>
 
       {isTextarea ? (

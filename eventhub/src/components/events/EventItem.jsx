@@ -1,18 +1,17 @@
 import { memo, useState, useEffect } from "react";
-import { Edit, Trash2, Calendar, Star, Heart } from "lucide-react";
+import { Edit, Trash2, Calendar, Star, Heart, MapPin, Clock, Tag, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getCategoryDisplay } from "@/utils/categories";
-import { formatPrice } from "@/utils/priceFormatter";
-import { formatDate } from "@/utils/dateFormatter";
+import { normalizeEvent, formatEventPrice, formatDuration } from "@/utils/eventHelpers";
 import { useAuth } from "@/contexts/AuthContext";
 import { useInterested } from "@/hooks/useInterested";
 import { getUserLikes } from "@/api/userLikesApi";
 import { API_BASE_URL } from "@/config/api";
 import { getUserDisplayName } from "@/utils/userHelpers";
-
-const USERS_API_URL = `${API_BASE_URL}/users`;
 import { useFavorites } from "@/hooks/useFavorites";
 import { useToast } from "@/contexts/ToastContext";
+
+const USERS_API_URL = `${API_BASE_URL}/users`;
 
 export const EventItem = memo(function EventItem({ event, onEdit, onDelete, authorLikesCount: externalAuthorLikesCount }) {
   const { user, isAuthenticated } = useAuth();
@@ -20,21 +19,43 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete, auth
   const { showToast } = useToast();
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   
-  // Authorization check: Verify current user is the owner (creator) of this event
-  // Support both creatorId (new) and userId (legacy) for backward compatibility
-  // Only owners can see and use Edit/Delete buttons
-  const eventCreatorId = event.creatorId || event.userId;
-  const isOwner = isAuthenticated && user && eventCreatorId === user.id;
-  const formattedDate = formatDate(event.date);
-  const city = event.city || "";
-  const category = event.category || "";
-  const price = formatPrice(event.price || "Безплатно");
-  const organizer = event.organizer || "";
+  // Normalize event to new format
+  const normalizedEvent = normalizeEvent(event);
   
-  // Get interests count for this event
+  // Authorization check
+  const eventCreatorId = normalizedEvent.creatorId;
+  const isOwner = isAuthenticated && user && eventCreatorId === user.id;
+  
+  // Format dates
+  const formatDateTime = (dateString) => {
+    if (!dateString) return "";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString("bg-BG", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    } catch {
+      return dateString;
+    }
+  };
+  
+  const startDateTime = formatDateTime(normalizedEvent.startDate);
+  const duration = formatDuration(normalizedEvent.durationMinutes);
+  
+  // Price
+  const priceString = formatEventPrice(normalizedEvent.price);
+  
+  // Category
+  const category = getCategoryDisplay(normalizedEvent.category);
+  
+  // Get interests count
   const { interestsCount } = useInterested(event.id);
   
-  // Check if this event is favorite
+  // Check if favorite
   const eventIsFavorite = isFavorite(event.id);
   
   // Handle favorite toggle
@@ -61,49 +82,41 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete, auth
   }
 
   // Author data
-  const [authorName, setAuthorName] = useState(event.creatorName || null);
+  const [authorName, setAuthorName] = useState(null);
   const [authorLikesCount, setAuthorLikesCount] = useState(externalAuthorLikesCount ?? 0);
   const [isLoadingAuthor, setIsLoadingAuthor] = useState(false);
 
-  // Load author name if creatorId exists
+  // Load author name
   useEffect(() => {
     if (eventCreatorId) {
-      if (event.creatorName) {
-        setAuthorName(event.creatorName);
-      } else {
-        setIsLoadingAuthor(true);
-        fetch(`${USERS_API_URL}/${eventCreatorId}`)
-          .then(res => {
-            if (!res.ok) {
-              throw new Error("Failed to fetch author");
-            }
-            return res.json();
-          })
-            .then(userData => {
-              const username = getUserDisplayName(userData, "Неизвестен");
-              setAuthorName(username);
-            })
-          .catch(err => {
-            console.error("Error loading author:", err);
-            setAuthorName("Неизвестен");
-          })
-          .finally(() => setIsLoadingAuthor(false));
-      }
+      setIsLoadingAuthor(true);
+      fetch(`${USERS_API_URL}/${eventCreatorId}`)
+        .then(res => {
+          if (!res.ok) {
+            throw new Error("Failed to fetch author");
+          }
+          return res.json();
+        })
+        .then(userData => {
+          const username = getUserDisplayName(userData, "Неизвестен");
+          setAuthorName(username);
+        })
+        .catch(err => {
+          console.error("Error loading author:", err);
+          setAuthorName("Неизвестен");
+        })
+        .finally(() => setIsLoadingAuthor(false));
     }
-  }, [eventCreatorId, event.creatorName]);
+  }, [eventCreatorId]);
 
   // Load or update author likes
   useEffect(() => {
     if (eventCreatorId) {
       if (externalAuthorLikesCount !== undefined) {
-        // Use external value if provided
         setAuthorLikesCount(externalAuthorLikesCount);
       } else {
-        // Load from API if not provided
-        getUserLikes(Number(eventCreatorId))
-          .then(likes => {
-            setAuthorLikesCount(likes.length);
-          })
+        getUserLikes(eventCreatorId)
+          .then(likes => setAuthorLikesCount(likes.length))
           .catch(err => {
             console.error("Error loading author likes:", err);
             setAuthorLikesCount(0);
@@ -113,150 +126,181 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete, auth
   }, [eventCreatorId, externalAuthorLikesCount]);
 
   return (
-    <div className="relative w-full h-full min-w-0 p-8 bg-white rounded-xl shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col group">
-      {/* Favorite button - visible for authenticated users */}
-      {isAuthenticated && (
-        <div className="absolute top-2 right-2 z-10">
+    <Link
+      to={`/events/${event.id}`}
+      className="block w-full bg-white rounded-2xl shadow-soft hover:shadow-color transition-all overflow-hidden group h-full flex flex-col"
+    >
+      {/* Image */}
+      <div className="relative h-48 overflow-hidden">
+        {normalizedEvent.imageUrl ? (
+          <img
+            src={normalizedEvent.imageUrl}
+            alt={normalizedEvent.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-primary/20 via-secondary/20 to-primary/10 flex items-center justify-center">
+            <Calendar className="w-16 h-16 text-primary/60" />
+          </div>
+        )}
+        {/* Favorite button */}
+        {isAuthenticated && (
           <button
             onClick={handleToggleFavorite}
             disabled={isTogglingFavorite}
-            className={`p-2 rounded-lg transition-all bg-white/90 backdrop-blur-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 ${
-              eventIsFavorite
-                ? "text-yellow-500 hover:bg-yellow-50 focus-visible:outline-yellow-500"
-                : "text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 focus-visible:outline-yellow-500"
-            } ${isTogglingFavorite ? "opacity-50 cursor-not-allowed" : ""}`}
+            className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors z-10"
             aria-label={eventIsFavorite ? "Премахни от любими" : "Добави в любими"}
           >
-            <Star className={`w-5 h-5 ${eventIsFavorite ? "fill-yellow-500" : ""}`} />
-          </button>
-        </div>
-      )}
-      
-      {/* Authorization: Edit/Delete buttons - ONLY visible to owner */}
-      {/* For non-owners: buttons are completely hidden (no empty space) */}
-      {isOwner && (
-        <div className="absolute top-2 right-2 flex gap-2 z-10" style={{ right: isAuthenticated ? "3.5rem" : "0.5rem" }}>
-          <button
-            onClick={() => onEdit(event.id)}
-            className="p-2 text-gray-500 hover:text-yellow-500 hover:bg-yellow-50 rounded-lg transition-colors bg-white/90 backdrop-blur-sm shadow-sm focus-visible:outline-2 focus-visible:outline-yellow-500 focus-visible:outline-offset-2"
-            aria-label="Редактирай събитие"
-          >
-            <Edit className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => onDelete(event)}
-            className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors bg-white/90 backdrop-blur-sm shadow-sm focus-visible:outline-2 focus-visible:outline-red-500 focus-visible:outline-offset-2"
-            aria-label="Изтрий събитие"
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
-        </div>
-      )}
-      <div className="mb-4 flex-shrink-0 w-full min-w-0 relative">
-        <Link 
-          to={`/events/${event.id}`}
-          className="block focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 rounded-lg w-full min-w-0"
-        >
-          {event.imageUrl ? (
-            <img 
-              src={event.imageUrl} 
-              alt={event.title} 
-              className="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity" 
-            />
-          ) : (
-            <div className="w-full h-48 min-w-0 bg-gradient-to-br from-primary/20 via-secondary/20 to-primary/10 rounded-lg flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity">
-              <Calendar className="w-16 h-16 text-primary/60" />
-            </div>
-          )}
-        </Link>
-        {/* Interests Badge */}
-        <div className="absolute bottom-3 right-3 px-3 py-2 bg-gradient-to-r from-primary to-secondary text-white text-base font-semibold rounded-lg flex items-center gap-1.5 shadow-lg">
-          👁 {interestsCount}
-        </div>
-      </div>
-      <Link 
-        to={`/events/${event.id}`} 
-        className="hover:text-primary transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 rounded focus-visible:outline-dashed"
-      >
-        <h3 className="text-xl font-bold text-gray-900 mb-4 flex-shrink-0 cursor-pointer">{event.title}</h3>
-      </Link>
-      
-      {/* City and Category - 📍 София | 🎭 Култура */}
-      {(city || category) && (
-        <div className="flex flex-wrap items-center gap-2 mb-3 flex-shrink-0 text-sm text-gray-700">
-          {city && <span>📍 {city}</span>}
-          {city && category && <span className="text-gray-400">|</span>}
-          {category && <span>{getCategoryDisplay(category)}</span>}
-        </div>
-      )}
-
-      {/* Date - 📅 22.03.2025 — Събота */}
-      {formattedDate && (
-        <div className="mb-3 flex-shrink-0 text-sm text-gray-600">
-          📅 {formattedDate}
-        </div>
-      )}
-
-      {/* Price - Цена: Безплатно */}
-      <div className="mb-3 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <span className="text-xl flex-shrink-0">💰</span>
-          <span className="text-base text-gray-700">
-            <span className="font-bold text-lg">Цена:</span>{" "}
-            <span
-              className={`inline-block px-4 py-2 rounded-lg text-lg font-bold ${
-                price.toLowerCase().includes("безплатно") || price.toLowerCase().includes("безплатн")
-                  ? "bg-green-100 text-green-700"
-                  : "bg-yellow-100 text-yellow-700"
+            <Star
+              className={`w-5 h-5 transition-colors ${
+                eventIsFavorite ? "fill-yellow-400 text-yellow-400" : "text-gray-400"
               }`}
-            >
-              {price}
+            />
+          </button>
+        )}
+        {/* Interests badge - долен десен ъгъл */}
+        {interestsCount > 0 && (
+          <div className="absolute bottom-3 right-3 px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-lg shadow-md flex items-center gap-1.5 z-10">
+            <Heart className="w-4 h-4 text-primary fill-primary" />
+            <span className="text-sm font-semibold text-gray-900">
+              {interestsCount} {interestsCount === 1 ? "има интерес" : "имат интерес"}
             </span>
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="p-6 flex flex-col flex-grow">
+        {/* Category Badge */}
+        <div className="flex items-center justify-between mb-3">
+          <span className="px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full">
+            {category}
+          </span>
+          {/* Online Badge */}
+          {normalizedEvent.isOnline && (
+            <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full flex items-center gap-1">
+              <MapPin className="w-3 h-3" />
+              Онлайн
+            </span>
+          )}
+        </div>
+
+        {/* Title */}
+        <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+          {normalizedEvent.title}
+        </h3>
+
+        {/* City - под заглавието */}
+        {normalizedEvent.location?.city && (
+          <div className="mb-3">
+            <span className="text-sm text-gray-600 font-medium">
+              {normalizedEvent.location.city}
+            </span>
+          </div>
+        )}
+
+        {/* Начална дата и час */}
+        {startDateTime && (
+          <div className="flex items-center gap-2 text-sm text-gray-700 mb-2">
+            <Calendar className="w-4 h-4 text-primary" />
+            <span className="font-medium">{startDateTime}</span>
+          </div>
+        )}
+
+        {/* Продължителност */}
+        {duration && (
+          <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
+            <Clock className="w-4 h-4" />
+            <span>Продължителност: {duration}</span>
+          </div>
+        )}
+
+        {/* Останалите подробности за място */}
+        {!normalizedEvent.isOnline && normalizedEvent.location?.address && (
+          <div className="mb-3 text-sm text-gray-600">
+            <div className="flex items-start gap-2">
+              <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span className="line-clamp-2">{normalizedEvent.location.address}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Онлайн локация */}
+        {normalizedEvent.isOnline && (
+          <div className="mb-3 text-sm text-gray-600">
+            <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-md">
+              Онлайн събитие
+            </span>
+          </div>
+        )}
+
+        {/* Цена */}
+        <div className="mb-3">
+          <span className={`px-3 py-1.5 rounded-full text-sm font-semibold ${
+            normalizedEvent.price === 0 
+              ? "bg-green-100 text-green-700" 
+              : "bg-yellow-100 text-yellow-700"
+          }`}>
+            {priceString}
           </span>
         </div>
-      </div>
 
-      {/* Organizer - Организатор: Национален театър */}
-      {organizer && (
-        <div className="mb-4 flex-shrink-0 text-sm text-gray-700">
-          <span className="font-medium">Организатор:</span> {organizer}
-        </div>
-      )}
-
-      {/* Author - Автор */}
-      {eventCreatorId && (
-        <div className="mb-4 flex-shrink-0 text-sm text-gray-700">
-          <span className="font-medium">Автор:</span>{" "}
-          {isLoadingAuthor ? (
-            <span className="text-gray-400">Зареждане...</span>
-          ) : (
-            <>
-              <Link
-                to={`/profile/${eventCreatorId}`}
-                className="text-primary hover:underline"
-              >
-                {authorName || "Неизвестен"}
-              </Link>
-              {/* Show heart icon and likes count only if there are likes */}
-              {authorLikesCount > 0 && (
-                <span className="inline-flex items-center gap-1 ml-1">
-                  <Heart className="w-4 h-4 text-red-500 fill-red-500" />
-                  <span className="text-red-500">{authorLikesCount}</span>
-                </span>
+        {/* Автор - mt-auto за да изтласка останалото надолу */}
+        <div className="pt-3 border-t border-gray-100 mt-auto">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500">Автор:</span>
+            <Link
+              to={`/profile/${eventCreatorId}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-sm text-gray-700 hover:text-primary transition-colors font-medium flex items-center gap-1.5"
+            >
+              {isLoadingAuthor ? (
+                <span className="text-gray-400">Зареждане...</span>
+              ) : (
+                <>
+                  <span>{authorName || "Неизвестен"}</span>
+                  {authorLikesCount > 0 && (
+                    <span className="flex items-center gap-1 text-yellow-600">
+                      <Heart className="w-3 h-3 fill-yellow-600" />
+                      <span className="text-xs">{authorLikesCount}</span>
+                    </span>
+                  )}
+                </>
               )}
-            </>
-          )}
+            </Link>
+          </div>
         </div>
-      )}
 
-      {/* View Details Button */}
-      <Link
-        to={`/events/${event.id}`}
-        className="mt-auto inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg text-sm font-medium hover:shadow-color hover:scale-105 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
-      >
-        Детайли
-      </Link>
-    </div>
+        {/* Owner Actions */}
+        {isOwner && (
+          <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onEdit(event);
+              }}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl font-medium hover:bg-primary/20 transition-colors"
+              aria-label="Редактирай събитие"
+            >
+              <Edit className="w-4 h-4" />
+              Редактирай
+            </button>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onDelete(event);
+              }}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-xl font-medium hover:bg-red-200 transition-colors"
+              aria-label="Изтрий събитие"
+            >
+              <Trash2 className="w-4 h-4" />
+              Изтрий
+            </button>
+          </div>
+        )}
+      </div>
+    </Link>
   );
 });
-

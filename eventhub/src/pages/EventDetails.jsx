@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Edit, Trash2, Calendar, Heart, Star } from "lucide-react";
+import { ArrowLeft, ExternalLink, Edit, Trash2, Calendar, Heart, Star, MapPin, Clock, Tag, Users, Globe } from "lucide-react";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -13,11 +13,10 @@ import { useComments } from "@/hooks/useComments";
 import { useFavorites } from "@/hooks/useFavorites";
 import { getUserLikes } from "@/api/userLikesApi";
 import { getUserDisplayName, getUserNameFromId } from "@/utils/userHelpers";
+import { normalizeEvent, formatEventPrice, formatDuration } from "@/utils/eventHelpers";
 import { EditEventForm } from "@/components/events/EditEventForm";
 import { DeleteEventModal } from "@/components/events/DeleteEventModal";
 import { getCategoryDisplay } from "@/utils/categories";
-import { formatPrice } from "@/utils/priceFormatter";
-import { formatDate } from "@/utils/dateFormatter";
 import { API_BASE_URL } from "@/config/api";
 
 const USERS_API_URL = `${API_BASE_URL}/users`;
@@ -51,11 +50,29 @@ export function EventDetails() {
   const { isFavorite, toggleFavorite } = useFavorites();
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
 
-  // Authorization check: Verify current user is the owner (creator) of this event
-  // Support both creatorId (new) and userId (legacy) for backward compatibility
-  // This check determines if user can see/edit/delete this event
-  const eventCreatorId = event?.creatorId || event?.userId;
-  const isOwner = isAuthenticated && user && event && eventCreatorId === user.id;
+  // Normalize event when loaded
+  const normalizedEvent = event ? normalizeEvent(event) : null;
+  
+  // Authorization check
+  const eventCreatorId = normalizedEvent?.creatorId;
+  const isOwner = isAuthenticated && user && normalizedEvent && eventCreatorId === user.id;
+
+  // Format date/time for display
+  const formatDateTime = (dateString) => {
+    if (!dateString) return "";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString("bg-BG", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    } catch {
+      return dateString;
+    }
+  };
 
   // Load users for comment display
   useEffect(() => {
@@ -69,55 +86,47 @@ export function EventDetails() {
       .then(data => setUsers(data))
       .catch(err => {
         console.error("Error loading users:", err);
-        // Set empty array on error to prevent crashes
         setUsers([]);
       });
   }, []);
 
   // Load author data when event is loaded
   useEffect(() => {
-    if (event) {
-      const creatorId = event.creatorId || event.userId;
-      if (creatorId) {
-        setIsLoadingAuthor(true);
-        
-        // Load author name
-        const loadAuthorName = event.creatorName 
-          ? Promise.resolve(event.creatorName)
-          : fetch(`${USERS_API_URL}/${creatorId}`)
-              .then(res => {
-                if (!res.ok) {
-                  throw new Error("Failed to fetch author");
-                }
-                return res.json();
-              })
-              .then(userData => {
-                return getUserDisplayName(userData, "Неизвестен");
-              })
-              .catch(err => {
-                console.error("Error loading author:", err);
-                return "Неизвестен";
-              });
+    if (normalizedEvent && eventCreatorId) {
+      setIsLoadingAuthor(true);
+      
+      const loadAuthorName = fetch(`${USERS_API_URL}/${eventCreatorId}`)
+        .then(res => {
+          if (!res.ok) {
+            throw new Error("Failed to fetch author");
+          }
+          return res.json();
+        })
+        .then(userData => {
+          return getUserDisplayName(userData, "Неизвестен");
+        })
+        .catch(err => {
+          console.error("Error loading author:", err);
+          return "Неизвестен";
+        });
 
-        // Load author likes
-        const loadAuthorLikes = getUserLikes(Number(creatorId))
-          .then(likes => likes.length)
-          .catch(err => {
-            console.error("Error loading author likes:", err);
-            return 0;
-          });
+      const loadAuthorLikes = getUserLikes(Number(eventCreatorId))
+        .then(likes => likes.length)
+        .catch(err => {
+          console.error("Error loading author likes:", err);
+          return 0;
+        });
 
-        // Load both in parallel
-        Promise.all([loadAuthorName, loadAuthorLikes])
-          .then(([name, likesCount]) => {
-            setAuthorName(name);
-            setAuthorLikesCount(likesCount);
-          })
-          .finally(() => setIsLoadingAuthor(false));
-      }
+      Promise.all([loadAuthorName, loadAuthorLikes])
+        .then(([name, likesCount]) => {
+          setAuthorName(name);
+          setAuthorLikesCount(likesCount);
+        })
+        .finally(() => setIsLoadingAuthor(false));
     }
-  }, [event]);
+  }, [normalizedEvent, eventCreatorId]);
 
+  // Load event
   useEffect(() => {
     if (!id) {
       setError("Липсва ID на събитието");
@@ -167,39 +176,27 @@ export function EventDetails() {
     }
   }
 
-  // Authorization check before opening edit modal
-  // Only owners can edit their events
   function handleEdit() {
     if (!isAuthenticated) {
       showToast("error", "Моля, влезте в профила си.");
       return;
     }
-
-    // Double-check ownership before opening modal
-    // This prevents unauthorized access even if UI is manipulated
     if (!isOwner) {
       showToast("error", "Нямате права да редактирате това събитие");
-      return; // Prevent opening modal for non-owners
+      return;
     }
-
     setShowEditModal(true);
   }
 
-  // Authorization check before opening delete modal
-  // Only owners can delete their events
   function handleDelete() {
     if (!isAuthenticated) {
       showToast("error", "Моля, влезте в профила си.");
       return;
     }
-
-    // Double-check ownership before opening modal
-    // This prevents unauthorized access even if UI is manipulated
     if (!isOwner) {
       showToast("error", "Нямате права да изтривате това събитие");
-      return; // Prevent opening modal for non-owners
+      return;
     }
-
     setShowDeleteModal(true);
   }
 
@@ -251,48 +248,11 @@ export function EventDetails() {
     }
   }
 
-  if (isLoading) {
-    return <LoadingSpinner message="Зареждане на детайли..." />;
-  }
-
-  if (error) {
-    return <ErrorMessage message={error} onRetry={retryHandler} />;
-  }
-
-  if (!event) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <EmptyState
-          title="Събитието не беше намерено"
-          message="Съжаляваме, но събитието, което търсиш, не съществува или е било премахнато."
-          icon="🔍"
-          action={
-            <Link
-              to="/events"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-medium hover:shadow-color transition-all"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              Назад към събитията
-            </Link>
-          }
-        />
-      </div>
-    );
-  }
-
-  const formattedDate = formatDate(event.date);
-  const city = event.city || "";
-  const category = event.category || "";
-  const price = formatPrice(event.price || "Безплатно");
-  const organizer = event.organizer || "";
-  const organizerUrl = event.organizerUrl || "";
-
-  // Helper function to get user name (using utility function)
+  // Helper functions
   function getUserName(userId) {
     return getUserNameFromId(userId, users, "Анонимен");
   }
 
-  // Helper function to format comment date
   function formatCommentDate(dateString) {
     if (!dateString) return "";
     try {
@@ -317,7 +277,6 @@ export function EventDetails() {
     }
   }
 
-  // Handle comment submission
   async function handleAddComment(e) {
     e.preventDefault();
     if (!newCommentText.trim()) {
@@ -337,7 +296,6 @@ export function EventDetails() {
     }
   }
 
-  // Handle comment deletion
   async function handleDeleteComment(commentId) {
     try {
       await deleteComment(commentId);
@@ -346,6 +304,45 @@ export function EventDetails() {
       showToast("error", err.message || "Възникна грешка при изтриване на коментар");
     }
   }
+
+  if (isLoading) {
+    return <LoadingSpinner message="Зареждане на детайли..." />;
+  }
+
+  if (error) {
+    return <ErrorMessage message={error} onRetry={retryHandler} />;
+  }
+
+  if (!event || !normalizedEvent) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <EmptyState
+          title="Събитието не беше намерено"
+          message="Съжаляваме, но събитието, което търсиш, не съществува или е било премахнато."
+          icon="🔍"
+          action={
+            <Link
+              to="/events"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-medium hover:shadow-color transition-all"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Назад към събитията
+            </Link>
+          }
+        />
+      </div>
+    );
+  }
+
+  // Get map URL if coordinates exist
+  const getMapUrl = () => {
+    if (normalizedEvent.location?.coordinates?.lat && normalizedEvent.location?.coordinates?.lng) {
+      return `https://www.google.com/maps?q=${normalizedEvent.location.coordinates.lat},${normalizedEvent.location.coordinates.lng}`;
+    }
+    return null;
+  };
+
+  const mapUrl = getMapUrl();
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -360,11 +357,11 @@ export function EventDetails() {
 
       <article className="bg-white rounded-2xl shadow-lg overflow-hidden animate-fadeIn">
         {/* Hero Image */}
-        <div className="w-full h-96 overflow-hidden rounded-t-2xl">
-          {event.imageUrl ? (
+        <div className="w-full h-96 overflow-hidden rounded-t-2xl relative">
+          {normalizedEvent.imageUrl ? (
             <img
-              src={event.imageUrl}
-              alt={event.title}
+              src={normalizedEvent.imageUrl}
+              alt={normalizedEvent.title}
               className="w-full h-full object-cover"
             />
           ) : (
@@ -377,13 +374,13 @@ export function EventDetails() {
         {/* Content */}
         <div className="p-6 md:p-10">
           {/* Title with Favorite and Action Bar */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div className="flex items-center gap-3 flex-1">
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900 flex-1">
-                {event.title}
+                {normalizedEvent.title}
               </h1>
               
-              {/* Favorite Star Button - visible for authenticated users */}
+              {/* Favorite Star Button */}
               {isAuthenticated && (
                 <button
                   onClick={async () => {
@@ -411,7 +408,7 @@ export function EventDetails() {
               )}
             </div>
             
-            {/* Action Bar - Only render if user is owner */}
+            {/* Action Bar */}
             {isOwner && (
               <div className="flex items-center gap-3 flex-shrink-0">
                 <button
@@ -476,48 +473,155 @@ export function EventDetails() {
             </div>
           </div>
 
-          {/* Meta Information - Responsive Grid */}
-          <div className="flex flex-col gap-4 md:gap-6 mb-8">
-            {/* Date and Category on one row */}
-            <div className="flex items-center gap-3 text-gray-700">
-              <span className="text-xl flex-shrink-0">📅</span>
-              <div className="flex items-center gap-3 flex-wrap">
-                {formattedDate && (
-                  <span className="text-sm font-medium">{formattedDate}</span>
+          {/* Event Details Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {/* Schedule Card */}
+            <div className="bg-gray-50 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-primary" />
+                График
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <span className="text-sm text-gray-600">Начало:</span>
+                  <p className="font-medium text-gray-900">
+                    {formatDateTime(normalizedEvent.startDate)}
+                  </p>
+                </div>
+                {normalizedEvent.endDate && (
+                  <div>
+                    <span className="text-sm text-gray-600">Край:</span>
+                    <p className="font-medium text-gray-900">
+                      {formatDateTime(normalizedEvent.endDate)}
+                    </p>
+                  </div>
                 )}
-                {category && (
-                  <>
-                    {formattedDate && <span className="text-gray-300">|</span>}
-                    <span className="px-2 py-1 text-sm font-medium bg-primary/10 text-primary rounded-md">
-                      {getCategoryDisplay(category)}
+                {normalizedEvent.durationMinutes && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Clock className="w-4 h-4" />
+                    <span>Продължителност: {formatDuration(normalizedEvent.durationMinutes)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Location Card */}
+            <div className="bg-gray-50 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-primary" />
+                Локация
+              </h3>
+              <div className="space-y-3">
+                {normalizedEvent.isOnline ? (
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-blue-500" />
+                    <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                      Онлайн събитие
                     </span>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* City and Location on one row */}
-            <div className="flex items-center gap-3 text-gray-700">
-              <span className="text-xl flex-shrink-0">📍</span>
-              <div className="flex items-center gap-3 flex-wrap">
-                {city && (
-                  <span className="text-sm font-medium">{city}</span>
-                )}
-                {event.location && (
+                  </div>
+                ) : (
                   <>
-                    {city && <span className="text-gray-300">|</span>}
-                    <span className="text-sm">{event.location}</span>
+                    {normalizedEvent.location?.city && (
+                      <div>
+                        <span className="text-sm text-gray-600">Град:</span>
+                        <p className="font-medium text-gray-900">{normalizedEvent.location.city}</p>
+                      </div>
+                    )}
+                    {normalizedEvent.location?.address && (
+                      <div>
+                        <span className="text-sm text-gray-600">Адрес:</span>
+                        <p className="font-medium text-gray-900">{normalizedEvent.location.address}</p>
+                      </div>
+                    )}
+                    {mapUrl && (
+                      <a
+                        href={mapUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-primary hover:underline text-sm font-medium"
+                      >
+                        <MapPin className="w-4 h-4" />
+                        Виж на карта
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
                   </>
                 )}
               </div>
             </div>
 
-            {/* Author on one row */}
-            {eventCreatorId && (
+            {/* Price */}
+            <div className="bg-gray-50 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">💰</span>
+                Цена:
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <span className={`inline-block px-4 py-2 rounded-lg font-bold text-lg ${
+                    normalizedEvent.price === 0 
+                      ? "bg-green-100 text-green-700" 
+                      : "bg-yellow-100 text-yellow-700"
+                  }`}>
+                    {formatEventPrice(normalizedEvent.price)}
+                  </span>
+                </div>                
+              </div>
+            </div>
+
+            {/* Category & Tags Card */}
+            <div className="bg-gray-50 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Tag className="w-5 h-5 text-primary" />
+                Категория & Тагове
+              </h3>
+              <div className="space-y-3">
+                {normalizedEvent.category && (
+                  <div>
+                    <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                      {getCategoryDisplay(normalizedEvent.category)}
+                    </span>
+                  </div>
+                )}
+                {normalizedEvent.tags && normalizedEvent.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {normalizedEvent.tags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="px-2 py-1 bg-gray-200 text-gray-700 rounded-full text-xs flex items-center gap-1"
+                      >
+                        <Tag className="w-3 h-3" />
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Website URL Section */}
+          {normalizedEvent.websiteUrl && (
+            <div className="mb-8">
+              <a
+                href={normalizedEvent.websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-medium hover:shadow-color transition-all"
+              >
+                <ExternalLink className="w-5 h-5" />
+                Виж повече тук
+              </a>
+            </div>
+          )}
+
+          {/* Author Section */}
+          {eventCreatorId && (
+            <div className="mb-8 pb-8 border-b border-gray-200">
               <div className="flex items-center gap-3 text-gray-700">
-                <span className="text-xl flex-shrink-0">👤</span>
+                <span className="text-xl">👤</span>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium">Автор:</span>{" "}
+                  <span className="text-sm font-medium">Автор:</span>
                   {isLoadingAuthor ? (
                     <span className="text-gray-400 text-sm">Зареждане...</span>
                   ) : (
@@ -528,8 +632,6 @@ export function EventDetails() {
                       >
                         {authorName || "Неизвестен"}
                       </Link>
-                      {" "}
-                      {/* Show heart icon and likes count only if there are likes */}
                       {authorLikesCount > 0 && (
                         <span className="inline-flex items-center gap-1 text-sm ml-1">
                           <Heart className="w-4 h-4 text-red-500 fill-red-500" />
@@ -540,57 +642,15 @@ export function EventDetails() {
                   )}
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Price and Organizer - Structured Info Layout */}
-          <div className="flex flex-col gap-6 mb-8 pb-8 border-b border-gray-200">
-            <div className="flex items-center gap-3">
-              <span className="text-xl flex-shrink-0">💰</span>
-              <span className="text-base text-gray-700">
-                <span className="font-bold text-lg">Цена:</span>{" "}
-                <span
-                  className={`inline-block px-4 py-2 rounded-lg text-lg font-bold ${
-                    price.toLowerCase().includes("безплатно") || price.toLowerCase().includes("безплатн")
-                      ? "bg-green-100 text-green-700"
-                      : "bg-yellow-100 text-yellow-700"
-                  }`}
-                >
-                  {price}
-                </span>
-              </span>
             </div>
-
-            {/* Organizer on one row */}
-            {organizer && (
-              <div className="flex items-center gap-3">
-                <span className="text-xl flex-shrink-0">👤</span>
-                <span className="text-sm text-gray-700">
-                  <span className="font-medium">Организатор:</span>{" "}
-                  {organizerUrl ? (
-                    <a
-                      href={organizerUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline inline-flex items-center gap-1"
-                    >
-                      {organizer}
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-                  ) : (
-                    organizer
-                  )}
-                </span>
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Description */}
           <div className="prose max-w-none mb-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6">Описание</h2>
             <div className="border-l-4 border-primary/20 pl-6">
               <p className="text-gray-700 text-base md:text-lg leading-relaxed md:leading-loose whitespace-pre-wrap">
-                {event.description}
+                {normalizedEvent.description}
               </p>
             </div>
           </div>
@@ -696,4 +756,3 @@ export function EventDetails() {
     </div>
   );
 }
-

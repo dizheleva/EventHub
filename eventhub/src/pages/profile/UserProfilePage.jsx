@@ -89,7 +89,7 @@ export function UserProfilePage() {
     if (!events || !profileUser) return [];
     const userIdNum = Number(userId);
     return events.filter(event => {
-      const eventCreatorId = event.creatorId || event.userId;
+      const eventCreatorId = event.creatorId;
       return eventCreatorId === userIdNum;
     });
   }, [events, profileUser, userId]);
@@ -344,13 +344,14 @@ export function UserProfilePage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {userEvents.map((event) => (
-              <EventItem
-                key={event.id}
-                event={event}
-                onEdit={() => {}}
-                onDelete={() => {}}
-                authorLikesCount={likesCount}
-              />
+              <div key={event.id} className="w-full min-w-0 h-full flex">
+                <EventItem
+                  event={event}
+                  onEdit={() => {}}
+                  onDelete={() => {}}
+                  authorLikesCount={likesCount}
+                />
+              </div>
             ))}
           </div>
         )}
