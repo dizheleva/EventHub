@@ -43,7 +43,15 @@ function sortEvents(eventsList, sortByField, sortOrderValue) {
 
 export function FavoritesPage() {
   const { user, isAuthenticated } = useAuth();
-  const { events, isLoading: isLoadingEvents, error: eventsError, fetchEvents } = useEvents(true);
+  const { 
+    events, 
+    externalEvents,
+    isLoading: isLoadingEvents, 
+    isLoadingExternal,
+    error: eventsError, 
+    fetchEvents,
+    fetchExternalEvents
+  } = useEvents(true);
   const { favorites, isLoading: isLoadingFavorites } = useFavorites();
 
   // Search state
@@ -70,21 +78,64 @@ export function FavoritesPage() {
   // Fetch events when component mounts
   useEffect(() => {
     fetchEvents();
+    fetchExternalEvents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
 
-  // Filter events to show only favorites
+  // Filter events to show only favorites (including external events)
+  // Also filter out past events (where both startDate and endDate are in the past)
   const favoriteEvents = useMemo(() => {
-    if (!isAuthenticated || !user || !favorites.length || !events.length) {
+    if (!isAuthenticated || !user || !favorites.length) {
       return [];
     }
 
     // Get event IDs from favorites
     const favoriteEventIds = favorites.map(fav => String(fav.eventId));
     
+    // Combine local and external events
+    const allEvents = [...(events || []), ...(externalEvents || [])];
+    
     // Filter events that are in favorites
-    return events.filter(event => favoriteEventIds.includes(String(event.id)));
-  }, [events, favorites, user, isAuthenticated]);
+    const favoriteEventsList = allEvents.filter(event => favoriteEventIds.includes(String(event.id)));
+    
+    // Filter out past events
+    const now = new Date();
+    now.setHours(0, 0, 0, 0); // Set to start of day for comparison
+    
+    return favoriteEventsList.filter(event => {
+      if (!event.startDate) {
+        return false; // Skip events without start date
+      }
+      
+      try {
+        const startDate = new Date(event.startDate);
+        startDate.setHours(0, 0, 0, 0);
+        
+        // Check if start date is in the past
+        if (startDate < now) {
+          // If start date is past, check end date
+          if (event.endDate) {
+            const endDate = new Date(event.endDate);
+            endDate.setHours(0, 0, 0, 0);
+            
+            // If end date is also in the past, skip this event
+            if (endDate < now) {
+              return false;
+            }
+          } else {
+            // No end date, but start date is past - skip
+            return false;
+          }
+        }
+        
+        // Event is valid (either start date is in future, or end date is in future)
+        return true;
+      } catch (error) {
+        // Skip events with invalid dates
+        return false;
+      }
+    });
+  }, [events, externalEvents, favorites, user, isAuthenticated]);
 
   // Compute unique cities from favoriteEvents
   const uniqueCities = useMemo(() => {
@@ -200,7 +251,7 @@ export function FavoritesPage() {
   }
 
   // Loading state
-  if (isLoadingEvents || isLoadingFavorites) {
+  if (isLoadingEvents || isLoadingExternal || isLoadingFavorites) {
     return <LoadingSpinner message="Зареждане на любимите събития..." />;
   }
 

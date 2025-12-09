@@ -55,7 +55,8 @@ export function EventDetails() {
   
   // Authorization check
   const eventCreatorId = normalizedEvent?.creatorId;
-  const isOwner = isAuthenticated && user && normalizedEvent && eventCreatorId === user.id;
+  const isExternal = event?.isExternal === true;
+  const isOwner = isAuthenticated && user && normalizedEvent && eventCreatorId === user.id && !isExternal;
 
   // Format date/time for display
   const formatDateTime = (dateString) => {
@@ -177,6 +178,10 @@ export function EventDetails() {
   }
 
   function handleEdit() {
+    if (isExternal) {
+      showToast("error", "Външните събития не могат да се редактират");
+      return;
+    }
     if (!isAuthenticated) {
       showToast("error", "Моля, влезте в профила си.");
       return;
@@ -189,6 +194,10 @@ export function EventDetails() {
   }
 
   function handleDelete() {
+    if (isExternal) {
+      showToast("error", "Външните събития не могат да се изтриват");
+      return;
+    }
     if (!isAuthenticated) {
       showToast("error", "Моля, влезте в профила си.");
       return;
@@ -599,21 +608,6 @@ export function EventDetails() {
               </div>
             </div>
           </div>
-
-          {/* Website URL Section */}
-          {normalizedEvent.websiteUrl && (
-            <div className="mb-8">
-              <a
-                href={normalizedEvent.websiteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-medium hover:shadow-color transition-all"
-              >
-                <ExternalLink className="w-5 h-5" />
-                Виж повече тук
-              </a>
-            </div>
-          )}
 
           {/* Author Section */}
           {eventCreatorId && (

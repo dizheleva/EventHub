@@ -81,6 +81,7 @@ export function MyEventsPage() {
   // Filter events to show only those created by the current user
   // Support ownerId (required), creatorId (new), and userId (legacy) for backward compatibility
   // Events without ownerId/creatorId/userId are safely ignored
+  // NOTE: Past events are NOT filtered here - they should be shown with a badge
   const myEvents = useMemo(() => {
     if (!isAuthenticated || !user) {
       return [];

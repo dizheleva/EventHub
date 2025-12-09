@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Trash2 } from "lucide-react";
 
 /**
@@ -10,7 +11,7 @@ import { Trash2 } from "lucide-react";
  * @param {string} props.userName - Name of the user who wrote the comment
  * @param {string} props.formattedDate - Formatted date string for the comment
  */
-export function CommentItem({ comment, onDelete, isOwner, userName, formattedDate }) {
+export const CommentItem = memo(function CommentItem({ comment, onDelete, isOwner, userName, formattedDate }) {
   return (
     <div className="bg-gray-50 rounded-xl p-4">
       <div className="flex items-start justify-between mb-2">
@@ -38,5 +39,5 @@ export function CommentItem({ comment, onDelete, isOwner, userName, formattedDat
       </div>
     </div>
   );
-}
+});
 

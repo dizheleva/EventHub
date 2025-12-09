@@ -10,6 +10,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
+  server: {
+    proxy: {
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',

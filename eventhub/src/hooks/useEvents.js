@@ -1,13 +1,22 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { API_BASE_URL } from "@/config/api";
 import { normalizeEvent } from "@/utils/eventHelpers";
+import { getAllEvents, getExternalEvents } from "@/api/externalEventsApi";
 
 const EVENTS_API_URL = `${API_BASE_URL}/events`;
 
+// Simple in-memory cache for external events (lasts for session)
+let externalEventsCache = null;
+let externalEventsCacheTime = null;
+const EXTERNAL_EVENTS_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export function useEvents(initialLoading = false) {
   const [events, setEvents] = useState([]);
+  const [externalEvents, setExternalEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(initialLoading);
+  const [isLoadingExternal, setIsLoadingExternal] = useState(false);
   const [error, setError] = useState(null);
+  const [externalError, setExternalError] = useState(null);
 
   // Fetch all events
   // Returns events with creatorId field (or userId for legacy events)
@@ -302,12 +311,102 @@ export function useEvents(initialLoading = false) {
     // Note: No setIsLoading for optimistic UI - operation should feel instant
   }
 
+  // Fetch external events from cached server endpoint (no direct scraping)
+  // Uses in-memory cache to avoid repeated requests
+  const fetchExternalEventsData = useCallback(async (options = {}) => {
+    setExternalError(null);
+    
+    // Check in-memory cache first
+    const now = Date.now();
+    if (externalEventsCache && externalEventsCacheTime && 
+        (now - externalEventsCacheTime) < EXTERNAL_EVENTS_CACHE_DURATION) {
+      let filteredEvents = externalEventsCache;
+      
+      // Apply city filter if specified
+      if (options.city) {
+        filteredEvents = applyCityFilter(externalEventsCache, options.city);
+      }
+      
+      setExternalEvents(filteredEvents);
+      return filteredEvents;
+    }
+    
+    setIsLoadingExternal(true);
+
+    try {
+      // Get cached external events from server (includes Varna + AllEvents)
+      const events = await getExternalEvents();
+      
+      // Update in-memory cache
+      externalEventsCache = events;
+      externalEventsCacheTime = Date.now();
+      
+      // Apply city filter if specified (client-side filtering)
+      let filteredEvents = events;
+      if (options.city) {
+        filteredEvents = applyCityFilter(events, options.city);
+      }
+      
+      setExternalEvents(filteredEvents);
+      return filteredEvents;
+    } catch (err) {
+      const errorMessage = err.message || "Възникна грешка при зареждане на външни събития";
+      setExternalError(errorMessage);
+      console.error("Error fetching external events:", err);
+      
+      // Try to use stale cache if available
+      if (externalEventsCache) {
+        let filteredEvents = externalEventsCache;
+        if (options.city) {
+          filteredEvents = applyCityFilter(externalEventsCache, options.city);
+        }
+        setExternalEvents(filteredEvents);
+        return filteredEvents;
+      }
+      
+      // Don't throw - allow internal events to still display
+      return [];
+    } finally {
+      setIsLoadingExternal(false);
+    }
+  }, []); // Empty deps - function doesn't depend on any props/state
+  
+  // Helper function to apply city filter
+  function applyCityFilter(events, city) {
+    const cityMap = {
+      "София": "Sofia",
+      "Sofia": "Sofia",
+      "Варна": "Varna",
+      "Varna": "Varna",
+      "Пловдив": "Plovdiv",
+      "Plovdiv": "Plovdiv",
+      "Бургас": "Burgas",
+      "Burgas": "Burgas",
+      "Русе": "Ruse",
+      "Ruse": "Ruse",
+    };
+    
+    const englishCity = cityMap[city] || city;
+    const normalizedCity = englishCity.toLowerCase();
+    
+    // Filter by city (case-insensitive)
+    return events.filter(event => {
+      const eventCity = event.location?.city?.toLowerCase() || "";
+      return eventCity.includes(normalizedCity) || 
+             eventCity.includes(city.toLowerCase());
+    });
+  }
+
   return {
     events,
+    externalEvents,
     isLoading,
+    isLoadingExternal,
     error,
+    externalError,
     setEvents,
     fetchEvents,
+    fetchExternalEvents: fetchExternalEventsData,
     createEvent,
     updateEvent,
     deleteEvent,

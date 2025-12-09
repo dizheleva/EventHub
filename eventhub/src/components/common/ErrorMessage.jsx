@@ -1,4 +1,6 @@
-export function ErrorMessage({ message, onRetry }) {
+import { memo } from "react";
+
+export const ErrorMessage = memo(function ErrorMessage({ message, onRetry }) {
   return (
     <div className="text-center py-20">
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 max-w-md mx-auto">
@@ -15,5 +17,5 @@ export function ErrorMessage({ message, onRetry }) {
       </div>
     </div>
   );
-}
+});
 

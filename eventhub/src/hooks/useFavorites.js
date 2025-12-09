@@ -73,6 +73,7 @@ export function useFavorites() {
     }
 
     const eventIdStr = String(eventId);
+    
     const wasFavorite = checkIsFavorite(eventId);
     
     // Find existing favorite entry
@@ -114,6 +115,13 @@ export function useFavorites() {
     } catch (err) {
       // On error, rollback to previous state
       console.error("Error toggling favorite:", err);
+      console.error("Error details:", {
+        message: err.message,
+        stack: err.stack,
+        eventId,
+        eventIdStr,
+        userId: user.id
+      });
       setFavorites(previousFavorites);
       
       // Re-throw error so caller can handle it (e.g., show toast)

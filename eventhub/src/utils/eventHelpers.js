@@ -33,11 +33,27 @@ export function calculateDurationMinutes(startDate, endDate) {
  * Format duration in minutes to human-readable string
  * 
  * @param {number|null} minutes - Duration in minutes
- * @returns {string} Formatted duration (e.g., "2h 30m", "45m", "неизвестно")
+ * @returns {string} Formatted duration (e.g., "2ч 30м", "45м", "1д 2ч 30м", "неизвестно")
  */
 export function formatDuration(minutes) {
   if (!minutes || minutes <= 0) return "неизвестно";
   
+  // If duration is >= 24 hours (1440 minutes), show days
+  if (minutes >= 1440) {
+    const days = Math.floor(minutes / 1440);
+    const remainingMinutes = minutes % 1440;
+    const hours = Math.floor(remainingMinutes / 60);
+    const mins = remainingMinutes % 60;
+    
+    const parts = [];
+    if (days > 0) parts.push(`${days}д`);
+    if (hours > 0) parts.push(`${hours}ч`);
+    if (mins > 0) parts.push(`${mins}м`);
+    
+    return parts.join(" ") || "неизвестно";
+  }
+  
+  // For durations < 24 hours, use the original format
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
   
@@ -172,6 +188,9 @@ export function normalizeEvent(event) {
     
     // Tags
     tags: tags,
+    
+    // Preserve custom fields (e.g., isExternal for external events)
+    ...(event.isExternal !== undefined && { isExternal: event.isExternal }),
   };
 }
 

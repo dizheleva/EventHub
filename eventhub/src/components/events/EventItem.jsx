@@ -1,6 +1,6 @@
 import { memo, useState, useEffect } from "react";
 import { Edit, Trash2, Calendar, Star, Heart, MapPin, Clock, Tag, Users } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getCategoryDisplay } from "@/utils/categories";
 import { normalizeEvent, formatEventPrice, formatDuration } from "@/utils/eventHelpers";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,33 +17,116 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete, auth
   const { user, isAuthenticated } = useAuth();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   
   // Normalize event to new format
   const normalizedEvent = normalizeEvent(event);
   
+  // Check if event is external
+  const isExternal = event.isExternal === true;
+  
+  // Check if event is past (both startDate and endDate are in the past)
+  const isPastEvent = (() => {
+    if (!normalizedEvent.startDate) return false;
+    
+    try {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      
+      const startDate = new Date(normalizedEvent.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      
+      // Check if start date is in the past
+      if (startDate < now) {
+        // If start date is past, check end date
+        if (normalizedEvent.endDate) {
+          const endDate = new Date(normalizedEvent.endDate);
+          endDate.setHours(0, 0, 0, 0);
+          
+          // If end date is also in the past, event is past
+          return endDate < now;
+        } else {
+          // No end date, but start date is past - event is past
+          return true;
+        }
+      }
+      
+      return false;
+    } catch (error) {
+      return false;
+    }
+  })();
+  
   // Authorization check
   const eventCreatorId = normalizedEvent.creatorId;
-  const isOwner = isAuthenticated && user && eventCreatorId === user.id;
+  const isOwner = isAuthenticated && user && eventCreatorId === user.id && !isPastEvent;
   
-  // Format dates
-  const formatDateTime = (dateString) => {
+  // Format dates - check if time is meaningful (not midnight)
+  const hasTime = (dateString) => {
+    if (!dateString) return false;
+    
+    try {
+      const date = new Date(dateString);
+      
+      // Check if time is midnight in local timezone
+      // Dates created from YYYY-MM-DD format (date-only) will have 00:00:00 in local time
+      const localHours = date.getHours();
+      const localMinutes = date.getMinutes();
+      const localSeconds = date.getSeconds();
+      const localMilliseconds = date.getMilliseconds();
+      
+      // If all time components are 0 in local time, treat it as date-only
+      // This handles dates scraped from Varna site which only have date (DD.MM.YYYY)
+      if (localHours === 0 && localMinutes === 0 && localSeconds === 0 && localMilliseconds === 0) {
+        return false;
+      }
+      
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const formatDateTime = (dateString, isExternalEvent = false) => {
     if (!dateString) return "";
     try {
       const date = new Date(dateString);
-      return date.toLocaleString("bg-BG", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
+      
+      // For external events, always show only date (no time)
+      if (isExternalEvent) {
+        return date.toLocaleDateString("bg-BG", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric"
+        });
+      }
+      
+      // For local events, check if time is present
+      if (hasTime(dateString)) {
+        // Format with date and time
+        return date.toLocaleString("bg-BG", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      } else {
+        // Format only date (no time)
+        return date.toLocaleDateString("bg-BG", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric"
+        });
+      }
     } catch {
       return dateString;
     }
   };
   
-  const startDateTime = formatDateTime(normalizedEvent.startDate);
+  const startDateTime = formatDateTime(normalizedEvent.startDate, isExternal);
+  const endDateTime = normalizedEvent.endDate ? formatDateTime(normalizedEvent.endDate, isExternal) : null;
   const duration = formatDuration(normalizedEvent.durationMinutes);
   
   // Price
@@ -125,10 +208,27 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete, auth
     }
   }, [eventCreatorId, externalAuthorLikesCount]);
 
+  // For external events, link to their website URL instead of detail page
+  const externalUrl = isExternal && normalizedEvent.websiteUrl ? normalizedEvent.websiteUrl : null;
+
+  // Handle click on event card
+  const handleEventClick = (e) => {
+    // Don't navigate if clicking on interactive elements
+    if (e.target.closest('a, button, [role="button"]')) {
+      return;
+    }
+    
+    if (externalUrl) {
+      window.open(externalUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      navigate(`/events/${event.id}`);
+    }
+  };
+
   return (
-    <Link
-      to={`/events/${event.id}`}
-      className="block w-full bg-white rounded-2xl shadow-soft hover:shadow-color transition-all overflow-hidden group h-full flex flex-col"
+    <div
+      onClick={handleEventClick}
+      className="block w-full bg-white rounded-2xl shadow-soft hover:shadow-color transition-all overflow-hidden group h-full flex flex-col cursor-pointer"
     >
       {/* Image */}
       <div className="relative h-48 overflow-hidden">
@@ -176,13 +276,27 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete, auth
           <span className="px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full">
             {category}
           </span>
-          {/* Online Badge */}
-          {normalizedEvent.isOnline && (
-            <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full flex items-center gap-1">
-              <MapPin className="w-3 h-3" />
-              Онлайн
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Past Event Badge */}
+            {isPastEvent && (
+              <span className="px-3 py-1 bg-gray-200 text-gray-700 text-xs font-semibold rounded-full">
+                Свършило
+              </span>
+            )}
+            {/* External Event Badge */}
+            {event.isExternal === true && (
+              <span className="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full">
+                Външно събитие
+              </span>
+            )}
+            {/* Online Badge */}
+            {normalizedEvent.isOnline && (
+              <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                Онлайн
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Title */}
@@ -199,11 +313,18 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete, auth
           </div>
         )}
 
-        {/* Начална дата и час */}
+        {/* Начална и крайна дата и час */}
         {startDateTime && (
-          <div className="flex items-center gap-2 text-sm text-gray-700 mb-2">
-            <Calendar className="w-4 h-4 text-primary" />
-            <span className="font-medium">{startDateTime}</span>
+          <div className="mb-2">
+            <div className="flex items-center gap-2 text-sm text-gray-700 mb-1">
+              <Calendar className="w-4 h-4 text-primary" />
+              <span className="font-medium">Начало: {startDateTime}</span>
+            </div>
+            {endDateTime && endDateTime !== startDateTime && (
+              <div className="flex items-center gap-2 text-sm text-gray-600 ml-6">
+                <span>Край: {endDateTime}</span>
+              </div>
+            )}
           </div>
         )}
 
@@ -234,45 +355,49 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete, auth
           </div>
         )}
 
-        {/* Цена */}
-        <div className="mb-3">
-          <span className={`px-3 py-1.5 rounded-full text-sm font-semibold ${
-            normalizedEvent.price === 0 
-              ? "bg-green-100 text-green-700" 
-              : "bg-yellow-100 text-yellow-700"
-          }`}>
-            {priceString}
-          </span>
-        </div>
+        {/* Цена - не се показва за външни събития */}
+        {!isExternal && (
+          <div className="mb-3">
+            <span className={`px-3 py-1.5 rounded-full text-sm font-semibold ${
+              normalizedEvent.price === 0 
+                ? "bg-green-100 text-green-700" 
+                : "bg-yellow-100 text-yellow-700"
+            }`}>
+              {priceString}
+            </span>
+          </div>
+        )}
 
         {/* Автор - mt-auto за да изтласка останалото надолу */}
-        <div className="pt-3 border-t border-gray-100 mt-auto">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">Автор:</span>
-            <Link
-              to={`/profile/${eventCreatorId}`}
-              onClick={(e) => e.stopPropagation()}
-              className="text-sm text-gray-700 hover:text-primary transition-colors font-medium flex items-center gap-1.5"
-            >
-              {isLoadingAuthor ? (
-                <span className="text-gray-400">Зареждане...</span>
-              ) : (
-                <>
-                  <span>{authorName || "Неизвестен"}</span>
-                  {authorLikesCount > 0 && (
-                    <span className="flex items-center gap-1 text-yellow-600">
-                      <Heart className="w-3 h-3 fill-yellow-600" />
-                      <span className="text-xs">{authorLikesCount}</span>
-                    </span>
-                  )}
-                </>
-              )}
-            </Link>
+        {!isExternal && eventCreatorId && (
+          <div className="pt-3 border-t border-gray-100 mt-auto">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">Автор:</span>
+              <Link
+                to={`/profile/${eventCreatorId}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-sm text-gray-700 hover:text-primary transition-colors font-medium flex items-center gap-1.5"
+              >
+                {isLoadingAuthor ? (
+                  <span className="text-gray-400">Зареждане...</span>
+                ) : (
+                  <>
+                    <span>{authorName || "Неизвестен"}</span>
+                    {authorLikesCount > 0 && (
+                      <span className="flex items-center gap-1 text-yellow-600">
+                        <Heart className="w-3 h-3 fill-yellow-600" />
+                        <span className="text-xs">{authorLikesCount}</span>
+                      </span>
+                    )}
+                  </>
+                )}
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Owner Actions */}
-        {isOwner && (
+        {/* Owner Actions - only for local events */}
+        {isOwner && !isExternal && (
           <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
             <button
               onClick={(e) => {
@@ -301,6 +426,6 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete, auth
           </div>
         )}
       </div>
-    </Link>
+    </div>
   );
 });

@@ -10,6 +10,8 @@ EventHub is a modern web application for discovering, managing, and sharing even
 - [Installation and Setup](#installation-and-setup)
 - [Features](#features)
 - [API](#api)
+- [Architecture](#architecture)
+- [Requirements Coverage](#requirements-coverage)
 - [Future Tasks](#future-tasks)
 
 ## ✨ Key Features
@@ -177,6 +179,35 @@ The application uses JSON Server for REST API. The main endpoints are:
   "updatedAt": "2025-11-01T00:00:00.000Z"
 }
 ```
+
+## 🏗️ Architecture
+
+За подробна информация за архитектурата на приложението, вижте [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+### Основни компоненти
+
+- **Public Part**: HomePage, EventsPage, EventDetails, UserProfilePage
+- **Private Part**: MyEventsPage, FavoritesPage, EditProfilePage
+- **Authentication**: LoginPage, RegisterPage с route guards
+- **State Management**: Context API (AuthContext, ToastContext)
+- **Routing**: React Router DOM с ProtectedRoute и GuestRoute
+
+## ✅ Requirements Coverage
+
+Приложението покрива всички изисквания за курсова работа:
+
+- ✅ Публична и частна част
+- ✅ Поне 3 динамични страници (6+ страници)
+- ✅ Catalog (EventsPage) и Details (EventDetails)
+- ✅ CRUD операции за Events колекция
+- ✅ React.js с hooks, Context API, lifecycle
+- ✅ REST API комуникация
+- ✅ Автентикация и route guards
+- ✅ Error handling и валидация
+- ✅ Bound forms и synthetic events
+- ✅ Responsive design и добър UI/UX
+
+За пълен анализ вижте [PROJECT_ANALYSIS.md](./PROJECT_ANALYSIS.md).
 
 ## 📝 Future Tasks
 
