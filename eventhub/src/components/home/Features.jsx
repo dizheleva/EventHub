@@ -52,7 +52,7 @@ export const Features = memo(function Features() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            <span className="text-gradient">Защо да изберете</span> EventHub?
+            Защо да изберете <span className="text-gradient">EventHub</span>?
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Всичко, от което се нуждаете, за да намерите перфектното събитие за вас
