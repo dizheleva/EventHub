@@ -1,6 +1,6 @@
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
-export function Sorting({ sortBy, sortOrder, onSortChange }) {
+export default function Sorting({ sortBy, sortOrder, onSortChange }) {
   const sortFields = [
     { key: "title", label: "Заглавие", color: "yellow" },
     { key: "date", label: "Дата", color: "blue" },

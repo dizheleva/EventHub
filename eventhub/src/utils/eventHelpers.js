@@ -42,73 +42,6 @@ export function sortEvents(eventsList, sortByField, sortOrderValue) {
   return sorted;
 }
 
-/**
- * Calculate duration in minutes between start and end date
- * 
- * @param {string} startDate - ISO date string
- * @param {string} endDate - ISO date string
- * @returns {number|null} Duration in minutes, or null if invalid
- */
-export function calculateDurationMinutes(startDate, endDate) {
-  if (!startDate || !endDate) {
-    return null;
-  }
-
-  try {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      return null;
-    }
-    
-    if (end <= start) {
-      return null; // Invalid: end must be after start
-    }
-    
-    const diffMs = end - start;
-    return Math.floor(diffMs / (1000 * 60)); // Convert to minutes
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Format duration in minutes to human-readable string
- * 
- * @param {number|null} minutes - Duration in minutes
- * @returns {string} Formatted duration (e.g., "2ч 30м", "45м", "1д 2ч 30м", "неизвестно")
- */
-export function formatDuration(minutes) {
-  if (!minutes || minutes <= 0) return "неизвестно";
-  
-  // If duration is >= 24 hours (1440 minutes), show days
-  if (minutes >= 1440) {
-    const days = Math.floor(minutes / 1440);
-    const remainingMinutes = minutes % 1440;
-    const hours = Math.floor(remainingMinutes / 60);
-    const mins = remainingMinutes % 60;
-    
-    const parts = [];
-    if (days > 0) parts.push(`${days}д`);
-    if (hours > 0) parts.push(`${hours}ч`);
-    if (mins > 0) parts.push(`${mins}м`);
-    
-    return parts.join(" ") || "неизвестно";
-  }
-  
-  // For durations < 24 hours, use the original format
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  
-  if (hours > 0 && mins > 0) {
-    return `${hours}ч ${mins}м`;
-  } else if (hours > 0) {
-    return `${hours}ч`;
-  } else {
-    return `${mins}м`;
-  }
-}
 
 /**
  * Normalize event data from old format to new format
@@ -181,8 +114,6 @@ export function normalizeEvent(event) {
     endDate = `${startDate.split('T')[0]}T${event.endTime}:00`;
   }
 
-  // Calculate duration
-  const durationMinutes = event.durationMinutes || calculateDurationMinutes(startDate, endDate);
 
   // Parse price
   let price = 0;
@@ -248,7 +179,6 @@ export function normalizeEvent(event) {
     // Schedule
     startDate: startDate,
     endDate: endDate,
-    durationMinutes: durationMinutes,
     
     // Media
     imageUrl: event.imageUrl || null,

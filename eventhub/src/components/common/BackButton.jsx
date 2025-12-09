@@ -14,7 +14,7 @@ import { ArrowLeft } from "lucide-react";
  * @param {boolean} useHistory - If true and no 'to' prop, uses browser history back
  * @param {boolean} noDefaultStyles - If true, only uses className without default styles
  */
-export const BackButton = memo(function BackButton({ 
+const BackButton = memo(function BackButton({ 
   to,
   onClick,
   text = "Върни се обратно",
@@ -82,4 +82,6 @@ export const BackButton = memo(function BackButton({
     </button>
   );
 });
+
+export default BackButton;
 

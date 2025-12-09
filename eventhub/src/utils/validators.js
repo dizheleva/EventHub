@@ -246,15 +246,6 @@ export const validators = {
       return "Моля, въведете валиден URL адрес";
     }
   },
-  durationMinutes: (value) => {
-    if (value !== null && value !== undefined && value !== "") {
-      const num = Number(value);
-      if (isNaN(num) || num < 0) {
-        return "Продължителността трябва да е положително число";
-      }
-    }
-    return null;
-  },
   tags: () => {
     // Optional field - comma-separated tags
     return null;

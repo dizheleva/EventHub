@@ -36,8 +36,15 @@
 @layer base {
   body {
     font-family: var(--font-sans);
-    background: linear-gradient(to bottom, #fef3f8 0%, #ffffff 50%);
+    background: linear-gradient(to bottom, rgba(253, 244, 255, 0.5) 0%, #ffffff 50%, rgba(253, 244, 255, 0.3) 100%);
     min-height: 100vh;
+    color: #111827;
+  }
+  
+  #root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
 }
 

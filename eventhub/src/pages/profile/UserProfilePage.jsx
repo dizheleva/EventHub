@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Edit, Mail, User, Calendar, CalendarDays, Star, Heart } from "lucide-react";
-import { BackButton } from "@/components/common/BackButton";
+import BackButton from "@/components/common/BackButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/hooks/useUser";
 import { useEvents } from "@/hooks/useEvents";
 import { getCommentsByUser } from "@/api/commentsApi";
 import { getUserLikes, hasUserLiked, giveLike, removeLike } from "@/api/userLikesApi";
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-import { ErrorMessage } from "@/components/common/ErrorMessage";
-import { EventItem } from "@/components/events/EventItem";
-import { LikeButton } from "@/components/profile/LikeButton";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
+import ErrorMessage from "@/components/common/ErrorMessage";
+import EventItem from "@/components/events/EventItem/EventItem";
+import LikeButton from "@/components/profile/LikeButton";
 import { useToast } from "@/hooks/useToast";
 
 /**
@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/useToast";
  * Shows user profile with events and comments count.
  * Only the profile owner can see "Edit Profile" button.
  */
-export function UserProfilePage() {
+export default function UserProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const { user: currentUser, isAuthenticated } = useAuth();

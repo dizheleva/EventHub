@@ -1,9 +1,9 @@
 import { Search } from "lucide-react";
 
-export function SearchBar({ value, onChange, children }) {
+export default function SearchBar({ value, onChange, children }) {
   return (
     <div className="mb-6 flex items-center justify-between gap-4">
-      <div className="relative w-[calc(33.333%+45px)]">
+      <div className="relative flex-1 w-full">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
         <input
           type="text"

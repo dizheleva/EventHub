@@ -12,7 +12,7 @@ import { Calendar } from "lucide-react";
  * @param {string|React.Component} icon - Optional icon (emoji string or React component)
  * @param {React.ReactNode} action - Optional action button or element
  */
-export const EmptyState = memo(function EmptyState({ title, message, icon, action }) {
+const EmptyState = memo(function EmptyState({ title, message, icon, action }) {
   // Default icon if none provided
   const defaultIcon = <Calendar className="w-16 h-16 text-primary/40" />;
   
@@ -66,4 +66,6 @@ export const EmptyState = memo(function EmptyState({ title, message, icon, actio
     </div>
   );
 });
+
+export default EmptyState;
 

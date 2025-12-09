@@ -1,6 +1,6 @@
 import { memo } from "react";
 
-export const Footer = memo(function Footer() {
+const Footer = memo(function Footer() {
   return (
     <footer className="bg-white/80 backdrop-blur-sm border-t border-pink-100">
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -23,4 +23,6 @@ export const Footer = memo(function Footer() {
     </footer>
   );
 });
+
+export default Footer;
 

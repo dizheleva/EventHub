@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom"
 import { CalendarDays, Menu, X, Star, Calendar, CalendarCheck, LogIn, UserPlus, User, LogOut } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 
-export function Navbar() {
+export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const { isAuthenticated, user, logout } = useAuth()
   const navigate = useNavigate()

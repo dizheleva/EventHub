@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Save } from "lucide-react";
-import { BackButton } from "@/components/common/BackButton";
+import BackButton from "@/components/common/BackButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/hooks/useUser";
 import { useToast } from "@/hooks/useToast";
@@ -9,9 +9,9 @@ import { useForm } from "@/hooks/useForm";
 import { API_BASE_URL } from "@/config/api";
 
 const USERS_API_URL = `${API_BASE_URL}/users`;
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-import { ErrorMessage } from "@/components/common/ErrorMessage";
-import { FormField } from "@/components/common/FormField";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
+import ErrorMessage from "@/components/common/ErrorMessage";
+import FormField from "@/components/common/FormField";
 import { validators } from "@/utils/validators";
 
 /**
@@ -20,7 +20,7 @@ import { validators } from "@/utils/validators";
  * Only the profile owner can edit their own profile.
  * If userId !== current user.id, redirects to /events
  */
-export function EditProfilePage() {
+export default function EditProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const { user: currentUser, isAuthenticated, isAuthReady, updateUserInAuth } = useAuth();

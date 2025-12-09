@@ -3,19 +3,19 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEvents } from "@/hooks/useEvents";
 import { useFavorites } from "@/hooks/useFavorites";
 import { Star } from "lucide-react";
-import { NoEventsState } from "@/components/events/NoEventsState";
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-import { ErrorMessage } from "@/components/common/ErrorMessage";
-import { EmptyState } from "@/components/common/EmptyState";
-import { EventItem } from "@/components/events/EventItem";
-import { SearchBar } from "@/components/common/SearchBar";
-import { Sorting } from "@/components/common/Sorting";
-import { EventsFilters } from "@/components/events/EventsFilters";
-import { Pagination } from "@/components/common/Pagination";
+import NoEventsState from "@/components/events/NoEventsState";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
+import ErrorMessage from "@/components/common/ErrorMessage";
+import EmptyState from "@/components/common/EmptyState";
+import EventItem from "@/components/events/EventItem/EventItem";
+import SearchBar from "@/components/common/SearchBar";
+import Sorting from "@/components/common/Sorting";
+import { EventsFilters } from "@/components/events/Filters/EventsFilters";
+import Pagination from "@/components/common/Pagination";
 import { isEventPast } from "@/utils/dateHelpers";
 import { sortEvents } from "@/utils/eventHelpers";
 
-export function FavoritesPage() {
+export default function FavoritesPage() {
   const { user, isAuthenticated } = useAuth();
   const { 
     events, 

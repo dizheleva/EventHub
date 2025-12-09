@@ -1,8 +1,8 @@
 import { memo } from "react";
-import { Navbar } from "./Navbar"
-import { Footer } from "./Footer"
+import Navbar from "./Navbar"
+import Footer from "./Footer"
 
-export const Layout = memo(function Layout({ children }) {
+const Layout = memo(function Layout({ children }) {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-pink-50/50 via-white to-pink-50/30 text-gray-900">
       <Navbar />
@@ -11,3 +11,5 @@ export const Layout = memo(function Layout({ children }) {
     </div>
   )
 });
+
+export default Layout;

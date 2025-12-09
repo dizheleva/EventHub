@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/useToast";
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 /**
  * ProtectedRoute - Route guard for authenticated routes
@@ -15,7 +15,7 @@ import { LoadingSpinner } from "@/components/common/LoadingSpinner";
  * @param {React.ReactNode} children - Content to render if authenticated
  * @param {string} redirectTo - Custom redirect path (default: "/login")
  */
-export function ProtectedRoute({ children, redirectTo = "/login" }) {
+export default function ProtectedRoute({ children, redirectTo = "/login" }) {
   const { isAuthenticated, isAuthReady } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();

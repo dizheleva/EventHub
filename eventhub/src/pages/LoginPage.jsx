@@ -3,7 +3,7 @@ import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/useToast";
 import { useForm } from "@/hooks/useForm";
-import { FormField } from "@/components/common/FormField";
+import FormField from "@/components/common/FormField";
 
 // Validation functions
 function validateEmail(email) {
@@ -27,7 +27,7 @@ function validatePassword(password) {
   return null;
 }
 
-export function LoginPage() {
+export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { login } = useAuth();

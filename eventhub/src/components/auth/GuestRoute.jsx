@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 /**
  * GuestRoute - Route guard for guest-only routes (login, register)
@@ -14,7 +14,7 @@ import { LoadingSpinner } from "@/components/common/LoadingSpinner";
  * @param {React.ReactNode} children - Content to render if not authenticated
  * @param {string} redirectTo - Custom redirect path for authenticated users (default: "/events")
  */
-export function GuestRoute({ children, redirectTo = "/events" }) {
+export default function GuestRoute({ children, redirectTo = "/events" }) {
   const { isAuthenticated, isAuthReady } = useAuth();
   const navigate = useNavigate();
 

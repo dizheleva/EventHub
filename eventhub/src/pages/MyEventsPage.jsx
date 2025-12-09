@@ -3,16 +3,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEvents } from "@/hooks/useEvents";
 import { useNavigate } from "react-router-dom";
 import { Plus, CalendarX } from "lucide-react";
-import { NoEventsState } from "@/components/events/NoEventsState";
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-import { ErrorMessage } from "@/components/common/ErrorMessage";
+import NoEventsState from "@/components/events/NoEventsState";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
+import ErrorMessage from "@/components/common/ErrorMessage";
 import { useToast } from "@/hooks/useToast";
-import { EventItem } from "@/components/events/EventItem";
-import { CreateEventModal } from "@/components/events/CreateEventModal";
-import { SearchBar } from "@/components/common/SearchBar";
-import { Sorting } from "@/components/common/Sorting";
-import { EventsFilters } from "@/components/events/EventsFilters";
-import { Pagination } from "@/components/common/Pagination";
+import EventItem from "@/components/events/EventItem/EventItem";
+import CreateEventModal from "@/components/events/Forms/CreateEventModal";
+import SearchBar from "@/components/common/SearchBar";
+import Sorting from "@/components/common/Sorting";
+import { EventsFilters } from "@/components/events/Filters/EventsFilters";
+import Pagination from "@/components/common/Pagination";
 
 // Helper function: Sort events
 function sortEvents(eventsList, sortByField, sortOrderValue) {
@@ -43,7 +43,7 @@ function sortEvents(eventsList, sortByField, sortOrderValue) {
   return sorted;
 }
 
-export function MyEventsPage() {
+export default function MyEventsPage() {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { events, isLoading, error, fetchEvents, createEvent } = useEvents(true);

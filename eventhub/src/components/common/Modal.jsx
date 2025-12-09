@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
 
-export function Modal({ isOpen, onClose, title, children }) {
+export default function Modal({ isOpen, onClose, title, children }) {
   // Handle ESC key to close modal and body scroll
   useEffect(() => {
     if (!isOpen) {

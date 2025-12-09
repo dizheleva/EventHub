@@ -1,7 +1,7 @@
 import { AlertCircle } from "lucide-react";
 import { CATEGORIES } from "@/utils/categories";
 
-export function CategorySelect({ value, onChange, onBlur, error, disabled, id = "category" }) {
+export default function CategorySelect({ value, onChange, onBlur, error, disabled, id = "category" }) {
   return (
     <div>
       <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">

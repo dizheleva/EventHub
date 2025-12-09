@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/useToast";
 import { useForm } from "@/hooks/useForm";
-import { FormField } from "@/components/common/FormField";
+import FormField from "@/components/common/FormField";
 
 // Validation functions
 function validateEmail(email) {
@@ -47,7 +47,7 @@ function validateConfirmPassword(password, confirmPassword) {
   return null;
 }
 
-export function RegisterPage() {
+export default function RegisterPage() {
   const navigate = useNavigate();
   const { register } = useAuth();
   const { showToast } = useToast();

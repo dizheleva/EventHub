@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-export function Pagination({
+export default function Pagination({
   currentPage,
   totalPages,
   itemsPerPage,

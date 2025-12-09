@@ -1,6 +1,6 @@
 import { AlertCircle } from "lucide-react";
 
-export function FormField({
+export default function FormField({
   label,
   name,
   type = "text",

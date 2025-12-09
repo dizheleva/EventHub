@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Search, PlusCircle, Heart, MapPin, Users, Star } from "lucide-react"
 
-export const Features = memo(function Features() {
+const Features = memo(function Features() {
   const features = [
     {
       icon: Search,
@@ -89,3 +89,5 @@ export const Features = memo(function Features() {
     </section>
   )
 });
+
+export default Features;

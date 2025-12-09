@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ExternalLink, Edit, Trash2, Calendar, Heart, Star, MapPin, Clock, Tag, Users, Globe } from "lucide-react";
-import { BackButton } from "@/components/common/BackButton";
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-import { ErrorMessage } from "@/components/common/ErrorMessage";
-import { EmptyState } from "@/components/common/EmptyState";
-import { Modal } from "@/components/common/Modal";
+import { ExternalLink, Edit, Trash2, Calendar, Heart, Star, MapPin, Tag, Users, Globe } from "lucide-react";
+import BackButton from "@/components/common/BackButton";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
+import ErrorMessage from "@/components/common/ErrorMessage";
+import EmptyState from "@/components/common/EmptyState";
+import Modal from "@/components/common/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/useToast";
 import { useEvents } from "@/hooks/useEvents";
@@ -14,16 +14,16 @@ import { useComments } from "@/hooks/useComments";
 import { useFavorites } from "@/hooks/useFavorites";
 import { getUserLikes } from "@/api/userLikesApi";
 import { getUserDisplayName, getUserNameFromId } from "@/utils/userHelpers";
-import { normalizeEvent, formatEventPrice, formatDuration } from "@/utils/eventHelpers";
-import { EditEventForm } from "@/components/events/EditEventForm";
-import { DeleteEventModal } from "@/components/events/DeleteEventModal";
+import { normalizeEvent, formatEventPrice } from "@/utils/eventHelpers";
+import EditEventForm from "@/components/events/Forms/EditEventForm";
+import DeleteEventModal from "@/components/events/Forms/DeleteEventModal";
 import { getCategoryDisplay } from "@/utils/categories";
 import { API_BASE_URL } from "@/config/api";
 
 const USERS_API_URL = `${API_BASE_URL}/users`;
 const EVENTS_API_URL = `${API_BASE_URL}/events`;
 
-export function EventDetails() {
+export default function EventDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
@@ -494,12 +494,6 @@ export function EventDetails() {
                     <p className="font-medium text-gray-900">
                       {formatDateTime(normalizedEvent.endDate)}
                     </p>
-                  </div>
-                )}
-                {normalizedEvent.durationMinutes && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Clock className="w-4 h-4" />
-                    <span>Продължителност: {formatDuration(normalizedEvent.durationMinutes)}</span>
                   </div>
                 )}
               </div>

@@ -8,7 +8,7 @@ import { Heart } from "lucide-react";
  * @param {Function} props.onToggle - Callback function when button is clicked
  * @param {boolean} props.disabled - Whether the button is disabled
  */
-export function LikeButton({ isLiked, onToggle, disabled = false }) {
+export default function LikeButton({ isLiked, onToggle, disabled = false }) {
   return (
     <button
       onClick={onToggle}
