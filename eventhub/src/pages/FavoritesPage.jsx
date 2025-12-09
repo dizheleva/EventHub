@@ -7,7 +7,7 @@ import NoEventsState from "@/components/events/NoEventsState";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import ErrorMessage from "@/components/common/ErrorMessage";
 import EmptyState from "@/components/common/EmptyState";
-import EventItem from "@/components/events/EventItem/EventItem";
+import EventItem from "@/components/events/EventCard/EventCard";
 import SearchBar from "@/components/common/SearchBar";
 import Sorting from "@/components/common/Sorting";
 import { EventsFilters } from "@/components/events/Filters/EventsFilters";

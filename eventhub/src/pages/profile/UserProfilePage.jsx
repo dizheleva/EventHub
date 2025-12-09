@@ -9,7 +9,7 @@ import { getCommentsByUser } from "@/api/commentsApi";
 import { getUserLikes, hasUserLiked, giveLike, removeLike } from "@/api/userLikesApi";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import ErrorMessage from "@/components/common/ErrorMessage";
-import EventItem from "@/components/events/EventItem/EventItem";
+import EventItem from "@/components/events/EventCard/EventCard";
 import LikeButton from "@/components/profile/LikeButton";
 import { useToast } from "@/hooks/useToast";
 

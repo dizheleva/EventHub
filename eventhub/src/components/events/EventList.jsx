@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { normalizeEvent } from "@/utils/eventHelpers";
-import EventCardSkeleton from "./EventItem/EventCardSkeleton";
-import EventItem from "./EventItem/EventItem";
+import EventCardSkeleton from "./EventCard/EventCardSkeleton";
+import EventItem from "./EventCard/EventCard";
 
 export default function EventList({ events = [], isLoading = false }) {
   // Normalize events once

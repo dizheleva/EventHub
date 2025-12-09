@@ -7,7 +7,7 @@ import NoEventsState from "@/components/events/NoEventsState";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import ErrorMessage from "@/components/common/ErrorMessage";
 import { useToast } from "@/hooks/useToast";
-import EventItem from "@/components/events/EventItem/EventItem";
+import EventItem from "@/components/events/EventCard/EventCard";
 import CreateEventModal from "@/components/events/Forms/CreateEventModal";
 import SearchBar from "@/components/common/SearchBar";
 import Sorting from "@/components/common/Sorting";
