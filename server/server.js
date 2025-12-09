@@ -154,6 +154,66 @@ server.get("/api/scrape/varna", async (req, res) => {
   }
 });
 
+// ============================================
+// Favorites Endpoints with Query Support
+// ============================================
+
+// GET /favorites - Support query parameters (userId, eventId)
+server.get("/favorites", (req, res, next) => {
+  const { userId, eventId } = req.query;
+  
+  // If no query params, use default JSON Server behavior
+  if (!userId && !eventId) {
+    return next();
+  }
+  
+  // Read database
+  const dbData = JSON.parse(fs.readFileSync(dbPath, "utf-8"));
+  let favorites = dbData.favorites || [];
+  
+  // Filter by userId if provided
+  if (userId) {
+    favorites = favorites.filter(fav => fav.userId === Number(userId));
+  }
+  
+  // Filter by eventId if provided
+  if (eventId) {
+    favorites = favorites.filter(fav => fav.eventId === String(eventId));
+  }
+  
+  res.json(favorites);
+});
+
+// ============================================
+// Interests Endpoints with Query Support
+// ============================================
+
+// GET /interests - Support query parameters (eventId, userId)
+server.get("/interests", (req, res, next) => {
+  const { eventId, userId } = req.query;
+  
+  // If no query params, use default JSON Server behavior
+  if (!eventId && !userId) {
+    return next();
+  }
+  
+  // Read database
+  const dbData = JSON.parse(fs.readFileSync(dbPath, "utf-8"));
+  let interests = dbData.interests || [];
+  
+  // Filter by eventId if provided
+  if (eventId) {
+    interests = interests.filter(int => int.eventId === String(eventId));
+  }
+  
+  // Filter by userId if provided
+  if (userId) {
+    interests = interests.filter(int => int.userId === Number(userId));
+  }
+  
+  res.json(interests);
+});
+
 // Middleware за добавяне на createdAt и updatedAt
 // За POST заявки добавяме createdAt и updatedAt
 // За PUT/PATCH заявки, updatedAt се добавя от клиента

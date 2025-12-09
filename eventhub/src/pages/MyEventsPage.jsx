@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEvents } from "@/hooks/useEvents";
 import { useNavigate } from "react-router-dom";
 import { Plus, CalendarX } from "lucide-react";
+import { NoEventsState } from "@/components/events/NoEventsState";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { useToast } from "@/contexts/ToastContext";
@@ -308,9 +309,11 @@ export function MyEventsPage() {
 
           {/* Events Grid or Empty Filter State */}
           {filteredAndSortedEvents.length === 0 ? (
-            <div className="text-center py-20">
-              <p className="text-gray-600">Няма събития по този критерий</p>
-            </div>
+            <NoEventsState
+              title="Няма събития"
+              message="Няма събития по този критерий"
+              icon="🔍"
+            />
           ) : (
             <>
               <div className="px-4 py-6">

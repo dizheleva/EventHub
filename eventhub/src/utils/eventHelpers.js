@@ -1,4 +1,48 @@
 /**
+ * Sort events by a field
+ * @param {Array} eventsList - Array of events to sort
+ * @param {string} sortByField - Field to sort by (date, title, location, etc.)
+ * @param {string} sortOrderValue - Sort order ("asc" or "desc")
+ * @returns {Array} Sorted array of events
+ */
+export function sortEvents(eventsList, sortByField, sortOrderValue) {
+  const sorted = [...eventsList].sort((a, b) => {
+    let aValue = a[sortByField];
+    let bValue = b[sortByField];
+
+    // Handle different data types
+    if (sortByField === "date") {
+      // For normalized events, use startDate if date is not available
+      aValue = aValue || a.startDate;
+      bValue = bValue || b.startDate;
+      // Compare dates
+      aValue = new Date(aValue || 0);
+      bValue = new Date(bValue || 0);
+    } else if (sortByField === "location") {
+      // For location, compare city first, then address
+      const aLocation = a.location?.city || a.location?.address || "";
+      const bLocation = b.location?.city || b.location?.address || "";
+      aValue = aLocation.toString().toLowerCase();
+      bValue = bLocation.toString().toLowerCase();
+    } else {
+      // Compare strings (title, etc.)
+      aValue = (aValue || "").toString().toLowerCase();
+      bValue = (bValue || "").toString().toLowerCase();
+    }
+
+    if (aValue < bValue) {
+      return sortOrderValue === "asc" ? -1 : 1;
+    }
+    if (aValue > bValue) {
+      return sortOrderValue === "asc" ? 1 : -1;
+    }
+    return 0;
+  });
+
+  return sorted;
+}
+
+/**
  * Calculate duration in minutes between start and end date
  * 
  * @param {string} startDate - ISO date string
@@ -92,17 +136,18 @@ export function normalizeEvent(event) {
       coordinates: null
     };
   } else if (!location || typeof location !== 'object') {
-    // No location or invalid
+    // No location or invalid - check if we have city field
     location = {
-      address: null,
+      address: event.location || null, // In case location is a string but wasn't caught above
       city: event.city || null,
       country: "България", // Always Bulgaria
       coordinates: null
     };
   } else {
-    // Ensure country is always Bulgaria
+    // Ensure country is always Bulgaria and city is set if missing
     location = {
       ...location,
+      city: location.city || event.city || null,
       country: "България",
       coordinates: null // Remove coordinates
     };
@@ -117,6 +162,24 @@ export function normalizeEvent(event) {
     startDate = legacyDate;
     endDate = legacyDate;
   }
+  
+  // Handle legacy format: separate date and time fields
+  // If startDate is just a date (YYYY-MM-DD) and we have startTime, combine them
+  if (startDate && event.startTime && !startDate.includes('T') && !startDate.includes(' ')) {
+    // startDate is just a date, combine with startTime
+    startDate = `${startDate}T${event.startTime}:00`;
+  }
+  
+  // If endDate is just a date (YYYY-MM-DD) and we have endTime, combine them
+  if (endDate && event.endTime && !endDate.includes('T') && !endDate.includes(' ')) {
+    // endDate is just a date, combine with endTime
+    endDate = `${endDate}T${event.endTime}:00`;
+  }
+  
+  // If we have startDate but no endDate, and we have endTime, use startDate with endTime
+  if (startDate && !endDate && event.endTime && !startDate.includes('T')) {
+    endDate = `${startDate.split('T')[0]}T${event.endTime}:00`;
+  }
 
   // Calculate duration
   const durationMinutes = event.durationMinutes || calculateDurationMinutes(startDate, endDate);
@@ -124,7 +187,22 @@ export function normalizeEvent(event) {
   // Parse price
   let price = 0;
   if (event.price !== null && event.price !== undefined) {
-    price = typeof event.price === 'number' ? event.price : 0;
+    if (typeof event.price === 'number') {
+      price = event.price;
+    } else {
+      // Try to parse string price (e.g., "20 лв", "Безплатно")
+      const priceStr = String(event.price).trim();
+      const priceLower = priceStr.toLowerCase();
+      if (priceLower.includes("безплатно") || priceLower.includes("free") || priceStr === "0") {
+        price = 0;
+      } else {
+        // Try to extract numeric value
+        const match = priceStr.match(/(\d+(?:[.,]\d+)?)/);
+        if (match) {
+          price = parseFloat(match[1].replace(',', '.'));
+        }
+      }
+    }
   } else if (legacyPrice) {
     const priceLower = String(legacyPrice).toLowerCase();
     if (priceLower.includes("безплатно") || priceLower.includes("free") || priceLower === "0") {

@@ -4,6 +4,7 @@ import { Modal } from "@/components/common/Modal";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { EmptyState } from "@/components/common/EmptyState";
+import { NoEventsState } from "./NoEventsState";
 import { Sorting } from "@/components/common/Sorting";
 import { Pagination } from "@/components/common/Pagination";
 import { SearchBar } from "@/components/common/SearchBar";
@@ -17,44 +18,8 @@ import { EditEventForm } from "./EditEventForm";
 import { DeleteEventModal } from "./DeleteEventModal";
 import { CreateEventModal } from "./CreateEventModal";
 import { EventsFilters } from "./EventsFilters";
-
-// Helper function: Sort events
-function sortEvents(eventsList, sortByField, sortOrderValue) {
-  const sorted = [...eventsList].sort((a, b) => {
-    let aValue = a[sortByField];
-    let bValue = b[sortByField];
-
-    // Handle different data types
-    if (sortByField === "date") {
-      // For normalized events, use startDate if date is not available
-      aValue = aValue || a.startDate;
-      bValue = bValue || b.startDate;
-      // Compare dates
-      aValue = new Date(aValue || 0);
-      bValue = new Date(bValue || 0);
-    } else if (sortByField === "location") {
-      // For location, compare city first, then address
-      const aLocation = a.location?.city || a.location?.address || "";
-      const bLocation = b.location?.city || b.location?.address || "";
-      aValue = aLocation.toString().toLowerCase();
-      bValue = bLocation.toString().toLowerCase();
-    } else {
-      // Compare strings (title, etc.)
-      aValue = (aValue || "").toString().toLowerCase();
-      bValue = (bValue || "").toString().toLowerCase();
-    }
-
-    if (aValue < bValue) {
-      return sortOrderValue === "asc" ? -1 : 1;
-    }
-    if (aValue > bValue) {
-      return sortOrderValue === "asc" ? 1 : -1;
-    }
-    return 0;
-  });
-
-  return sorted;
-}
+import { getTodayUTC, getDateOnlyUTC, isSameDay } from "@/utils/dateHelpers";
+import { sortEvents } from "@/utils/eventHelpers";
 
 export function EventList() {
   const { 
@@ -88,6 +53,19 @@ export function EventList() {
   // Sort states
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState("asc");
+  
+  // Function to clear all filters
+  const clearAllFilters = useCallback(() => {
+    setSearchQuery("");
+    setSourceFilter("all");
+    setSelectedCity("");
+    setSelectedCategory("");
+    setSelectedPrice("");
+    setSelectedDate("");
+    setSortBy("date");
+    setSortOrder("asc");
+    setCurrentPage(1);
+  }, []);
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -301,41 +279,28 @@ export function EventList() {
     }
     
     // Step 0.5: Filter out past events (where both startDate and endDate are in the past)
-    const now = new Date();
-    now.setHours(0, 0, 0, 0); // Set to start of day for comparison
-    
     const futureEvents = displayedEvents.filter(event => {
       if (!event.startDate) {
         return false; // Skip events without start date
       }
       
-      try {
-        const startDate = new Date(event.startDate);
-        startDate.setHours(0, 0, 0, 0);
-        
-        // Check if start date is in the past
-        if (startDate < now) {
-          // If start date is past, check end date
-          if (event.endDate) {
-            const endDate = new Date(event.endDate);
-            endDate.setHours(0, 0, 0, 0);
-            
-            // If end date is also in the past, skip this event
-            if (endDate < now) {
-              return false;
-            }
-          } else {
-            // No end date, but start date is past - skip
-            return false;
-          }
+      // Use helper function to check if event is past
+      const todayUTC = getTodayUTC();
+      const startDateUTC = getDateOnlyUTC(event.startDate);
+      
+      // If start date is in the past, check end date
+      if (startDateUTC < todayUTC) {
+        if (event.endDate) {
+          const endDateUTC = getDateOnlyUTC(event.endDate);
+          // If end date is also in the past, skip this event
+          return endDateUTC >= todayUTC;
         }
-        
-        // Event is valid (either start date is in future, or end date is in future)
-        return true;
-      } catch (error) {
-        // Skip events with invalid dates
+        // No end date, but start date is past - skip
         return false;
       }
+      
+      // Event is valid (start date is in future)
+      return true;
     });
     
     // Step 0.6: Use filtered future events
@@ -384,14 +349,7 @@ export function EventList() {
     if (selectedDate) {
       filtered = filtered.filter(event => {
         if (!event.startDate) return false;
-        const eventDate = new Date(event.startDate);
-        const filterDate = new Date(selectedDate);
-        
-        // Compare only date part (ignore time)
-        const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
-        const filterDateOnly = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate());
-        
-        return eventDateOnly.getTime() === filterDateOnly.getTime();
+        return isSameDay(event.startDate, selectedDate);
       });
     }
 
@@ -440,14 +398,12 @@ export function EventList() {
   const hasLocalEvents = events.length > 0;
   const hasExternalEvents = externalEvents.length > 0;
   const hasAnyEvents = hasLocalEvents || hasExternalEvents;
-  
-  // Check if current filter shows any events
   const showEmptyState = !hasAnyEvents || filteredAndSortedEvents.length === 0;
 
   return (
     <>
       {showEmptyState ? (
-        <EmptyState
+        <NoEventsState
           title="Няма събития"
           message={
             !hasAnyEvents
@@ -458,6 +414,7 @@ export function EventList() {
               ? "Няма външни събития по избраните филтри."
               : "Няма събития по избраните филтри. Опитай с други критерии!"
           }
+          onClearFilters={clearAllFilters}
           icon="🎈"
           action={
             isAuthenticated && !hasLocalEvents ? (
@@ -525,10 +482,11 @@ export function EventList() {
 
 
           {filteredAndSortedEvents.length === 0 ? (
-            <EmptyState
+            <NoEventsState
               title="Няма събития"
               message="Няма събития по избраните филтри. Опитай с други критерии!"
               icon="🔍"
+              onClearFilters={clearAllFilters}
             />
           ) : (
             <>

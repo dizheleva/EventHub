@@ -2,357 +2,154 @@
   "users": [
     {
       "id": 1,
-      "email": "test@test.com",
+      "username": "maria",
+      "email": "maria@example.com",
       "password": "123456",
-      "name": "Test User"
+      "avatarUrl": "https://i.pravatar.cc/150?img=47",
+      "createdAt": "2024-11-12T10:00:00.000Z",
+      "stars": [2, 3],
+      "favorites": [101, 103]
     },
     {
-      "name": "Диляна",
-      "email": "di.nikolova89@gmail.com",
-      "password": "dilqna",
-      "createdAt": "2025-12-05T21:36:55.595Z",
-      "updatedAt": "2025-12-05T21:36:55.595Z",
       "id": 2,
-      "username": "Диляна",
-      "avatarUrl": ""
+      "username": "ivan",
+      "email": "ivan@example.com",
+      "password": "123456",
+      "avatarUrl": "https://i.pravatar.cc/150?img=21",
+      "createdAt": "2024-06-22T13:20:00.000Z",
+      "stars": [1],
+      "favorites": [102]
     },
     {
-      "username": "test",
-      "email": "test@mail.com",
-      "password": "test123",
-      "avatarUrl": "",
-      "createdAt": "2025-12-07T21:50:17.589Z",
-      "id": 3
+      "id": 3,
+      "username": "petya",
+      "email": "petya@example.com",
+      "password": "123456",
+      "avatarUrl": "https://i.pravatar.cc/150?img=10",
+      "createdAt": "2025-01-03T08:00:00.000Z",
+      "stars": [],
+      "favorites": [101, 104]
     }
   ],
   "events": [
     {
-      "id": "1",
-      "title": "Детски театър",
-      "description": "Весело представление за деца от 3-8 години",
+      "id": "101",
+      "title": "Концерт на симфоничния оркестър – Варна",
+      "description": "Класически концерт с произведения на Чайковски и Рахманинов.",
+      "category": "Култура",
+      "location": {
+        "address": "Фестивален и конгресен център",
+        "city": "Варна",
+        "country": "България",
+        "coordinates": null
+      },
+      "startDate": "2026-01-18T19:00:00.000Z",
+      "endDate": "2026-01-18T21:00:00.000Z",
+      "durationMinutes": 120,
+      "price": 20,
+      "isOnline": false,
+      "imageUrl": "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "websiteUrl": "https://fccvarna.bg/",
+      "tags": [],
+      "createdAt": "2024-11-12T10:00:00.000Z",
+      "updatedAt": "2024-11-12T10:00:00.000Z",
+      "creatorId": 1
+    },
+    {
+      "id": "102",
+      "title": "Опера \"Кармен\" – София",
+      "description": "Световноизвестната опера от Бизе – спектакъл с международни солисти.",
+      "category": "Култура",
+      "location": {
+        "address": "Национална опера и балет",
+        "city": "София",
+        "country": "България",
+        "coordinates": null
+      },
+      "startDate": "2026-02-02T19:00:00.000Z",
+      "endDate": "2026-02-02T22:00:00.000Z",
+      "durationMinutes": 180,
+      "price": 35,
+      "isOnline": false,
+      "imageUrl": "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "websiteUrl": "https://www.operasofia.bg/",
+      "tags": [],
+      "createdAt": "2024-06-22T13:20:00.000Z",
+      "updatedAt": "2024-06-22T13:20:00.000Z",
+      "creatorId": 2
+    },
+    {
+      "id": "103",
+      "title": "Детска работилница \"Малки изобретатели\"",
+      "description": "Занимания по роботика и инженерство за деца 6–12 години.",
       "category": "Деца",
       "location": {
-        "address": "Детски център Радост",
-        "city": "София",
+        "address": "Science Center Plovdiv",
+        "city": "Пловдив",
         "country": "България",
         "coordinates": null
       },
-      "startDate": "2025-12-05T10:00:00",
-      "endDate": "2025-12-05T12:00:00",
-      "durationMinutes": 120,
-      "imageUrl": "https://static.bnr.bg/gallery/cr/medium/ae854d361d4434891255dcd083b1f5f6.jpg",
+      "startDate": "2026-01-25T10:00:00.000Z",
+      "endDate": "2026-01-25T13:00:00.000Z",
+      "durationMinutes": 180,
       "price": 0,
-      "capacity": null,
       "isOnline": false,
-      "createdAt": "2025-12-08T00:44:07.872Z",
+      "imageUrl": "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "websiteUrl": "https://sciencecenter.bg/",
       "tags": [],
-      "updatedAt": "2025-11-30T23:36:40.202Z",
-      "creatorId": null
+      "createdAt": "2025-01-03T08:00:00.000Z",
+      "updatedAt": "2025-01-03T08:00:00.000Z",
+      "creatorId": 3
     },
     {
-      "id": "2",
-      "title": "Рисуване на открито",
-      "description": "Семинар за малки и големи художници",
-      "category": "Работилници",
-      "location": {
-        "address": "Градски парк",
-        "city": "София",
-        "country": "България",
-        "coordinates": null
-      },
-      "startDate": "2025-12-07T10:00:00",
-      "endDate": "2025-12-07T12:00:00",
-      "durationMinutes": 120,
-      "imageUrl": "https://static.bnr.bg/gallery/72/72e28cd3eb471c03f32e5cd53ca4e310.jpg",
-      "price": 0,
-      "capacity": null,
-      "isOnline": false,
-      "createdAt": "2025-12-08T00:44:07.875Z",
-      "tags": [],
-      "creatorId": null
-    },
-    {
-      "id": "I3VlhJm",
-      "title": "Коледен театър",
-      "description": "Детски театър с Дядо Коледа и Снежанка. След представлението ще се подаряват подаръци.",
+      "id": "104",
+      "title": "Празник на мартеницата – Варна",
+      "description": "Традиционен български базар с работилници, музика и изложби.",
       "category": "Сезонни",
       "location": {
-        "address": "Куклен театър Варна",
+        "address": "Морска градина – сцена Раковина",
         "city": "Варна",
         "country": "България",
         "coordinates": null
       },
-      "startDate": "2025-12-20T10:00:00",
-      "endDate": "2025-12-20T12:00:00",
-      "durationMinutes": 120,
-      "imageUrl": "https://namoreto.bg/wp-content/uploads/2020/12/132150284_1521291828082162_5065814003445877196_o.jpg",
-      "price": 15,
-      "capacity": null,
+      "startDate": "2026-02-01T11:00:00.000Z",
+      "endDate": "2026-02-03T18:00:00.000Z",
+      "durationMinutes": 4320,
+      "price": 0,
       "isOnline": false,
-      "createdAt": "2025-12-08T00:44:07.875Z",
+      "imageUrl": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "websiteUrl": "https://varna.bg/",
       "tags": [],
-      "updatedAt": "2025-12-01T01:00:01.435Z",
-      "creatorId": null
+      "createdAt": "2024-11-12T10:00:00.000Z",
+      "updatedAt": "2024-11-12T10:00:00.000Z",
+      "creatorId": 1
     },
     {
-      "id": "JNA781w",
-      "title": "Лего работилница",
-      "description": "Творим с лего!",
-      "category": "Работилници",
+      "id": "105",
+      "title": "5 км бягане – София",
+      "description": "Неформално бягане в Борисовата градина за всички възрасти.",
+      "category": "Спорт",
       "location": {
-        "address": "Младост 2, Варна",
-        "city": "Варна",
-        "country": "България",
-        "coordinates": null
-      },
-      "startDate": "2025-12-15T10:00:00",
-      "endDate": "2025-12-15T12:00:00",
-      "durationMinutes": 120,
-      "imageUrl": "https://www.noviteroditeli.bg/sites/default/files/field/image/000-istock-485964165_0.jpg",
-      "price": 20,
-      "capacity": null,
-      "isOnline": false,
-      "createdAt": "2025-12-08T00:44:07.876Z",
-      "tags": [],
-      "creatorId": null
-    },
-    {
-      "id": "4grobts",
-      "title": "Лего работилница",
-      "description": "Дъга от мечти, лего анимация, лего работилница, работилница за деца",
-      "category": "Работилници",
-      "location": {
-        "address": "Дъга от мечти в Младост 3, блок 321А",
+        "address": "Борисова градина – Алея на бегачите",
         "city": "София",
         "country": "България",
         "coordinates": null
       },
-      "startDate": "2025-12-17T10:00:00",
-      "endDate": "2025-12-17T12:00:00",
-      "durationMinutes": 120,
-      "imageUrl": "https://kids.programata.bg/wp-content/uploads/2020/01/3-2.jpg",
-      "price": 25,
-      "capacity": null,
+      "startDate": "2026-01-22T09:00:00.000Z",
+      "endDate": "2026-01-22T10:00:00.000Z",
+      "durationMinutes": 60,
+      "price": 0,
       "isOnline": false,
-      "createdAt": "2025-12-08T00:44:07.876Z",
+      "imageUrl": "https://images.unsplash.com/photo-1571008887538-b36bb32f4571?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "websiteUrl": "https://sofiarun.bg/",
       "tags": [],
-      "creatorId": null
-    },
-    {
-      "id": "KYDWlPT",
-      "title": "Игри на открито",
-      "description": "сдфсагагсагг",
-      "category": "Деца",
-      "location": {
-        "address": "Младост",
-        "city": "Варна",
-        "country": "България",
-        "coordinates": null
-      },
-      "startDate": "2025-12-17T10:00:00",
-      "endDate": "2025-12-17T12:00:00",
-      "durationMinutes": 120,
-      "imageUrl": "https://www.puls.bg/cache/d/7/b/8/a/d7b8a9cf1b2f30b41132501986cd0db5377c8356.jpeg",
-      "price": 0,
-      "capacity": null,
-      "isOnline": false,
-      "createdAt": "2025-12-08T00:44:07.876Z",
-      "tags": [],
-      "updatedAt": "2025-12-05T22:09:52.767Z",
-      "creatorId": null
-    },
-    {
-      "id": "GkMD41O",
-      "title": "Шах турнир",
-      "description": "Състезание по шах за деца 10-12 години",
-      "category": "Деца",
-      "location": {
-        "address": "СУ Неофит Бозвели",
-        "city": "Варна",
-        "country": "България",
-        "coordinates": null
-      },
-      "startDate": "2025-12-20T10:00:00",
-      "endDate": "2025-12-20T12:00:00",
-      "durationMinutes": 120,
-      "imageUrl": "https://i.ytimg.com/vi/gwxi8vryQ9E/maxresdefault.jpg?sqp=-oaymwEmCIAKENAF8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGHIgUig8MA8=&rs=AOn4CLAWtj962pyvrC_YKq7-WNTJcY46Fw",
-      "price": 0,
-      "capacity": null,
-      "isOnline": false,
-      "createdAt": "2025-12-08T00:44:07.876Z",
-      "creatorId": 2,
-      "tags": [],
-      "updatedAt": "2025-12-05T22:18:11.281Z"
-    },
-    {
-      "id": "HQh3lH6",
-      "title": "Четене на приказки",
-      "description": "Приказки за деца между 3 и 7 години",
-      "category": "Деца",
-      "location": {
-        "address": "Парк Младост",
-        "city": "Варна",
-        "country": "България",
-        "coordinates": null
-      },
-      "startDate": "2025-12-21T10:00:00",
-      "endDate": "2025-12-21T12:00:00",
-      "durationMinutes": 120,
-      "imageUrl": null,
-      "price": 0,
-      "capacity": null,
-      "isOnline": false,
-      "createdAt": "2025-12-08T00:44:07.876Z",
-      "creatorId": 2,
-      "tags": []
-    },
-    {
-      "id": "ZuuJKla",
-      "title": "Test event",
-      "description": "Test test test",
-      "category": "Деца",
-      "location": {
-        "address": "Test location",
-        "city": "Test",
-        "country": "България",
-        "coordinates": null
-      },
-      "startDate": "2025-12-26T10:00:00",
-      "endDate": "2025-12-26T12:00:00",
-      "durationMinutes": 120,
-      "imageUrl": null,
-      "price": 0,
-      "capacity": null,
-      "isOnline": false,
-      "createdAt": "2025-12-08T00:44:07.876Z",
-      "creatorId": 3,
-      "tags": []
-    },
-    {
-      "title": "Нов тест",
-      "description": "",
-      "category": "Спорт",
-      "location": {
-        "address": "Градски парк",
-        "city": "Добрич",
-        "country": "България",
-        "coordinates": null
-      },
-      "startDate": "2025-12-20T08:50",
-      "endDate": "2025-12-20T12:30",
-      "durationMinutes": 220,
-      "imageUrl": null,
-      "websiteUrl": "https://sportenkalendar.bg/mesta/varna",
-      "price": 12.49,
-      "isOnline": false,
-      "tags": [
-        "футбол",
-        "спорт"
-      ],
-      "createdAt": "2025-12-08T01:33:50.035Z",
-      "creatorId": 3,
-      "id": "ZvhlMB2"
+      "createdAt": "2024-06-22T13:20:00.000Z",
+      "updatedAt": "2024-06-22T13:20:00.000Z",
+      "creatorId": 2
     }
   ],
-  "interests": [
-    {
-      "id": 1,
-      "eventId": "1",
-      "userId": 1
-    },
-    {
-      "eventId": "1",
-      "userId": 2,
-      "id": 2
-    },
-    {
-      "eventId": "4grobts",
-      "userId": 2,
-      "id": 3
-    },
-    {
-      "eventId": "HQh3lH6",
-      "userId": 3,
-      "id": 4
-    }
-  ],
-  "comments": [
-    {
-      "id": 1,
-      "eventId": "1",
-      "userId": 1,
-      "text": "Страхотно събитие!",
-      "createdAt": "2025-01-05T10:12:00.000Z"
-    },
-    {
-      "eventId": "1",
-      "userId": 2,
-      "text": "Театъра е страхотен! Гледали сме го и преди, струва си :)",
-      "createdAt": "2025-12-06T13:01:02.656Z",
-      "id": 2
-    }
-  ],
-  "userLikes": [
-    {
-      "fromUserId": 3,
-      "toUserId": 2,
-      "id": 1
-    }
-  ],
-  "favorites": [
-    {
-      "userId": 3,
-      "eventId": "HQh3lH6",
-      "createdAt": "2025-12-07T22:24:51.759Z",
-      "id": 1
-    },
-    {
-      "userId": 3,
-      "eventId": "varna_1765241650701_vkvi0odh3",
-      "createdAt": "2025-12-09T00:54:14.237Z",
-      "id": 2
-    },
-    {
-      "userId": 3,
-      "eventId": "varna_1765241689815_y66xpzu9n",
-      "createdAt": "2025-12-09T00:54:53.188Z",
-      "id": 3
-    },
-    {
-      "userId": 3,
-      "eventId": "varna_1765241700304_7z4zpeae0",
-      "createdAt": "2025-12-09T00:55:03.576Z",
-      "id": 4
-    },
-    {
-      "userId": 3,
-      "eventId": "varna_1765241890279_nepwsot9g",
-      "createdAt": "2025-12-09T00:58:12.577Z",
-      "id": 5
-    },
-    {
-      "userId": 3,
-      "eventId": "varna_1765241955516_30rhgdjn2",
-      "createdAt": "2025-12-09T00:59:18.513Z",
-      "id": 6
-    },
-    {
-      "userId": 3,
-      "eventId": "varna_1765242082558_6qrw6q9x9",
-      "createdAt": "2025-12-09T01:01:27.628Z",
-      "id": 7
-    },
-    {
-      "userId": 3,
-      "eventId": "varna_коледнаградинкачатал_20251122",
-      "createdAt": "2025-12-09T01:04:20.380Z",
-      "id": 8
-    },
-    {
-      "userId": 3,
-      "eventId": "varna_коледнаградинкачаталджа_20251122",
-      "createdAt": "2025-12-09T01:24:56.099Z",
-      "id": 9
-    }
-  ]
+  "favorites": [],
+  "interests": [],
+  "comments": [],
+  "userLikes": []
 }

@@ -71,8 +71,6 @@ export async function getExternalEvents() {
     }
 
     const events = (data.events || []).map(event => normalizeEvent(event));
-    console.log(`Loaded ${events.length} external events from cache`);
-    
     return events;
   } catch (error) {
     console.error("Error fetching external events:", error);
@@ -105,8 +103,6 @@ export async function refreshExternalEvents() {
     }
 
     const events = (data.events || []).map(event => normalizeEvent(event));
-    console.log(`Refreshed ${events.length} external events`);
-    
     return events;
   } catch (error) {
     console.error("Error refreshing external events:", error);

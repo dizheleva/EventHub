@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEvents } from "@/hooks/useEvents";
 import { useFavorites } from "@/hooks/useFavorites";
 import { Star } from "lucide-react";
+import { NoEventsState } from "@/components/events/NoEventsState";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -11,35 +12,8 @@ import { SearchBar } from "@/components/common/SearchBar";
 import { Sorting } from "@/components/common/Sorting";
 import { EventsFilters } from "@/components/events/EventsFilters";
 import { Pagination } from "@/components/common/Pagination";
-
-// Helper function: Sort events
-function sortEvents(eventsList, sortByField, sortOrderValue) {
-  const sorted = [...eventsList].sort((a, b) => {
-    let aValue = a[sortByField];
-    let bValue = b[sortByField];
-
-    // Handle different data types
-    if (sortByField === "date") {
-      // Compare dates
-      aValue = new Date(aValue || 0);
-      bValue = new Date(bValue || 0);
-    } else {
-      // Compare strings (title, location)
-      aValue = (aValue || "").toString().toLowerCase();
-      bValue = (bValue || "").toString().toLowerCase();
-    }
-
-    if (aValue < bValue) {
-      return sortOrderValue === "asc" ? -1 : 1;
-    }
-    if (aValue > bValue) {
-      return sortOrderValue === "asc" ? 1 : -1;
-    }
-    return 0;
-  });
-
-  return sorted;
-}
+import { isEventPast } from "@/utils/dateHelpers";
+import { sortEvents } from "@/utils/eventHelpers";
 
 export function FavoritesPage() {
   const { user, isAuthenticated } = useAuth();
@@ -99,42 +73,7 @@ export function FavoritesPage() {
     const favoriteEventsList = allEvents.filter(event => favoriteEventIds.includes(String(event.id)));
     
     // Filter out past events
-    const now = new Date();
-    now.setHours(0, 0, 0, 0); // Set to start of day for comparison
-    
-    return favoriteEventsList.filter(event => {
-      if (!event.startDate) {
-        return false; // Skip events without start date
-      }
-      
-      try {
-        const startDate = new Date(event.startDate);
-        startDate.setHours(0, 0, 0, 0);
-        
-        // Check if start date is in the past
-        if (startDate < now) {
-          // If start date is past, check end date
-          if (event.endDate) {
-            const endDate = new Date(event.endDate);
-            endDate.setHours(0, 0, 0, 0);
-            
-            // If end date is also in the past, skip this event
-            if (endDate < now) {
-              return false;
-            }
-          } else {
-            // No end date, but start date is past - skip
-            return false;
-          }
-        }
-        
-        // Event is valid (either start date is in future, or end date is in future)
-        return true;
-      } catch (error) {
-        // Skip events with invalid dates
-        return false;
-      }
-    });
+    return favoriteEventsList.filter(event => !isEventPast(event));
   }, [events, externalEvents, favorites, user, isAuthenticated]);
 
   // Compute unique cities from favoriteEvents
@@ -301,9 +240,11 @@ export function FavoritesPage() {
 
           {/* Events Grid or Empty Filter State */}
           {filteredAndSortedEvents.length === 0 ? (
-            <div className="text-center py-20">
-              <p className="text-gray-600">Няма събития по този критерий</p>
-            </div>
+            <NoEventsState
+              title="Няма събития"
+              message="Няма събития по този критерий"
+              icon="🔍"
+            />
           ) : (
             <>
               <div className="px-4 py-6">

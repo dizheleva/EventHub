@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Edit, Trash2, Calendar, Heart, Star, MapPin, Clock, Tag, Users, Globe } from "lucide-react";
+import { ExternalLink, Edit, Trash2, Calendar, Heart, Star, MapPin, Clock, Tag, Users, Globe } from "lucide-react";
+import { BackButton } from "@/components/common/BackButton";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -330,13 +331,12 @@ export function EventDetails() {
           message="Съжаляваме, но събитието, което търсиш, не съществува или е било премахнато."
           icon="🔍"
           action={
-            <Link
+            <BackButton 
               to="/events"
+              text="Назад към събитията"
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-medium hover:shadow-color transition-all"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              Назад към събитията
-            </Link>
+              noDefaultStyles={true}
+            />
           }
         />
       </div>
@@ -356,13 +356,11 @@ export function EventDetails() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Back Button */}
-      <button
-        onClick={() => navigate("/events")}
-        className="flex items-center gap-2 mb-8 text-gray-600 hover:text-primary transition-colors"
-      >
-        <ArrowLeft className="w-5 h-5" />
-        <span className="font-medium">Назад към събитията</span>
-      </button>
+      <BackButton 
+        to="/events"
+        text="Назад към събитията"
+        className="mb-8"
+      />
 
       <article className="bg-white rounded-2xl shadow-lg overflow-hidden animate-fadeIn">
         {/* Hero Image */}

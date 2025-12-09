@@ -3,6 +3,7 @@ import { Edit, Trash2, Calendar, Star, Heart, MapPin, Clock, Tag, Users } from "
 import { Link, useNavigate } from "react-router-dom";
 import { getCategoryDisplay } from "@/utils/categories";
 import { normalizeEvent, formatEventPrice, formatDuration } from "@/utils/eventHelpers";
+import { isEventPast } from "@/utils/dateHelpers";
 import { useAuth } from "@/contexts/AuthContext";
 import { useInterested } from "@/hooks/useInterested";
 import { getUserLikes } from "@/api/userLikesApi";
@@ -19,44 +20,25 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete, auth
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+  const [imageError, setImageError] = useState(false);
   
   // Normalize event to new format
   const normalizedEvent = normalizeEvent(event);
   
+  // Initialize image loading state based on whether imageUrl exists
+  const [imageLoading, setImageLoading] = useState(!!normalizedEvent.imageUrl);
+  
+  // Reset image error and loading when imageUrl or event.id changes
+  useEffect(() => {
+    setImageError(false);
+    setImageLoading(!!normalizedEvent.imageUrl);
+  }, [normalizedEvent.imageUrl, event.id]);
+  
   // Check if event is external
   const isExternal = event.isExternal === true;
   
-  // Check if event is past (both startDate and endDate are in the past)
-  const isPastEvent = (() => {
-    if (!normalizedEvent.startDate) return false;
-    
-    try {
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
-      
-      const startDate = new Date(normalizedEvent.startDate);
-      startDate.setHours(0, 0, 0, 0);
-      
-      // Check if start date is in the past
-      if (startDate < now) {
-        // If start date is past, check end date
-        if (normalizedEvent.endDate) {
-          const endDate = new Date(normalizedEvent.endDate);
-          endDate.setHours(0, 0, 0, 0);
-          
-          // If end date is also in the past, event is past
-          return endDate < now;
-        } else {
-          // No end date, but start date is past - event is past
-          return true;
-        }
-      }
-      
-      return false;
-    } catch (error) {
-      return false;
-    }
-  })();
+  // Check if event is past
+  const isPastEvent = isEventPast(normalizedEvent);
   
   // Authorization check
   const eventCreatorId = normalizedEvent.creatorId;
@@ -184,8 +166,7 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete, auth
           const username = getUserDisplayName(userData, "Неизвестен");
           setAuthorName(username);
         })
-        .catch(err => {
-          console.error("Error loading author:", err);
+        .catch(() => {
           setAuthorName("Неизвестен");
         })
         .finally(() => setIsLoadingAuthor(false));
@@ -200,8 +181,7 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete, auth
       } else {
         getUserLikes(eventCreatorId)
           .then(likes => setAuthorLikesCount(likes.length))
-          .catch(err => {
-            console.error("Error loading author likes:", err);
+          .catch(() => {
             setAuthorLikesCount(0);
           });
       }
@@ -231,15 +211,31 @@ export const EventItem = memo(function EventItem({ event, onEdit, onDelete, auth
       className="block w-full bg-white rounded-2xl shadow-soft hover:shadow-color transition-all overflow-hidden group h-full flex flex-col cursor-pointer"
     >
       {/* Image */}
-      <div className="relative h-48 overflow-hidden">
-        {normalizedEvent.imageUrl ? (
-          <img
-            src={normalizedEvent.imageUrl}
-            alt={normalizedEvent.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
+      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/20 via-secondary/20 to-primary/10">
+        {normalizedEvent.imageUrl && !imageError ? (
+          <>
+            {imageLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 via-secondary/20 to-primary/10">
+                <Calendar className="w-12 h-12 text-primary/40 animate-pulse" />
+              </div>
+            )}
+            <img
+              src={normalizedEvent.imageUrl}
+              alt={normalizedEvent.title}
+              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+              loading="lazy"
+              onError={() => {
+                setImageError(true);
+                setImageLoading(false);
+              }}
+              onLoad={() => {
+                setImageError(false);
+                setImageLoading(false);
+              }}
+            />
+          </>
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-primary/20 via-secondary/20 to-primary/10 flex items-center justify-center">
+          <div className="w-full h-full flex items-center justify-center">
             <Calendar className="w-16 h-16 text-primary/60" />
           </div>
         )}

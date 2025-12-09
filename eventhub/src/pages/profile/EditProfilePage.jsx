@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Save } from "lucide-react";
+import { Save } from "lucide-react";
+import { BackButton } from "@/components/common/BackButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/hooks/useUser";
 import { useToast } from "@/contexts/ToastContext";
@@ -351,13 +352,11 @@ export function EditProfilePage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Back Button */}
-      <button
-        onClick={() => navigate(`/profile/${userId}`)}
-        className="flex items-center gap-2 mb-8 text-gray-600 hover:text-primary transition-colors"
-      >
-        <ArrowLeft className="w-5 h-5" />
-        <span className="font-medium">Назад към профила</span>
-      </button>
+      <BackButton 
+        to={`/profile/${userId}`}
+        text="Назад към профила"
+        className="mb-8"
+      />
 
       {/* Form Card */}
       <article className="bg-white rounded-2xl shadow-lg overflow-hidden animate-fadeIn">
