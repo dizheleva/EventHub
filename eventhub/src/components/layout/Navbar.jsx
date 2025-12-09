@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, useNavigate, useLocation } from "react-router-dom"
-import { CalendarDays, Menu, X, Star } from "lucide-react"
+import { CalendarDays, Menu, X, Star, Calendar, CalendarCheck, LogIn, UserPlus, User, LogOut } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 
 export function Navbar() {
@@ -37,8 +37,9 @@ export function Navbar() {
         {/* Desktop menu */}
         <ul className="hidden md:flex items-center space-x-1">
           <li>
-            <Link to="/events" className="px-4 py-2 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors">
-              Събития
+            <Link to="/events" className="px-4 py-2 max-[880px]:px-3 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors flex items-center gap-2">
+              <Calendar className="w-4 h-4 max-[880px]:w-5 max-[880px]:h-5" />
+              <span className="max-[880px]:hidden">Събития</span>
             </Link>
           </li>
           
@@ -48,26 +49,27 @@ export function Navbar() {
               <li>
                 <Link 
                   to="/my-events" 
-                  className={`px-4 py-2 rounded-xl font-medium transition-colors ${
+                  className={`px-4 py-2 max-[880px]:px-3 rounded-xl font-medium transition-colors flex items-center gap-2 ${
                     isActive("/my-events")
                       ? "bg-primary/10 text-primary font-semibold"
                       : "text-gray-700 hover:bg-pink-50 hover:text-primary"
                   }`}
                 >
-                  Моите събития
+                  <CalendarCheck className="w-4 h-4 max-[880px]:w-5 max-[880px]:h-5" />
+                  <span className="max-[880px]:hidden">Моите събития</span>
                 </Link>
               </li>
               <li>
                 <Link 
                   to="/favorites" 
-                  className={`px-4 py-2 rounded-xl font-medium transition-colors flex items-center gap-2 ${
+                  className={`px-4 py-2 max-[880px]:px-3 rounded-xl font-medium transition-colors flex items-center gap-2 ${
                     isActive("/favorites")
                       ? "bg-primary/10 text-primary font-semibold"
                       : "text-gray-700 hover:bg-pink-50 hover:text-primary"
                   }`}
                 >
-                  <Star className="w-4 h-4" />
-                  Любими
+                  <Star className="w-4 h-4 max-[880px]:w-5 max-[880px]:h-5" />
+                  <span className="max-[880px]:hidden">Любими</span>
                 </Link>
               </li>
             </>
@@ -77,13 +79,15 @@ export function Navbar() {
           {!isAuthenticated ? (
             <>
               <li>
-                <Link to="/login" className="px-4 py-2 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors">
-                  Вход
+                <Link to="/login" className="px-4 py-2 max-[880px]:px-3 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors flex items-center gap-2">
+                  <LogIn className="w-4 h-4 max-[880px]:w-5 max-[880px]:h-5" />
+                  <span className="max-[880px]:hidden">Вход</span>
                 </Link>
               </li>
               <li>
-                <Link to="/register" className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-medium hover:shadow-color transition-all">
-                  Регистрация
+                <Link to="/register" className="px-4 py-2 max-[880px]:px-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-medium hover:shadow-color transition-all flex items-center gap-2">
+                  <UserPlus className="w-4 h-4 max-[880px]:w-5 max-[880px]:h-5" />
+                  <span className="max-[880px]:hidden">Регистрация</span>
                 </Link>
               </li>
             </>
@@ -92,21 +96,25 @@ export function Navbar() {
               <li>
                 <Link 
                   to={`/profile/${user.id}`}
-                  className={`px-4 py-2 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors ${
+                  className={`px-4 py-2 max-[880px]:px-3 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors flex items-center gap-2 ${
                     isActive(`/profile/${user.id}`) || isActive(`/profile/${user.id}/edit`)
                       ? "bg-primary/10 text-primary font-semibold"
                       : ""
                   }`}
                 >
-                  Добре дошли, <span className="text-primary font-semibold">{user?.username || user?.email}</span>
+                  <User className="w-4 h-4 max-[880px]:w-5 max-[880px]:h-5" />
+                  <span className="max-[880px]:hidden">
+                    Добре дошли, <span className="text-primary font-semibold">{user?.username || user?.email}</span>
+                  </span>
                 </Link>
               </li>
               <li>
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors"
+                  className="px-4 py-2 max-[880px]:px-3 rounded-xl text-gray-700 font-medium hover:bg-pink-50 hover:text-primary transition-colors flex items-center gap-2"
                 >
-                  Изход
+                  <LogOut className="w-4 h-4 max-[880px]:w-5 max-[880px]:h-5" />
+                  <span className="max-[880px]:hidden">Изход</span>
                 </button>
               </li>
             </>
