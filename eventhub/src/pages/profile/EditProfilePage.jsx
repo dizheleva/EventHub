@@ -4,7 +4,8 @@ import { Save } from "lucide-react";
 import { BackButton } from "@/components/common/BackButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/hooks/useUser";
-import { useToast } from "@/contexts/ToastContext";
+import { useToast } from "@/hooks/useToast";
+import { useForm } from "@/hooks/useForm";
 import { API_BASE_URL } from "@/config/api";
 
 const USERS_API_URL = `${API_BASE_URL}/users`;
@@ -24,13 +25,6 @@ export function EditProfilePage() {
   const navigate = useNavigate();
   const { user: currentUser, isAuthenticated, isAuthReady, updateUserInAuth } = useAuth();
   const { user: profileUser, isLoading: isLoadingUser, error: userError, fetchUser, updateUser } = useUser();
-  const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    avatarUrl: "",
-    password: "",
-    confirmPassword: "",
-  });
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
@@ -68,10 +62,83 @@ export function EditProfilePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, currentUser?.id, isAuthenticated, isAuthReady]);
 
+  // Handle form submit
+  async function submitHandler(values) {
+    if (!validateForm(values)) {
+      showToast("error", "Моля, попълнете всички полета правилно.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Check if email is already taken by another user
+      const usersResponse = await fetch(USERS_API_URL);
+      if (!usersResponse.ok) {
+        throw new Error("Грешка при проверка на имейла");
+      }
+      const allUsers = await usersResponse.json();
+      const emailExists = allUsers.some(
+        (u) => u.email === values.email && u.id !== Number(userId)
+      );
+
+      if (emailExists) {
+        setFormErrors({ email: "Потребител с този имейл вече съществува" });
+        showToast("error", "Потребител с този имейл вече съществува");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Prepare update data (trim strings, handle empty avatarUrl)
+      const updateData = {
+        username: values.username.trim(),
+        email: values.email.trim(),
+        avatarUrl: values.avatarUrl.trim() || "",
+      };
+
+      // Only include password if it's provided AND matches confirmation (optional when editing)
+      if (values.password && values.password.trim().length > 0) {
+        // Double-check that passwords match before updating
+        if (values.password !== values.confirmPassword) {
+          setFormErrors(prev => ({
+            ...prev,
+            confirmPassword: "Паролите не съвпадат",
+          }));
+          showToast("error", "Паролите не съвпадат. Моля, проверете отново.");
+          setIsSubmitting(false);
+          return;
+        }
+        // Only update password if they match
+        updateData.password = values.password;
+      }
+
+      // Update user using useUser hook
+      const updatedUser = await updateUser(userId, updateData);
+
+      // Update auth context with new user data
+      updateUserInAuth(updatedUser);
+
+      showToast("success", "Профилът беше обновен успешно!");
+      navigate(`/profile/${userId}`);
+    } catch (error) {
+      showToast("error", error.message || "Възникна грешка при обновяване на профила");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  const { register, formAction, values, setValues } = useForm(submitHandler, {
+    username: "",
+    email: "",
+    avatarUrl: "",
+    password: "",
+    confirmPassword: "",
+  });
+
   // Pre-fill form when user data is loaded
   useEffect(() => {
     if (profileUser) {
-      setFormData({
+      setValues({
         username: profileUser.username || "",
         email: profileUser.email || "",
         avatarUrl: profileUser.avatarUrl || "",
@@ -79,17 +146,15 @@ export function EditProfilePage() {
         confirmPassword: "",
       });
     }
-  }, [profileUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileUser]); // Don't include setValues - it's stable
 
   // Handle input changes
   function handleChange(e) {
-    const { name, value } = e.target;
-    const newFormData = {
-      ...formData,
-      [name]: value,
-    };
+    register(e.target.name).onChange(e);
     
-    setFormData(newFormData);
+    const { name, value } = e.target;
+    const newFormData = { ...values, [name]: value };
     
     // For password fields, validate immediately without clearing error first
     if (name === "password") {
@@ -157,8 +222,8 @@ export function EditProfilePage() {
 
     if (name === "confirmPassword") {
       // Special handling for confirmPassword - needs password value
-      if (formData.password && formData.password.trim().length > 0) {
-        error = validators.confirmPassword(formData.password, value);
+      if (values.password && values.password.trim().length > 0) {
+        error = validators.confirmPassword(values.password, value);
       } else if (value && value.trim().length > 0) {
         // If confirmPassword is provided but password is not
         error = "Моля, въведете парола";
@@ -184,7 +249,7 @@ export function EditProfilePage() {
   }
 
   // Validate entire form
-  function validateForm() {
+  function validateForm(formData) {
     const errors = {};
     let isValid = true;
 
@@ -242,77 +307,6 @@ export function EditProfilePage() {
     return isValid;
   }
 
-  // Handle form submission
-  async function handleSubmit(e) {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      showToast("error", "Моля, попълнете всички полета правилно.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // Check if email is already taken by another user
-      const usersResponse = await fetch(USERS_API_URL);
-      if (!usersResponse.ok) {
-        throw new Error("Грешка при проверка на имейла");
-      }
-      const allUsers = await usersResponse.json();
-      const emailExists = allUsers.some(
-        (u) => u.email === formData.email && u.id !== Number(userId)
-      );
-
-      if (emailExists) {
-        setFormErrors({ email: "Потребител с този имейл вече съществува" });
-        showToast("error", "Потребител с този имейл вече съществува");
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Prepare update data (trim strings, handle empty avatarUrl)
-      const updateData = {
-        username: formData.username.trim(),
-        email: formData.email.trim(),
-        avatarUrl: formData.avatarUrl.trim() || "",
-      };
-
-      // Only include password if it's provided AND matches confirmation (optional when editing)
-      if (formData.password && formData.password.trim().length > 0) {
-        // Double-check that passwords match before updating
-        if (formData.password !== formData.confirmPassword) {
-          setFormErrors(prev => ({
-            ...prev,
-            confirmPassword: "Паролите не съвпадат",
-          }));
-          showToast("error", "Паролите не съвпадат. Моля, проверете отново.");
-          setIsSubmitting(false);
-          return;
-        }
-        // Only update password if they match
-        updateData.password = formData.password;
-      }
-
-      // Update user using useUser hook
-      const updatedUser = await updateUser(userId, updateData);
-
-      // Automatically update AuthContext.user and persist in localStorage
-      updateUserInAuth(updatedUser);
-
-      // Show success toast
-      showToast("success", "Профилът беше обновен успешно!");
-
-      // Redirect to profile page
-      navigate(`/profile/${userId}`);
-    } catch (err) {
-      const errorMessage = err.message || "Възникна грешка при обновяване на профила";
-      showToast("error", errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
   // Show loading while auth is initializing
   if (!isAuthReady) {
     return (
@@ -364,14 +358,14 @@ export function EditProfilePage() {
           <h1 className="text-3xl font-bold text-gray-900">Редактирай профил</h1>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8">
+        <form onSubmit={formAction} className="p-8">
           {/* Username Field */}
           <div className="mb-6">
             <FormField
               label="Потребителско име"
-              name="username"
               type="text"
-              value={formData.username}
+              {...register("username")}
+              value={values.username}
               onChange={handleChange}
               onBlur={handleBlur}
               error={formErrors.username}
@@ -384,9 +378,9 @@ export function EditProfilePage() {
           <div className="mb-6">
             <FormField
               label="Имейл"
-              name="email"
               type="email"
-              value={formData.email}
+              {...register("email")}
+              value={values.email}
               onChange={handleChange}
               onBlur={handleBlur}
               error={formErrors.email}
@@ -398,9 +392,9 @@ export function EditProfilePage() {
           <div className="mb-6">
             <FormField
               label="URL на аватар"
-              name="avatarUrl"
               type="url"
-              value={formData.avatarUrl}
+              {...register("avatarUrl")}
+              value={values.avatarUrl}
               onChange={handleChange}
               onBlur={handleBlur}
               error={formErrors.avatarUrl}
@@ -413,9 +407,9 @@ export function EditProfilePage() {
           <div className="mb-6">
             <FormField
               label="Нова парола"
-              name="password"
               type="password"
-              value={formData.password}
+              {...register("password")}
+              value={values.password}
               onChange={handleChange}
               onBlur={handleBlur}
               error={formErrors.password}
@@ -426,13 +420,13 @@ export function EditProfilePage() {
           </div>
 
           {/* Confirm Password Field - Always visible when password is entered */}
-          {formData.password && formData.password.trim().length > 0 && (
+          {values.password && values.password.trim().length > 0 && (
             <div className="mb-6">
               <FormField
                 label="Повтори новата парола"
-                name="confirmPassword"
                 type="password"
-                value={formData.confirmPassword}
+                {...register("confirmPassword")}
+                value={values.confirmPassword}
                 onChange={handleChange}
                 onBlur={handleBlur}
                 error={formErrors.confirmPassword}

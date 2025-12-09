@@ -6,7 +6,7 @@ import { Plus, CalendarX } from "lucide-react";
 import { NoEventsState } from "@/components/events/NoEventsState";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
-import { useToast } from "@/contexts/ToastContext";
+import { useToast } from "@/hooks/useToast";
 import { EventItem } from "@/components/events/EventItem";
 import { CreateEventModal } from "@/components/events/CreateEventModal";
 import { SearchBar } from "@/components/common/SearchBar";

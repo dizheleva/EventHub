@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { Layout } from "@/components/layout/Layout"
 import { HomePage } from "@/pages/HomePage"
 import { EventsPage } from "@/pages/EventsPage"
@@ -12,9 +14,6 @@ import { FavoritesPage } from "@/pages/FavoritesPage"
 import { Features } from "@/components/home/Features"
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 import { GuestRoute } from "@/components/auth/GuestRoute"
-import { LoadingSpinner } from "@/components/common/LoadingSpinner"
-import { Toast } from "@/components/common/Toast"
-import { useAuth } from "@/contexts/AuthContext"
 
 function AppRoutes() {
   return (
@@ -83,25 +82,27 @@ function AppRoutes() {
 }
 
 export default function App() {
-  const { isAuthReady } = useAuth();
-
-  // Show centered loading spinner while auth is initializing
-  // This ensures auth state is restored from localStorage before rendering routes
-  if (!isAuthReady) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <LoadingSpinner message="Зареждане..." />
-      </div>
-    );
-  }
+  // isAuthReady is now always true immediately in AuthContext
+  // No need to check it here - routes will handle their own loading states
 
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Layout>
         <AppRoutes />
       </Layout>
-      {/* Global Toast - reads from ToastContext */}
-      <Toast />
+      {/* Global Toast Container */}
+      <ToastContainer
+        position="bottom-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </Router>    
   )
 }

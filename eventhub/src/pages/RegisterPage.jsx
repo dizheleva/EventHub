@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/contexts/ToastContext";
+import { useToast } from "@/hooks/useToast";
+import { useForm } from "@/hooks/useForm";
 import { FormField } from "@/components/common/FormField";
 
 // Validation functions
@@ -49,25 +50,18 @@ function validateConfirmPassword(password, confirmPassword) {
 export function RegisterPage() {
   const navigate = useNavigate();
   const { register } = useAuth();
-  
-  const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
+  const { showToast } = useToast();
   
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { showToast } = useToast();
 
   // Validate single field
-  function validateField(name, value) {
+  function validateField(name, value, allValues) {
     if (name === "username") return validateUsername(value);
     if (name === "email") return validateEmail(value);
     if (name === "password") return validatePassword(value);
     if (name === "confirmPassword") {
-      return validateConfirmPassword(formData.password, value);
+      return validateConfirmPassword(allValues.password, value);
     }
     return null;
   }
@@ -89,46 +83,10 @@ export function RegisterPage() {
     return newErrors;
   }
 
-  // Handle input change
-  function changeHandler(e) {
-    const { name, value } = e.target;
-    
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Validate on change (after first blur)
-    if (errors[name]) {
-      const error = validateField(name, value);
-      setErrors((prev) => {
-        if (error) {
-          return { ...prev, [name]: error };
-        }
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-
-    // If password changes, re-validate confirmPassword
-    if (name === "password" && formData.confirmPassword) {
-      const confirmError = validateConfirmPassword(value, formData.confirmPassword);
-      setErrors((prev) => {
-        if (confirmError) {
-          return { ...prev, confirmPassword: confirmError };
-        }
-        const newErrors = { ...prev };
-        delete newErrors.confirmPassword;
-        return newErrors;
-      });
-    }
-  }
-
   // Handle blur - validate field
   function blurHandler(e) {
     const { name, value } = e.target;
-    const error = validateField(name, value);
+    const error = validateField(name, value, values);
     setErrors((prev) => {
       if (error) {
         return { ...prev, [name]: error };
@@ -140,11 +98,9 @@ export function RegisterPage() {
   }
 
   // Handle form submit
-  async function submitHandler(e) {
-    e.preventDefault();
-
+  async function submitHandler(values) {
     // Validate all fields
-    const formErrors = validateForm(formData);
+    const formErrors = validateForm(values);
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
       return;
@@ -155,17 +111,13 @@ export function RegisterPage() {
     try {
       // Prepare user data (without confirmPassword)
       const userData = {
-        username: formData.username.trim(),
-        email: formData.email.trim(),
-        password: formData.password,
+        username: values.username.trim(),
+        email: values.email.trim(),
+        password: values.password,
       };
 
       await register(userData);
-      
-      // Show success toast
       showToast("success", "Успешна регистрация!");
-
-      // Redirect to events page after short delay
       setTimeout(() => {
         navigate("/events");
       }, 500);
@@ -173,6 +125,42 @@ export function RegisterPage() {
       showToast("error", error.message || "Възникна грешка при регистрация");
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  const { register: registerField, formAction, values } = useForm(submitHandler, {
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  // Validate on change (after first blur)
+  function changeHandler(e) {
+    registerField(e.target.name).onChange(e);
+    if (errors[e.target.name]) {
+      const error = validateField(e.target.name, e.target.value, values);
+      setErrors((prev) => {
+        if (error) {
+          return { ...prev, [e.target.name]: error };
+        }
+        const newErrors = { ...prev };
+        delete newErrors[e.target.name];
+        return newErrors;
+      });
+    }
+
+    // If password changes, re-validate confirmPassword
+    if (e.target.name === "password" && values.confirmPassword) {
+      const confirmError = validateConfirmPassword(e.target.value, values.confirmPassword);
+      setErrors((prev) => {
+        if (confirmError) {
+          return { ...prev, confirmPassword: confirmError };
+        }
+        const newErrors = { ...prev };
+        delete newErrors.confirmPassword;
+        return newErrors;
+      });
     }
   }
 
@@ -189,14 +177,14 @@ export function RegisterPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={submitHandler} className="space-y-6">
+          <form onSubmit={formAction} className="space-y-6">
             {/* Username Field */}
             <FormField
               label="Потребителско име"
-              name="username"
               type="text"
               placeholder="Минимум 3 символа"
-              value={formData.username}
+              {...registerField("username")}
+              value={values.username}
               error={errors.username}
               onChange={changeHandler}
               onBlur={blurHandler}
@@ -206,10 +194,10 @@ export function RegisterPage() {
             {/* Email Field */}
             <FormField
               label="Email"
-              name="email"
               type="email"
               placeholder="your.email@example.com"
-              value={formData.email}
+              {...registerField("email")}
+              value={values.email}
               error={errors.email}
               onChange={changeHandler}
               onBlur={blurHandler}
@@ -219,10 +207,10 @@ export function RegisterPage() {
             {/* Password Field */}
             <FormField
               label="Парола"
-              name="password"
               type="password"
               placeholder="Минимум 6 символа"
-              value={formData.password}
+              {...registerField("password")}
+              value={values.password}
               error={errors.password}
               onChange={changeHandler}
               onBlur={blurHandler}
@@ -232,10 +220,10 @@ export function RegisterPage() {
             {/* Confirm Password Field */}
             <FormField
               label="Потвърди парола"
-              name="confirmPassword"
               type="password"
               placeholder="Въведете паролата отново"
-              value={formData.confirmPassword}
+              {...registerField("confirmPassword")}
+              value={values.confirmPassword}
               error={errors.confirmPassword}
               onChange={changeHandler}
               onBlur={blurHandler}

@@ -7,8 +7,14 @@
       "password": "123456",
       "avatarUrl": "https://i.pravatar.cc/150?img=47",
       "createdAt": "2024-11-12T10:00:00.000Z",
-      "stars": [2, 3],
-      "favorites": [101, 103]
+      "stars": [
+        2,
+        3
+      ],
+      "favorites": [
+        101,
+        103
+      ]
     },
     {
       "id": 2,
@@ -17,8 +23,12 @@
       "password": "123456",
       "avatarUrl": "https://i.pravatar.cc/150?img=21",
       "createdAt": "2024-06-22T13:20:00.000Z",
-      "stars": [1],
-      "favorites": [102]
+      "stars": [
+        1
+      ],
+      "favorites": [
+        102
+      ]
     },
     {
       "id": 3,
@@ -28,7 +38,10 @@
       "avatarUrl": "https://i.pravatar.cc/150?img=10",
       "createdAt": "2025-01-03T08:00:00.000Z",
       "stars": [],
-      "favorites": [101, 104]
+      "favorites": [
+        101,
+        104
+      ]
     }
   ],
   "events": [
@@ -104,7 +117,7 @@
     {
       "id": "104",
       "title": "Празник на мартеницата – Варна",
-      "description": "Традиционен български базар с работилници, музика и изложби.",
+      "description": "Традиционен български базар за мартеници с работилници, музика и изложби.",
       "category": "Сезонни",
       "location": {
         "address": "Морска градина – сцена Раковина",
@@ -112,16 +125,19 @@
         "country": "България",
         "coordinates": null
       },
-      "startDate": "2026-02-01T11:00:00.000Z",
-      "endDate": "2026-02-03T18:00:00.000Z",
-      "durationMinutes": 4320,
+      "startDate": "2026-02-01T13:00",
+      "endDate": "2026-02-03T20:00",
+      "durationMinutes": 3300,
       "price": 0,
       "isOnline": false,
-      "imageUrl": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "imageUrl": "https://stenliyarn.com/image/cache/catalog/blog/res-5ecf8b51531634440674a2e12ddfc180-full-614x614.jpg",
       "websiteUrl": "https://varna.bg/",
-      "tags": [],
+      "tags": [
+        "мартеница",
+        "празник"
+      ],
       "createdAt": "2024-11-12T10:00:00.000Z",
-      "updatedAt": "2024-11-12T10:00:00.000Z",
+      "updatedAt": "2025-12-09T15:57:40.613Z",
       "creatorId": 1
     },
     {

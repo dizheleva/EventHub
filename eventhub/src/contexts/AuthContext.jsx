@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { API_BASE_URL } from "@/config/api";
+import { usePersistedState } from "@/hooks/usePersistedState";
 
 const USERS_API_URL = `${API_BASE_URL}/users`;
 
@@ -8,35 +9,36 @@ const AuthContext = createContext(null);
 
 // AuthProvider component
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = usePersistedState(null, "authUser");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAuthReady, setIsAuthReady] = useState(false); // Loading state for auth initialization
+  const [isAuthReady, setIsAuthReady] = useState(false);
 
-  // Load user from localStorage on app start
-  // This ensures auth state is restored before rendering protected routes
+  // Initialize auth state immediately on mount
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem("authUser");
-      if (storedUser) {
-        try {
-          // Safely parse user data from localStorage
-          const parsedUser = JSON.parse(storedUser);
-          setUser(parsedUser);
-          setIsAuthenticated(true);
-        } catch (parseError) {
-          // If parsing fails, remove corrupted data
-          console.error("Error parsing stored user:", parseError);
-          localStorage.removeItem("authUser");
-        }
+    // Set isAuthenticated based on current user value
+    setIsAuthenticated(!!user);
+    // Force isAuthReady to true immediately (usePersistedState is synchronous)
+    setIsAuthReady(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount - user is already initialized from usePersistedState
+
+  // Update isAuthenticated when user changes
+  useEffect(() => {
+    setIsAuthenticated(!!user);
+  }, [user]);
+
+  // Safety timeout: Force isAuthReady to true after 1 second if still false
+  // This prevents infinite loading states
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!isAuthReady) {
+        console.warn("Auth initialization timeout - forcing ready state");
+        setIsAuthReady(true);
       }
-    } catch (error) {
-      // If localStorage access fails, log error but continue
-      console.error("Error accessing localStorage:", error);
-    } finally {
-      // Mark auth as ready after checking localStorage
-      setIsAuthReady(true);
-    }
-  }, []);
+    }, 1000);
+
+    return () => clearTimeout(timeout);
+  }, [isAuthReady]);
 
   // Login function
   async function login(email, password) {
@@ -62,12 +64,8 @@ export function AuthProvider({ children }) {
       // Remove password from user object before storing
       const { password: _, ...userWithoutPassword } = foundUser;
 
-      // Update state
+      // Update state (automatically persisted by usePersistedState)
       setUser(userWithoutPassword);
-      setIsAuthenticated(true);
-
-      // Save user to localStorage under "authUser" key for persistence
-      localStorage.setItem("authUser", JSON.stringify(userWithoutPassword));
 
       return { success: true, user: userWithoutPassword };
     } catch (error) {
@@ -115,12 +113,8 @@ export function AuthProvider({ children }) {
       // Remove password from user object before storing
       const { password: _, ...userWithoutPassword } = newUser;
 
-      // Update state
+      // Update state (automatically persisted by usePersistedState)
       setUser(userWithoutPassword);
-      setIsAuthenticated(true);
-
-      // Save user to localStorage under "authUser" key for persistence
-      localStorage.setItem("authUser", JSON.stringify(userWithoutPassword));
 
       return { success: true, user: userWithoutPassword };
     } catch (error) {
@@ -132,18 +126,11 @@ export function AuthProvider({ children }) {
   // Logout function
   function logout() {
     setUser(null);
-    setIsAuthenticated(false);
-    // Remove user from localStorage on logout
-    localStorage.removeItem("authUser");
   }
 
-  // Update user in auth context and localStorage
-  // Used when profile is updated - persists the updated user object
+  // Update user in auth context (automatically persisted by usePersistedState)
   function updateUserInAuth(updatedUser) {
-    // Update state
     setUser(updatedUser);
-    // Persist new user object in localStorage
-    localStorage.setItem("authUser", JSON.stringify(updatedUser));
   }
 
   // Context value

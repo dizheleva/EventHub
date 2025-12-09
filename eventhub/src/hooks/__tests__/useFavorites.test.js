@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext'
 // Mock dependencies
 vi.mock('@/api/favoritesApi')
 vi.mock('@/contexts/AuthContext')
-vi.mock('@/contexts/ToastContext', () => ({
+vi.mock('@/hooks/useToast', () => ({
   useToast: () => ({
     showToast: vi.fn(),
   }),

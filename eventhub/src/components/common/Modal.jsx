@@ -2,9 +2,13 @@ import { useEffect } from "react";
 import { X } from "lucide-react";
 
 export function Modal({ isOpen, onClose, title, children }) {
-  // Handle ESC key to close modal
+  // Handle ESC key to close modal and body scroll
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      // Ensure body scroll is restored when modal is closed
+      document.body.style.overflow = "";
+      return;
+    }
 
     function escapeHandler(e) {
       if (e.key === "Escape") {
@@ -18,11 +22,22 @@ export function Modal({ isOpen, onClose, title, children }) {
 
     return () => {
       document.removeEventListener("keydown", escapeHandler);
-      document.body.style.overflow = "unset";
+      // Always restore body scroll on cleanup
+      document.body.style.overflow = "";
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  // Cleanup on unmount to ensure body scroll is restored
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  if (!isOpen) {
+    // Ensure no overlay remains when modal is closed
+    return null;
+  }
 
   return (
     <div
@@ -30,12 +45,14 @@ export function Modal({ isOpen, onClose, title, children }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? "modal-title" : undefined}
+      style={{ pointerEvents: 'auto' }}
     >
       {/* Backdrop overlay */}
       <div
         className="fixed inset-0 bg-black/30 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
         aria-hidden="true"
+        style={{ pointerEvents: 'auto' }}
       />
 
       {/* Modal content */}

@@ -10,7 +10,7 @@ import { Pagination } from "@/components/common/Pagination";
 import { SearchBar } from "@/components/common/SearchBar";
 import { useEvents } from "@/hooks/useEvents";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/contexts/ToastContext";
+import { useToast } from "@/hooks/useToast";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { EventItem } from "./EventItem";
 import { EventCardSkeleton } from "./EventCardSkeleton";

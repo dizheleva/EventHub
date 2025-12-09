@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
@@ -28,8 +28,21 @@ export function GuestRoute({ children, redirectTo = "/events" }) {
     }
   }, [isAuthenticated, isAuthReady, navigate, redirectTo]);
 
-  // Show loading spinner while auth is initializing
-  if (!isAuthReady) {
+  // isAuthReady should be true immediately, but add timeout fallback
+  // Show loading spinner while auth is initializing (with timeout to prevent infinite loading)
+  const [forceReady, setForceReady] = useState(false);
+  
+  useEffect(() => {
+    // Force ready after 500ms if still not ready (safety fallback)
+    const timeout = setTimeout(() => {
+      if (!isAuthReady) {
+        setForceReady(true);
+      }
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [isAuthReady]);
+
+  if (!isAuthReady && !forceReady) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <LoadingSpinner message="Зареждане..." />

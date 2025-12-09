@@ -11,7 +11,7 @@ import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { EventItem } from "@/components/events/EventItem";
 import { LikeButton } from "@/components/profile/LikeButton";
-import { useToast } from "@/contexts/ToastContext";
+import { useToast } from "@/hooks/useToast";
 
 /**
  * UserProfilePage - Display user profile information

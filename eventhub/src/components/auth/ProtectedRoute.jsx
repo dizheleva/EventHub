@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Toast } from "@/components/common/Toast";
+import { useToast } from "@/hooks/useToast";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 /**
@@ -17,16 +17,16 @@ import { LoadingSpinner } from "@/components/common/LoadingSpinner";
  */
 export function ProtectedRoute({ children, redirectTo = "/login" }) {
   const { isAuthenticated, isAuthReady } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const [showToast, setShowToast] = useState(false);
 
   // Wait for auth to be ready before making redirect decisions
   useEffect(() => {
     // Only check authentication and redirect if auth is ready
     if (isAuthReady && !isAuthenticated) {
       // Show toast notification
-      setShowToast(true);
+      showToast("error", "Моля, влезте в акаунта си.");
 
       // Preserve original URL in query parameter for redirect after login
       const currentPath = location.pathname + location.search;
@@ -41,10 +41,23 @@ export function ProtectedRoute({ children, redirectTo = "/login" }) {
         clearTimeout(redirectTimer);
       };
     }
-  }, [isAuthenticated, isAuthReady, navigate, location, redirectTo]);
+  }, [isAuthenticated, isAuthReady, navigate, location, redirectTo, showToast]);
 
-  // Show loading spinner while auth is initializing
-  if (!isAuthReady) {
+  // isAuthReady should be true immediately, but add timeout fallback
+  // Show loading spinner while auth is initializing (with timeout to prevent infinite loading)
+  const [forceReady, setForceReady] = useState(false);
+  
+  useEffect(() => {
+    // Force ready after 500ms if still not ready (safety fallback)
+    const timeout = setTimeout(() => {
+      if (!isAuthReady) {
+        setForceReady(true);
+      }
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [isAuthReady]);
+
+  if (!isAuthReady && !forceReady) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <LoadingSpinner message="Зареждане..." />
@@ -52,18 +65,9 @@ export function ProtectedRoute({ children, redirectTo = "/login" }) {
     );
   }
 
-  // If not authenticated (and auth is ready), show toast and don't render children
+  // If not authenticated (and auth is ready), don't render children (redirect will happen)
   if (!isAuthenticated) {
-    return (
-      <>
-        {showToast && (
-          <Toast
-            type="error"
-            message="Моля, влезте в акаунта си."
-          />
-        )}
-      </>
-    );
+    return null;
   }
 
   // If authenticated, render children

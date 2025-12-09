@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/contexts/ToastContext";
+import { useToast } from "@/hooks/useToast";
+import { useForm } from "@/hooks/useForm";
 import { FormField } from "@/components/common/FormField";
 
 // Validation functions
@@ -30,18 +31,13 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { login } = useAuth();
+  const { showToast } = useToast();
   
   // Get redirect URL from query parameter (preserved by ProtectedRoute)
   const redirectPath = searchParams.get("redirect") || "/events";
   
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-  
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { showToast } = useToast();
 
   // Validate single field
   function validateField(name, value) {
@@ -62,29 +58,6 @@ export function LoginPage() {
     return newErrors;
   }
 
-  // Handle input change
-  function changeHandler(e) {
-    const { name, value } = e.target;
-    
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Validate on change (after first blur)
-    if (errors[name]) {
-      const error = validateField(name, value);
-      setErrors((prev) => {
-        if (error) {
-          return { ...prev, [name]: error };
-        }
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-  }
-
   // Handle blur - validate field
   function blurHandler(e) {
     const { name, value } = e.target;
@@ -100,11 +73,9 @@ export function LoginPage() {
   }
 
   // Handle form submit
-  async function submitHandler(e) {
-    e.preventDefault();
-
+  async function submitHandler(values) {
     // Validate all fields
-    const formErrors = validateForm(formData);
+    const formErrors = validateForm(values);
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
       return;
@@ -113,13 +84,8 @@ export function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      await login(formData.email, formData.password);
-      
-      // Show success toast
+      await login(values.email, values.password);
       showToast("success", "Успешно влизане!");
-
-      // Redirect to original destination (or /events if no redirect param)
-      // This preserves the user's intended destination after login
       setTimeout(() => {
         navigate(redirectPath, { replace: true });
       }, 500);
@@ -127,6 +93,27 @@ export function LoginPage() {
       showToast("error", error.message || "Възникна грешка при влизане");
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  const { register, formAction, values } = useForm(submitHandler, {
+    email: "",
+    password: "",
+  });
+
+  // Validate on change (after first blur)
+  function changeHandler(e) {
+    register(e.target.name).onChange(e);
+    if (errors[e.target.name]) {
+      const error = validateField(e.target.name, e.target.value);
+      setErrors((prev) => {
+        if (error) {
+          return { ...prev, [e.target.name]: error };
+        }
+        const newErrors = { ...prev };
+        delete newErrors[e.target.name];
+        return newErrors;
+      });
     }
   }
 
@@ -143,14 +130,14 @@ export function LoginPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={submitHandler} className="space-y-6">
+          <form onSubmit={formAction} className="space-y-6">
             {/* Email Field */}
             <FormField
               label="Email"
-              name="email"
               type="email"
               placeholder="your.email@example.com"
-              value={formData.email}
+              {...register("email")}
+              value={values.email}
               error={errors.email}
               onChange={changeHandler}
               onBlur={blurHandler}
@@ -160,10 +147,10 @@ export function LoginPage() {
             {/* Password Field */}
             <FormField
               label="Парола"
-              name="password"
               type="password"
               placeholder="Въведете парола"
-              value={formData.password}
+              {...register("password")}
+              value={values.password}
               error={errors.password}
               onChange={changeHandler}
               onBlur={blurHandler}

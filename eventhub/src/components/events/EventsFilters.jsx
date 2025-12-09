@@ -141,11 +141,18 @@ export function EventsFilters({ filters, onChange, cities = [] }) {
     const clearHover = hasValue ? filterStyles[type].clearHover : "";
 
     return (
-      <button
-        onClick={onClick}
-        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${style}`}
-      >
-        {label}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onClick}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${style}`}
+        >
+          {label}
+          <ChevronDown
+            className={`w-4 h-4 transition-transform ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
         {hasValue && showClearButton && (
           <button
             onClick={(e) => {
@@ -158,12 +165,7 @@ export function EventsFilters({ filters, onChange, cities = [] }) {
             <X className="w-3 h-3" />
           </button>
         )}
-        <ChevronDown
-          className={`w-4 h-4 transition-transform ${
-            isOpen ? "rotate-180" : ""
-          }`}
-        />
-      </button>
+      </div>
     );
   }
 

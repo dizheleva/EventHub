@@ -7,7 +7,7 @@ import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Modal } from "@/components/common/Modal";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/contexts/ToastContext";
+import { useToast } from "@/hooks/useToast";
 import { useEvents } from "@/hooks/useEvents";
 import { useInterested } from "@/hooks/useInterested";
 import { useComments } from "@/hooks/useComments";
@@ -159,24 +159,6 @@ export function EventDetails() {
       });
   }, [id]);
 
-  // Refresh event data after update
-  function refreshEvent() {
-    if (id) {
-      fetch(`${EVENTS_API_URL}/${id}`)
-        .then(res => {
-          if (!res.ok) {
-            throw new Error(`Грешка при зареждане: ${res.status}`);
-          }
-          return res.json();
-        })
-        .then(data => {
-          setEvent(data);
-        })
-        .catch(err => {
-          console.error("Error refreshing event:", err);
-        });
-    }
-  }
 
   function handleEdit() {
     if (isExternal) {
@@ -212,9 +194,20 @@ export function EventDetails() {
 
   async function handleEventUpdated(updatedEvent) {
     try {
-      await updateEvent(updatedEvent.id, updatedEvent);
+      // Update local state immediately with the updated event data
+      setEvent(updatedEvent);
       setShowEditModal(false);
-      refreshEvent();
+      
+      // Also update in the global events list (if it exists there)
+      // This won't throw an error if event is not in the list
+      try {
+        await updateEvent(updatedEvent.id, updatedEvent);
+      } catch (err) {
+        // Ignore error - event might not be in the global events list
+        // The local state is already updated above
+        console.warn("Could not update event in global list:", err.message);
+      }
+      
       showToast("success", "Събитието беше обновено успешно!");
     } catch (err) {
       showToast("error", err.message || "Възникна грешка при обновяване на събитие");

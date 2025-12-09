@@ -6,43 +6,127 @@ import { CategorySelect } from "@/components/common/CategorySelect";
 import { normalizeEvent } from "@/utils/eventHelpers";
 import { calculateDurationMinutes } from "@/utils/eventHelpers";
 import { useAuth } from "@/contexts/AuthContext";
+import { useForm } from "@/hooks/useForm";
 import { API_BASE_URL } from "@/config/api";
-import { useToast } from "@/contexts/ToastContext";
+import { useToast } from "@/hooks/useToast";
 
 const EVENTS_API_URL = `${API_BASE_URL}/events`;
 
+const INITIAL_FORM_STATE = {
+  title: "",
+  description: "",
+  category: "",
+  startDate: "",
+  endDate: "",
+  durationMinutes: null,
+  isOnline: false,
+  address: "",
+  city: "",
+  imageUrl: "",
+  websiteUrl: "",
+  price: 0,
+  tags: "",
+};
+
 export function EditEventForm({ eventId, onEventUpdated, onClose }) {
   const { user } = useAuth();
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    category: "",
-    startDate: "",
-    endDate: "",
-    durationMinutes: null,
-    isOnline: false,
-    address: "",
-    city: "",
-    imageUrl: "",
-    websiteUrl: "",
-    price: 0,
-    tags: "",
-  });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { showToast } = useToast();
 
+  // Handle form submit
+  async function submitHandler(values) {
+    const formErrors = validateForm(values);
+    if (Object.keys(formErrors).length > 0) {
+      setErrors(formErrors);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Parse tags
+      const tags = values.tags
+        ? values.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+        : [];
+
+      // Prepare location object (country is always Bulgaria)
+      const location = {
+        address: values.isOnline ? null : (values.address || null),
+        city: values.isOnline ? null : (values.city || null),
+        country: "България",
+        coordinates: null
+      };
+
+      // Prepare event data
+      const eventData = {
+        title: values.title,
+        description: values.description,
+        category: values.category,
+        location: location,
+        startDate: values.startDate,
+        endDate: values.endDate || null,
+        durationMinutes: values.durationMinutes,
+        imageUrl: values.imageUrl || null,
+        websiteUrl: values.websiteUrl || null,
+        price: values.price || 0,
+        isOnline: values.isOnline,
+        tags: tags,
+        updatedAt: new Date().toISOString(),
+        // Keep creatorId
+        creatorId: user.id,
+      };
+
+      const res = await fetch(`${EVENTS_API_URL}/${eventId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(eventData),
+      });
+
+      if (!res.ok) {
+        throw new Error("Грешка при обновяване на събитието");
+      }
+
+      const updatedEvent = await res.json();
+      
+      // Call callback first (it will show toast and close modal)
+      if (onEventUpdated) {
+        onEventUpdated(updatedEvent);
+      } else {
+        // If no callback, show toast and close manually
+        showToast("success", "Събитието е обновено успешно!");
+        if (onClose) {
+          onClose();
+        }
+      }
+    } catch (err) {
+      showToast("error", err.message || "Възникна грешка при обновяване на събитието");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  const { register, formAction, values, setValues } = useForm(submitHandler, INITIAL_FORM_STATE);
+
   // Calculate duration when dates change
   useEffect(() => {
-    if (formData.startDate && formData.endDate) {
-      const duration = calculateDurationMinutes(formData.startDate, formData.endDate);
-      setFormData(prev => ({ ...prev, durationMinutes: duration }));
+    if (values.startDate && values.endDate) {
+      const duration = calculateDurationMinutes(values.startDate, values.endDate);
+      // Only update if duration actually changed to avoid infinite loop
+      setValues(prev => {
+        if (prev.durationMinutes === duration) return prev;
+        return { ...prev, durationMinutes: duration };
+      });
     } else {
       // If endDate is removed, clear duration
-      setFormData(prev => ({ ...prev, durationMinutes: null }));
+      setValues(prev => {
+        if (prev.durationMinutes === null) return prev;
+        return { ...prev, durationMinutes: null };
+      });
     }
-  }, [formData.startDate, formData.endDate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values.startDate, values.endDate]); // Don't include setValues - it's stable
 
   // Fetch event data when component mounts or eventId changes
   useEffect(() => {
@@ -50,6 +134,8 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
       setIsLoading(false);
       return;
     }
+
+    let isCancelled = false;
 
     setIsLoading(true);
     fetch(`${EVENTS_API_URL}/${eventId}`)
@@ -60,6 +146,9 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
         return res.json();
       })
       .then(event => {
+        // Don't update state if component was unmounted or eventId changed
+        if (isCancelled) return;
+
         // Normalize event to new format
         const normalized = normalizeEvent(event);
         
@@ -88,7 +177,7 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
           return `${year}-${month}-${day}T${hours}:${minutes}`;
         };
 
-        setFormData({
+        setValues({
           title: normalized.title || "",
           description: normalized.description || "",
           category: normalized.category || "",
@@ -106,11 +195,17 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
         setIsLoading(false);
       })
       .catch(err => {
+        if (isCancelled) return;
         console.error("Error fetching event:", err);
         showToast("error", err.message || "Възникна грешка при зареждане на събитието");
         setIsLoading(false);
       });
-  }, [eventId, user, onClose, showToast]);
+
+    return () => {
+      isCancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, user?.id]); // Only depend on eventId and user.id, not functions
 
   // Validate single field
   function validateField(name, value) {
@@ -159,24 +254,23 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
       newValue = value === "" ? null : Number(value);
     }
     
-    setFormData((prev) => {
-      const updated = {
+    // Use useForm's changeHandler
+    register(name).onChange(e);
+    
+    // If isOnline changes, clear location fields if going online
+    if (name === "isOnline" && newValue === true) {
+      setValues(prev => ({
         ...prev,
         [name]: newValue,
-      };
-      
-      if (name === "isOnline" && newValue === true) {
-        updated.address = "";
-        updated.city = "";
-      }
-      
-      return updated;
-    });
+        address: "",
+        city: "",
+      }));
+    }
 
     // Validate on change
     if (errors[name]) {
       let error = null;
-      const currentData = { ...formData, [name]: newValue };
+      const currentData = { ...values, [name]: newValue };
       
       if (name === "endDate") {
         error = validators.endDate(newValue, currentData.startDate);
@@ -205,7 +299,7 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
   function blurHandler(e) {
     const { name, value } = e.target;
     let error = null;
-    const currentData = { ...formData, [name]: value };
+    const currentData = { ...values, [name]: value };
     
     if (name === "endDate") {
       error = validators.endDate(value, currentData.startDate);
@@ -229,79 +323,6 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
     });
   }
 
-  // Handle form submit
-  async function submitHandler(e) {
-    e.preventDefault();
-
-    const formErrors = validateForm(formData);
-    if (Object.keys(formErrors).length > 0) {
-      setErrors(formErrors);
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // Parse tags
-      const tags = formData.tags
-        ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
-        : [];
-
-      // Prepare location object (country is always Bulgaria)
-      const location = {
-        address: formData.isOnline ? null : (formData.address || null),
-        city: formData.isOnline ? null : (formData.city || null),
-        country: "България",
-        coordinates: null
-      };
-
-      // Prepare event data
-      const eventData = {
-        title: formData.title,
-        description: formData.description,
-        category: formData.category,
-        location: location,
-        startDate: formData.startDate,
-        endDate: formData.endDate || null,
-        durationMinutes: formData.durationMinutes,
-        imageUrl: formData.imageUrl || null,
-        websiteUrl: formData.websiteUrl || null,
-        price: formData.price || 0,
-        isOnline: formData.isOnline,
-        tags: tags,
-        updatedAt: new Date().toISOString(),
-        // Keep creatorId
-        creatorId: user.id,
-      };
-
-      const res = await fetch(`${EVENTS_API_URL}/${eventId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(eventData),
-      });
-
-      if (!res.ok) {
-        throw new Error("Грешка при обновяване на събитието");
-      }
-
-      const updatedEvent = await res.json();
-      
-      if (onEventUpdated) {
-        onEventUpdated(updatedEvent);
-      }
-
-      showToast("success", "Събитието е обновено успешно!");
-      
-      if (onClose) {
-        onClose();
-      }
-    } catch (err) {
-      showToast("error", err.message || "Възникна грешка при обновяване на събитието");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
   if (isLoading) {
     return (
       <div className="p-8">
@@ -313,14 +334,14 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
   const hasErrors = Object.keys(errors).length > 0;
 
   return (
-    <form onSubmit={submitHandler} className="space-y-4 max-h-[80vh] overflow-y-auto px-1">
+    <form onSubmit={formAction} className="space-y-4 max-h-[80vh] overflow-y-auto px-1">
       {/* Title */}
       <FormField
         label="Заглавие"
-        name="title"
         type="text"
         placeholder="Въведете заглавие на събитието"
-        value={formData.title}
+        {...register("title")}
+        value={values.title}
         error={errors.title}
         onChange={changeHandler}
         onBlur={blurHandler}
@@ -329,7 +350,7 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
 
       {/* Category */}
       <CategorySelect
-        value={formData.category}
+        value={values.category}
         onChange={changeHandler}
         onBlur={blurHandler}
         error={errors.category}
@@ -339,11 +360,11 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
       {/* Description */}
       <FormField
         label="Описание"
-        name="description"
         type="textarea"
         placeholder="Въведете описание на събитието (по избор)"
         rows={4}
-        value={formData.description}
+        {...register("description")}
+        value={values.description}
         error={errors.description}
         onChange={changeHandler}
         onBlur={blurHandler}
@@ -358,9 +379,9 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             label="Начална дата и час"
-            name="startDate"
             type="datetime-local"
-            value={formData.startDate}
+            {...register("startDate")}
+            value={values.startDate}
             error={errors.startDate}
             onChange={changeHandler}
             onBlur={blurHandler}
@@ -369,21 +390,21 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
           
           <FormField
             label="Крайна дата и час"
-            name="endDate"
             type="datetime-local"
-            value={formData.endDate}
+            {...register("endDate")}
+            value={values.endDate}
             error={errors.endDate}
             onChange={changeHandler}
             onBlur={blurHandler}
             disabled={isSubmitting}
-            min={formData.startDate}
+            min={values.startDate}
             optional={true}
           />
         </div>
         
         <div className="text-sm text-gray-600">
-          Продължителност: {formData.durationMinutes 
-            ? `${Math.floor(formData.durationMinutes / 60)}ч ${formData.durationMinutes % 60}м`
+          Продължителност: {values.durationMinutes 
+            ? `${Math.floor(values.durationMinutes / 60)}ч ${values.durationMinutes % 60}м`
             : "неизвестно"}
         </div>
       </div>
@@ -396,8 +417,8 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
-              name="isOnline"
-              checked={formData.isOnline}
+              {...register("isOnline")}
+              checked={values.isOnline}
               onChange={changeHandler}
               disabled={isSubmitting}
               className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
@@ -406,14 +427,14 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
           </label>
         </div>
         
-        {!formData.isOnline && (
+        {!values.isOnline && (
           <>
             <FormField
               label="Адрес"
-              name="address"
               type="text"
               placeholder="Въведете пълен адрес"
-              value={formData.address}
+              {...register("address")}
+              value={values.address}
               error={errors.address}
               onChange={changeHandler}
               onBlur={blurHandler}
@@ -421,10 +442,10 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
             />
             <FormField
               label="Град"
-              name="city"
               type="text"
               placeholder="Въведете град"
-              value={formData.city}
+              {...register("city")}
+              value={values.city}
               error={errors.city}
               onChange={changeHandler}
               onBlur={blurHandler}
@@ -440,10 +461,10 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
         
         <FormField
           label="Цена (0 = безплатно)"
-          name="price"
           type="number"
           placeholder="0"
-          value={formData.price || ""}
+          {...register("price")}
+          value={values.price || ""}
           error={errors.price}
           onChange={changeHandler}
           onBlur={blurHandler}
@@ -456,10 +477,10 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
       {/* Tags */}
       <FormField
         label="Тагове"
-        name="tags"
         type="text"
         placeholder="Разделете таговете със запетая"
-        value={formData.tags}
+        {...register("tags")}
+        value={values.tags}
         error={errors.tags}
         onChange={changeHandler}
         onBlur={blurHandler}
@@ -470,10 +491,10 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
       {/* Image URL */}
       <FormField
         label="Снимка (URL)"
-        name="imageUrl"
         type="url"
         placeholder="https://example.com/image.jpg"
-        value={formData.imageUrl}
+        {...register("imageUrl")}
+        value={values.imageUrl}
         error={errors.imageUrl}
         onChange={changeHandler}
         onBlur={blurHandler}
@@ -484,10 +505,10 @@ export function EditEventForm({ eventId, onEventUpdated, onClose }) {
       {/* Website URL */}
       <FormField
         label="Официална страница / Повече информация (URL)"
-        name="websiteUrl"
         type="url"
         placeholder="https://example.com/event"
-        value={formData.websiteUrl}
+        {...register("websiteUrl")}
+        value={values.websiteUrl}
         error={errors.websiteUrl}
         onChange={changeHandler}
         onBlur={blurHandler}

@@ -10,7 +10,7 @@ import { getUserLikes } from "@/api/userLikesApi";
 import { API_BASE_URL } from "@/config/api";
 import { getUserDisplayName } from "@/utils/userHelpers";
 import { useFavorites } from "@/hooks/useFavorites";
-import { useToast } from "@/contexts/ToastContext";
+import { useToast } from "@/hooks/useToast";
 
 const USERS_API_URL = `${API_BASE_URL}/users`;
 
