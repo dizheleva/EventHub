@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ec4899;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f43f5e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="30" fill="url(#gradient)" stroke="#fff" stroke-width="2"/>
+  
+  <!-- Calendar icon -->
+  <rect x="14" y="18" width="36" height="32" rx="2" fill="#fff" opacity="0.95"/>
+  <rect x="14" y="18" width="36" height="8" rx="2" fill="url(#gradient)"/>
+  
+  <!-- Calendar grid lines -->
+  <line x1="22" y1="26" x2="22" y2="50" stroke="#e5e7eb" stroke-width="1"/>
+  <line x1="30" y1="26" x2="30" y2="50" stroke="#e5e7eb" stroke-width="1"/>
+  <line x1="38" y1="26" x2="38" y2="50" stroke="#e5e7eb" stroke-width="1"/>
+  <line x1="46" y1="26" x2="46" y2="50" stroke="#e5e7eb" stroke-width="1"/>
+  <line x1="14" y1="34" x2="50" y2="34" stroke="#e5e7eb" stroke-width="1"/>
+  <line x1="14" y1="42" x2="50" y2="42" stroke="#e5e7eb" stroke-width="1"/>
+  
+  <!-- Event dots -->
+  <circle cx="22" cy="30" r="2" fill="url(#gradient)"/>
+  <circle cx="30" cy="38" r="2" fill="url(#gradient)"/>
+  <circle cx="38" cy="46" r="2" fill="url(#gradient)"/>
+  <circle cx="46" cy="34" r="2" fill="url(#gradient)"/>
+</svg>
+

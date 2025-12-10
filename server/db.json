@@ -1,171 +1,163 @@
 {
-  "users": [
-    {
-      "id": 1,
-      "username": "maria",
-      "email": "maria@example.com",
-      "password": "123456",
-      "avatarUrl": "https://i.pravatar.cc/150?img=47",
-      "createdAt": "2024-11-12T10:00:00.000Z",
-      "stars": [
-        2,
-        3
-      ],
-      "favorites": [
-        101,
-        103
-      ]
-    },
-    {
-      "id": 2,
-      "username": "ivan",
-      "email": "ivan@example.com",
-      "password": "123456",
-      "avatarUrl": "https://i.pravatar.cc/150?img=21",
-      "createdAt": "2024-06-22T13:20:00.000Z",
-      "stars": [
-        1
-      ],
-      "favorites": [
-        102
-      ]
-    },
-    {
-      "id": 3,
-      "username": "petya",
-      "email": "petya@example.com",
-      "password": "123456",
-      "avatarUrl": "https://i.pravatar.cc/150?img=10",
-      "createdAt": "2025-01-03T08:00:00.000Z",
-      "stars": [],
-      "favorites": [
-        101,
-        104
-      ]
-    }
-  ],
-  "events": [
-    {
-      "id": "101",
-      "title": "Концерт на симфоничния оркестър – Варна",
-      "description": "Класически концерт с произведения на Чайковски и Рахманинов.",
+  "events": {
+    "evt-001": {
+      "_id": "evt-001",
+      "_ownerId": "user-001",
+      "title": "Концерт на Софийската филхармония",
       "category": "Култура",
-      "location": {
-        "address": "Фестивален и конгресен център",
-        "city": "Варна",
-        "country": "България",
-        "coordinates": null
-      },
-      "startDate": "2026-01-18T19:00:00.000Z",
-      "endDate": "2026-01-18T21:00:00.000Z",
-      "durationMinutes": 120,
-      "price": 20,
-      "isOnline": false,
-      "imageUrl": "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      "websiteUrl": "https://fccvarna.bg/",
-      "tags": [],
-      "createdAt": "2024-11-12T10:00:00.000Z",
-      "updatedAt": "2024-11-12T10:00:00.000Z",
-      "creatorId": 1
+      "date": "2025-12-15T19:00:00",
+      "location": "София, Национален дворец на културата",
+      "imageUrl": "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800",
+      "description": "Незабравим концерт с класическа музика в изпълнение на Софийската филхармония. Програмата включва произведения на Моцарт, Бетховен и Чайковски.",
+      "price": 25,
+      "websiteUrl": "",
+      "tags": "",
+      "_createdOn": 1734206400000
     },
-    {
-      "id": "102",
-      "title": "Опера \"Кармен\" – София",
-      "description": "Световноизвестната опера от Бизе – спектакъл с международни солисти.",
-      "category": "Култура",
-      "location": {
-        "address": "Национална опера и балет",
-        "city": "София",
-        "country": "България",
-        "coordinates": null
-      },
-      "startDate": "2026-02-02T19:00:00.000Z",
-      "endDate": "2026-02-02T22:00:00.000Z",
-      "durationMinutes": 180,
-      "price": 35,
-      "isOnline": false,
-      "imageUrl": "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      "websiteUrl": "https://www.operasofia.bg/",
-      "tags": [],
-      "createdAt": "2024-06-22T13:20:00.000Z",
-      "updatedAt": "2024-06-22T13:20:00.000Z",
-      "creatorId": 2
-    },
-    {
-      "id": "103",
-      "title": "Детска работилница \"Малки изобретатели\"",
-      "description": "Занимания по роботика и инженерство за деца 6–12 години.",
-      "category": "Деца",
-      "location": {
-        "address": "Science Center Plovdiv",
-        "city": "Пловдив",
-        "country": "България",
-        "coordinates": null
-      },
-      "startDate": "2026-01-25T10:00:00.000Z",
-      "endDate": "2026-01-25T13:00:00.000Z",
-      "durationMinutes": 180,
-      "price": 0,
-      "isOnline": false,
-      "imageUrl": "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      "websiteUrl": "https://sciencecenter.bg/",
-      "tags": [],
-      "createdAt": "2025-01-03T08:00:00.000Z",
-      "updatedAt": "2025-01-03T08:00:00.000Z",
-      "creatorId": 3
-    },
-    {
-      "id": "104",
-      "title": "Празник на мартеницата – Варна",
-      "description": "Традиционен български базар за мартеници с работилници, музика и изложби.",
+    "evt-002": {
+      "_id": "evt-002",
+      "_ownerId": "user-002",
+      "title": "Фестивал на уличната храна",
       "category": "Сезонни",
-      "location": {
-        "address": "Морска градина – сцена Раковина",
-        "city": "Варна",
-        "country": "България",
-        "coordinates": null
-      },
-      "startDate": "2026-02-01T13:00",
-      "endDate": "2026-02-03T20:00",
-      "durationMinutes": 3300,
+      "date": "2025-12-20T12:00:00",
+      "location": "Пловдив, Централен площад",
+      "imageUrl": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800",
+      "description": "Голям фестивал на уличната храна с над 50 участници от цялата страна. Ще има бургери, пици, азиатска храна, десерти и много повече!",
       "price": 0,
-      "isOnline": false,
-      "imageUrl": "https://stenliyarn.com/image/cache/catalog/blog/res-5ecf8b51531634440674a2e12ddfc180-full-614x614.jpg",
-      "websiteUrl": "https://varna.bg/",
-      "tags": [
-        "мартеница",
-        "празник"
-      ],
-      "createdAt": "2024-11-12T10:00:00.000Z",
-      "updatedAt": "2025-12-09T15:57:40.613Z",
-      "creatorId": 1
+      "websiteUrl": "",
+      "tags": "",
+      "_createdOn": 1734206500000
     },
-    {
-      "id": "105",
-      "title": "5 км бягане – София",
-      "description": "Неформално бягане в Борисовата градина за всички възрасти.",
-      "category": "Спорт",
-      "location": {
-        "address": "Борисова градина – Алея на бегачите",
-        "city": "София",
-        "country": "България",
-        "coordinates": null
-      },
-      "startDate": "2026-01-22T09:00:00.000Z",
-      "endDate": "2026-01-22T10:00:00.000Z",
-      "durationMinutes": 60,
+    "evt-003": {
+      "_id": "evt-003",
+      "_ownerId": "user-001",
+      "title": "Рок концерт - The Rockers",
+      "category": "Култура",
+      "date": "2025-12-18T20:00:00",
+      "location": "Варна, Морско казино",
+      "imageUrl": "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800",
+      "description": "Енергичен рок концерт с най-добрите български рок групи. Гарантираме незабравима вечер с класически рок химни!",
+      "price": 30,
+      "websiteUrl": "",
+      "tags": "",
+      "_createdOn": 1734206600000
+    },
+    "evt-004": {
+      "_id": "evt-004",
+      "_ownerId": "user-002",
+      "title": "Работилница по изкуствен интелект",
+      "category": "Работилници",
+      "date": "2025-12-22T10:00:00",
+      "location": "София, Технически университет",
+      "imageUrl": "https://images.unsplash.com/photo-1677442136019-0c0b1627e73e?w=800",
+      "description": "Практическа работилница за начинаещи и напреднали, която ще ви научи на основите на машинното обучение и AI. Включва hands-on упражнения.",
+      "price": 50,
+      "websiteUrl": "",
+      "tags": "",
+      "_createdOn": 1734206700000
+    },
+    "evt-005": {
+      "_id": "evt-005",
+      "_ownerId": "user-001",
+      "title": "Рождествен базар",
+      "category": "Сезонни",
+      "date": "2025-12-10T09:00:00",
+      "location": "София, Градска градина",
+      "imageUrl": "https://images.unsplash.com/photo-1482517967863-00e15c9b44be?w=800",
+      "description": "Традиционен рождествен базар с ръчно изработени сувенири, храна и напитки. Идеално място за рождествени подаръци!",
       "price": 0,
-      "isOnline": false,
-      "imageUrl": "https://images.unsplash.com/photo-1571008887538-b36bb32f4571?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      "websiteUrl": "https://sofiarun.bg/",
-      "tags": [],
-      "createdAt": "2024-06-22T13:20:00.000Z",
-      "updatedAt": "2024-06-22T13:20:00.000Z",
-      "creatorId": 2
+      "websiteUrl": "",
+      "tags": "",
+      "_createdOn": 1734206800000
+    },
+    "id-1765398451509-iz2s55q9i": {
+      "_id": "id-1765398451509-iz2s55q9i",
+      "_ownerId": "id-1765391316240-w9j6wjacl",
+      "_createdOn": 1765398451509,
+      "title": "Тест",
+      "category": "Деца",
+      "description": "",
+      "date": "2025-12-26T00:30",
+      "location": "Варна",
+      "imageUrl": "",
+      "websiteUrl": "",
+      "price": 24.99,
+      "tags": ""
+    },
+    "id-1765402053324-4hypxm22i": {
+      "_id": "id-1765402053324-4hypxm22i",
+      "_ownerId": "id-1765391316240-w9j6wjacl",
+      "_createdOn": 1765402053324,
+      "title": "тест 2",
+      "category": "Култура",
+      "description": "",
+      "date": "2025-12-20T23:27",
+      "location": "Варна",
+      "imageUrl": "",
+      "websiteUrl": "",
+      "price": 0,
+      "tags": ""
     }
-  ],
-  "favorites": [],
-  "interests": [],
-  "comments": [],
-  "userLikes": []
+  },
+  "comments": {
+    "cmt-001": {
+      "_id": "cmt-001",
+      "_ownerId": "user-002",
+      "eventId": "evt-001",
+      "comment": "Страхотен концерт! Определено ще дойда.",
+      "_createdOn": 1734206900000
+    },
+    "cmt-002": {
+      "_id": "cmt-002",
+      "_ownerId": "user-001",
+      "eventId": "evt-002",
+      "comment": "Много се радвам, че има такъв фестивал в Пловдив!",
+      "_createdOn": 1734207000000
+    },
+    "id-1765393990876-87pwzj2qu": {
+      "_id": "id-1765393990876-87pwzj2qu",
+      "_ownerId": "id-1765391316240-w9j6wjacl",
+      "_createdOn": 1765393990876,
+      "comment": "Ще бъда там!",
+      "eventId": "evt-005"
+    }
+  },
+  "users": {
+    "user-001": {
+      "_id": "user-001",
+      "email": "ivan@example.com",
+      "hashedPassword": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+      "username": "",
+      "avatarUrl": "",
+      "_createdOn": 1734206000000
+    },
+    "user-002": {
+      "_id": "user-002",
+      "email": "maria@example.com",
+      "hashedPassword": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+      "username": "",
+      "avatarUrl": "",
+      "_createdOn": 1734206100000
+    },
+    "id-1765391316240-w9j6wjacl": {
+      "_id": "id-1765391316240-w9j6wjacl",
+      "email": "dilyana@example.com",
+      "hashedPassword": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+      "username": "",
+      "avatarUrl": "",
+      "_createdOn": 1765391316240
+    }
+  },
+  "sessions": {
+    "id-1765391316240-hnkbiodvs": {
+      "_id": "id-1765391316240-hnkbiodvs",
+      "userId": "id-1765391316240-w9j6wjacl",
+      "accessToken": "0b70ee49eeed3d7b30b3b4538ccb407616c47e42a0a332dad446a7e63fa777cb"
+    },
+    "id-1765399176120-toidntlya": {
+      "_id": "id-1765399176120-toidntlya",
+      "userId": "id-1765391316240-w9j6wjacl",
+      "accessToken": "4c095328b82021f47e925e17ee61848c8567bda083179af4d19f2dc52fd21eb9"
+    }
+  }
 }

@@ -1,0 +1,111 @@
+#catalog-page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 3rem 1rem;
+}
+
+#catalog-page h1 {
+  text-align: center;
+  font-size: 3rem;
+  margin-bottom: 3rem;
+  color: #111827;
+}
+
+.no-articles {
+  text-align: center;
+  color: #6b7280;
+  font-size: 1.5rem;
+  padding: 3rem 0;
+  font-weight: 500;
+}
+
+.catalog-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.event {
+  background: white;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: var(--shadow-soft);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.event:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-color);
+}
+
+.event img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.event .details-overlay {
+  padding: 1.5rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  position: static;
+  background: white;
+  opacity: 1;
+  color: #111827;
+}
+
+.event .details-overlay .name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #111827;
+  line-height: 1.3;
+}
+
+.event:hover .details-overlay .name {
+  color: var(--color-primary);
+}
+
+.event .details-overlay .category {
+  font-size: 0.875rem;
+  color: var(--color-primary);
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.event .details-overlay .date,
+.event .details-overlay .location {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+.event .details-overlay .details-button {
+  margin-top: auto;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  display: inline-block;
+  width: auto;
+}
+
+.event .details-overlay .details-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-color);
+}
+

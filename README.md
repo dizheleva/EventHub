@@ -1,325 +1,349 @@
-# EventHub 🎉
+# EventHub - Каталог за събития
 
-EventHub is a modern web application for discovering, managing, and sharing events. The application allows users to browse events, filter them by various criteria, search, and manage their own events.
+EventHub е Single Page Application (SPA), изградена с React.js, която предоставя каталог за събития. Приложението позволява на потребителите да разглеждат, създават, редактират и изтриват събития, както и да коментират и взаимодействат с тях.
 
-## 📋 Table of Contents
-
-- [Key Features](#key-features)
-- [Technologies](#technologies)
-- [Project Structure](#project-structure)
-- [Installation and Setup](#installation-and-setup)
-- [Features](#features)
-- [API](#api)
-- [Architecture](#architecture)
-- [Requirements Coverage](#requirements-coverage)
-- [Future Tasks](#future-tasks)
-
-## ✨ Key Features
-
-- 🏠 **Home Page** with an attractive hero section and statistics
-- 📅 **Events List** with full management functionality
-- 🔍 **Search and Filtering** by city, category, and price
-- 📊 **Sorting** by date, title, and location
-- 📄 **Pagination** for convenient browsing
-- ➕ **Event Creation** with validation
-- ✏️ **Event Editing**
-- 🗑️ **Event Deletion** with confirmation
-- 📱 **Responsive Design** for all devices
-- 🎨 **Modern UI** with Tailwind CSS and animations
-
-## 🛠️ Technologies
+## Технологии
 
 ### Frontend
-- **React 19.1.1** - JavaScript library for building user interfaces
-- **React Router DOM 6.28.0** - Routing and navigation
-- **Vite 7.1.7** - Modern build tool and dev server
-- **Tailwind CSS 4.1.16** - Utility-first CSS framework
-- **Lucide React** - Icons
-- **Radix UI** - UI components
+- **React.js 19** - Frontend framework
+- **React Router 7** - Клиентска маршрутизация
+- **React Toastify** - Известия и toast съобщения
+- **Vite** - Build tool и development server
+- **Tailwind CSS** - Utility-first CSS framework
+- **Lucide React** - Икони
+- **Vitest** - Unit тестване
+- **React Testing Library** - Тестване на React компоненти
 
 ### Backend
-- **JSON Server** - REST API server for development
 - **Node.js** - Runtime environment
+- **Express** - Web framework
+- **CORS** - Cross-Origin Resource Sharing
+- **JSON** - File-based database (db.json)
 
-### Development Tools
-- **ESLint** - Code quality linter
-- **PostCSS** - CSS processing
-- **Autoprefixer** - Automatic vendor prefix addition
-
-## 📁 Project Structure
+## Структура на проекта
 
 ```
-EventHub/
-├── eventhub/                 # Frontend application
+NewEventhub/
+├── client/                    # Frontend приложение
+│   ├── public/
+│   │   ├── favicon.svg        # Favicon
+│   │   └── styles/            # CSS стилове
 │   ├── src/
-│   │   ├── components/       # React components
-│   │   │   ├── common/       # Common components (Modal, Toast, Pagination, etc.)
-│   │   │   ├── events/       # Event components
-│   │   │   ├── home/         # Home page components
-│   │   │   ├── layout/       # Layout components (Navbar, Layout)
-│   │   │   └── ui/           # UI components (Button, Card, Input)
-│   │   ├── pages/            # Pages (HomePage, EventsPage, EventDetails)
-│   │   ├── hooks/            # Custom React hooks (useEvents)
-│   │   ├── utils/            # Helper functions
-│   │   ├── data/             # Initial data
-│   │   └── lib/              # Libraries and utilities
-│   ├── public/               # Static files
-│   └── package.json
-├── server/                   # Backend server
-│   ├── server.js             # JSON Server configuration
-│   └── db.json               # Database (JSON)
-└── package.json              # Root package.json
+│   │   ├── components/        # React компоненти
+│   │   │   ├── catalog/       # Каталог страница
+│   │   │   ├── details/       # Детайли за събитие
+│   │   │   │   ├── create-comment/    # Форма за коментар
+│   │   │   │   ├── details-comments/  # Списък с коментари
+│   │   │   │   └── DeleteEventModal.jsx
+│   │   │   ├── event-card/    # Карта за събитие
+│   │   │   │   ├── EventCard.jsx
+│   │   │   │   └── EventCardSkeleton.jsx
+│   │   │   ├── events/        # Събития компоненти
+│   │   │   │   ├── AddEventButton.jsx
+│   │   │   │   ├── CreateEventModal.jsx
+│   │   │   │   ├── EditEventModal.jsx
+│   │   │   │   ├── EventCreateForm.jsx
+│   │   │   │   ├── EditEventForm.jsx
+│   │   │   │   └── Filters/   # Филтри за събития
+│   │   │   ├── common/        # Общи компоненти
+│   │   │   │   ├── ErrorBoundary.jsx
+│   │   │   │   ├── LoadingSpinner.jsx
+│   │   │   │   ├── Modal.jsx
+│   │   │   │   ├── Skeleton.jsx
+│   │   │   │   └── navigation/ # Навигация компоненти
+│   │   │   ├── header/        # Header компонент
+│   │   │   ├── footer/        # Footer компонент
+│   │   │   ├── home/          # Начална страница
+│   │   │   │   └── Features.jsx
+│   │   │   ├── login/         # Вход
+│   │   │   ├── register/      # Регистрация
+│   │   │   ├── logout/        # Изход
+│   │   │   ├── my-events/     # Мои събития
+│   │   │   ├── profile/       # Профил
+│   │   │   │   ├── Profile.jsx
+│   │   │   │   ├── ProfileHeader.jsx
+│   │   │   │   ├── EditProfileForm.jsx
+│   │   │   │   └── EditProfileModal.jsx
+│   │   │   └── route-guard/   # Route guard компонент
+│   │   ├── contexts/          # React Context API
+│   │   │   └── UserContext.jsx
+│   │   ├── hooks/             # Custom React hooks
+│   │   │   ├── useRequest.js
+│   │   │   ├── useForm.js
+│   │   │   ├── usePersistedState.js
+│   │   │   ├── useEventFilters.js
+│   │   │   └── useToast.js
+│   │   ├── utils/             # Utility функции
+│   │   │   ├── categories.js
+│   │   │   ├── dateHelpers.js
+│   │   │   ├── eventHelpers.js
+│   │   │   └── filterEvents.js
+│   │   ├── test/              # Тестова конфигурация
+│   │   │   └── setup.js
+│   │   ├── App.jsx            # Главен компонент
+│   │   ├── main.jsx           # Entry point
+│   │   └── index.css          # Главни стилове
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── tailwind.config.js
+│   ├── postcss.config.js
+│   └── eslint.config.js
+├── server/                     # Backend сървър
+│   ├── server.js              # Express сървър
+│   ├── db.json                # База данни (JSON)
+│   ├── package.json
+│   └── README.md
+└── README.md                   # Главна документация
 ```
 
-## 🚀 Installation and Setup
+## Функционалности
 
-### Prerequisites
-- Node.js (version 18 or higher)
-- npm or yarn
+### Публична част (без аутентификация)
+- Разглеждане на каталог събития с филтри, търсене и сортиране
+- Пагинация на резултатите
+- Преглед на детайли за събитие
+- Преглед на коментари
+- Преглед на профили на потребители
 
-### Installation Steps
+### Частна част (с аутентификация)
+- Създаване на нови събития (чрез модал)
+- Редактиране на собствени събития (чрез модал)
+- Изтриване на собствени събития (с потвърждение)
+- Добавяне на коментари към събития
+- Преглед на собствени събития (Мои Събития)
+- Редактиране на профил (чрез модал)
+- Изход от профила
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd EventHub
-   ```
+### Аутентификация
+- Регистрация на нов потребител (с опционално име и аватар)
+- Вход в системата
+- Изход от системата
+- Route guards за защита на частни страници
+- Автоматично запазване на сесията (localStorage)
 
-2. **Install dependencies**
-   ```bash
-   # Install root dependencies
-   npm install
-   
-   # Install frontend dependencies
-   cd eventhub
-   npm install
-   ```
+### Допълнителни функции
+- Търсене на събития по заглавие
+- Филтриране по град, категория, цена и дата
+- Сортиране по заглавие, дата или локация
+- Пагинация с избиране на брой елементи на страница
+- Loading states (спинъри и skeleton loaders)
+- Error Boundary за обработка на грешки
+- Toast известия за всички операции
+- Responsive дизайн
 
-3. **Start the backend server**
-   ```bash
-   # From root directory
-   npm run server
-   ```
-   The server will start on `http://localhost:5000`
+## Инсталация и стартиране
 
-4. **Start the frontend application**
-   ```bash
-   # From eventhub directory
-   cd eventhub
-   npm run dev
-   ```
-   The application will start on `http://localhost:5173`
+### Предварителни изисквания
+- Node.js (версия 18 или по-нова)
+- npm или yarn
 
-### Build for production
+### Инсталация
+
+**1. Клонирай репозитория:**
 ```bash
-cd eventhub
-npm run build
+git clone <repository-url>
+cd NewEventhub
 ```
 
-## 🎯 Features
+**2. Инсталирай backend зависимости:**
+```bash
+cd server
+npm install
+```
 
-### Home Page
-- Hero section with attractive design
-- Statistics for events and locations
-- Features section with key characteristics
+**3. Инсталирай frontend зависимости:**
+```bash
+cd ../client
+npm install
+```
 
-### Events Page
-- **Search**: Search by title and location
-- **Filtering**:
-  - By city (dynamically from available events)
-  - By category (Children, Culture, Sports, Workshops, Seasonal, Charitable)
-  - By price (Free)
-- **Sorting**: By date, title, or location (ascending/descending)
-- **Pagination**: Configure number of items per page
-- **CRUD Operations**:
-  - Create new event
-  - Edit existing event
-  - Delete event with confirmation
+**4. Създай .env файл в client директорията:**
+```bash
+# client/.env
+VITE_APP_SERVER_URL=http://localhost:3030
+```
 
-### Event Details Page
-- Complete event information
-- Image (if available)
-- Date, category, city, location
-- Price and organizer
-- Description
+### Стартиране
 
-### UI/UX Characteristics
-- Toast notifications for successful operations and errors
-- Loading spinners during loading
-- Error handling with retry capability
-- Optimistic updates for better UX
-- Responsive design for mobile devices
-- Modern animations and transitions
+**1. Стартирай backend сървъра (в нов терминал):**
+```bash
+cd server
+npm start
+```
+Сървърът ще стартира на `http://localhost:3030`
 
-## 🔌 API
+**2. Стартирай frontend приложението (в друг терминал):**
+```bash
+cd client
+npm run dev
+```
+Приложението ще стартира на `http://localhost:5173`
 
-The application uses JSON Server for REST API. The main endpoints are:
+**3. Отвори браузъра:**
+```
+http://localhost:5173
+```
 
-- `GET /events` - Get all events
-- `GET /events/:id` - Get a specific event
-- `POST /events` - Create a new event
-- `PUT /events/:id` - Update an event
-- `DELETE /events/:id` - Delete an event
+### Тестови потребители
 
-### Example Event Structure
-```json
+След инсталацията можеш да използваш следните тестови акаунти:
+
+- **Email:** `ivan@example.com`, **Password:** `123456`
+- **Email:** `maria@example.com`, **Password:** `123456`
+
+## Тестване
+
+Приложението включва unit тестове, написани с Vitest и React Testing Library.
+
+**Стартиране на тестовете:**
+```bash
+cd client
+npm test
+```
+
+**Стартиране на тестовете с UI:**
+```bash
+npm run test:ui
+```
+
+**Стартиране на тестовете с coverage:**
+```bash
+npm run test:coverage
+```
+
+## API Endpoints
+
+Приложението комуникира с REST API на следните endpoints:
+
+### Аутентификация
+- `POST /users/register` - Регистрация на нов потребител
+- `POST /users/login` - Вход в системата
+- `GET /users/logout` - Изход от системата
+- `GET /users/:id` - Получаване на потребител по ID
+- `PUT /users/:id` - Обновяване на потребителски профил
+
+### Събития
+- `GET /data/events` - Всички събития
+- `GET /data/events/:id` - Детайли за събитие
+- `POST /data/events` - Създаване на събитие
+- `PUT /data/events/:id` - Редактиране на събитие
+- `DELETE /data/events/:id` - Изтриване на събитие
+
+### Коментари
+- `GET /data/comments` - Всички коментари
+- `POST /data/comments` - Създаване на коментар
+
+### Потребители
+- `GET /data/users` - Всички потребители
+
+## React концепции
+
+Приложението демонстрира използването на:
+
+- **React Hooks**: 
+  - `useState` - Управление на локално състояние
+  - `useEffect` - Side effects и lifecycle
+  - `useContext` - Доступ до Context API
+  - `useParams` - Параметри от URL
+  - `useNavigate` - Навигация
+  - `useMemo` - Мемоизация на изчисления
+  - `useCallback` - Мемоизация на функции
+
+- **Context API**: UserContext за управление на потребителската сесия
+
+- **Stateless и Stateful компоненти**: Комбинация от двата типа
+
+- **Bound forms**: Използване на custom `useForm` hook за управление на форми
+
+- **Synthetic events**: Обработка на събития в React
+
+- **Component lifecycle**: mount, update, unmount чрез `useEffect`
+
+- **Route Guards**: Защита на маршрути за автентифицирани и неавтентифицирани потребители
+
+- **Error Boundary**: Обработка на грешки на ниво приложение
+
+## Структура на данните
+
+### Event
+```javascript
 {
-  "id": "1",
-  "title": "Event Title",
-  "description": "Event description",
-  "date": "2025-12-01",
-  "city": "Sofia",
-  "location": "Event address",
-  "category": "Culture",
-  "price": "Free",
-  "imageUrl": "https://example.com/image.jpg",
-  "organizer": "Organizer Name",
-  "organizerUrl": "https://example.com",
-  "createdAt": "2025-11-01T00:00:00.000Z",
-  "updatedAt": "2025-11-01T00:00:00.000Z"
+  _id: string,
+  title: string,
+  category: string,           // "Деца", "Култура", "Спорт", "Работилници", "Сезонни", "Благотворителни"
+  date: string,                // ISO date string
+  location: string,             // "Град, Адрес" или "Онлайн"
+  imageUrl: string,            // URL на изображение
+  websiteUrl: string,          // URL на официална страница
+  description: string,
+  price: number,               // 0 = безплатно
+  tags: string,                // Разделени със запетая
+  _ownerId: string,            // ID на създателя
+  _createdOn: number           // Timestamp
 }
 ```
 
-## 🏗️ Architecture
+### Comment
+```javascript
+{
+  _id: string,
+  comment: string,
+  eventId: string,
+  _ownerId: string,
+  _createdOn: number,
+  author: User                  // Зарежда се отделно
+}
+```
 
-За подробна информация за архитектурата на приложението, вижте [ARCHITECTURE.md](./ARCHITECTURE.md).
+### User
+```javascript
+{
+  _id: string,
+  email: string,
+  username: string,            // Опционално
+  avatarUrl: string,           // Опционално
+  accessToken: string,         // За автентифицирани потребители
+  _createdOn: number
+}
+```
 
-### Основни компоненти
+## Скриптове
 
-- **Public Part**: HomePage, EventsPage, EventDetails, UserProfilePage
-- **Private Part**: MyEventsPage, FavoritesPage, EditProfilePage
-- **Authentication**: LoginPage, RegisterPage с route guards
-- **State Management**: Context API (AuthContext, ToastContext)
-- **Routing**: React Router DOM с ProtectedRoute и GuestRoute
+### Frontend (client/)
+- `npm run dev` - Стартира development сървър
+- `npm run build` - Build за production
+- `npm run preview` - Preview на production build
+- `npm run lint` - Проверка на код с ESLint
+- `npm test` - Стартиране на тестове
+- `npm run test:ui` - Стартиране на тестове с UI
+- `npm run test:coverage` - Стартиране на тестове с coverage
 
-## ✅ Requirements Coverage
+### Backend (server/)
+- `npm start` - Стартира сървъра
 
-Приложението покрива всички изисквания за курсова работа:
+## Технически детайли
 
-- ✅ Публична и частна част
-- ✅ Поне 3 динамични страници (6+ страници)
-- ✅ Catalog (EventsPage) и Details (EventDetails)
-- ✅ CRUD операции за Events колекция
-- ✅ React.js с hooks, Context API, lifecycle
-- ✅ REST API комуникация
-- ✅ Автентикация и route guards
-- ✅ Error handling и валидация
-- ✅ Bound forms и synthetic events
-- ✅ Responsive design и добър UI/UX
+### Стилизиране
+- Приложението използва **Tailwind CSS** за стилизиране
+- Custom цветова палитра и анимации
+- Responsive дизайн за мобилни устройства
+- Gradient ефекти и модерен UI
 
-За пълен анализ вижте [PROJECT_ANALYSIS.md](./PROJECT_ANALYSIS.md).
+### State Management
+- **Context API** за глобално състояние (потребител)
+- **localStorage** за персистентност на сесията
+- **Custom hooks** за управление на форми и заявки
 
-## 📝 Future Tasks
+### Error Handling
+- Error Boundary на ниво приложение
+- Toast известия за всички операции
+- Валидация на форми
+- Обработка на API грешки
 
-### Functional Improvements
-- [ ] **User System and Authentication**
-  - Registration and login
-  - User profiles
-  - Management of own events
+## Автор
 
-- [ ] **Advanced Filters**
-  - Date filter (today, tomorrow, this week, this month)
-  - Price range filter
-  - Combined filters
+Създадено като проект за SoftUni React курс.
 
-- [ ] **Map Integration**
-  - Google Maps or OpenStreetMap integration
-  - Display locations on map
-  - Proximity search
+## Лиценз
 
-- [ ] **Notifications and Reminders**
-  - Email notifications for new events
-  - Push notifications
-  - Calendar for saving events
-
-- [ ] **Social Features**
-  - Share events on social networks
-  - Comments and reviews
-  - Rating system
-  - Favorite events
-
-- [ ] **Advanced Search**
-  - Search by organizer
-  - Search by description
-  - Autocomplete in search
-
-### Technical Improvements
-- [ ] **Tests**
-  - Unit tests (Jest, React Testing Library)
-  - Integration tests
-  - E2E tests (Playwright or Cypress)
-
-- [ ] **State Management**
-  - Redux or Zustand integration
-  - Improved global state management
-
-- [ ] **Backend Improvements**
-  - Migration to real backend (Node.js/Express, Python/Django, etc.)
-  - Database (PostgreSQL, MongoDB)
-  - Authentication (JWT, OAuth)
-  - File upload for images
-
-- [ ] **Performance Optimizations**
-  - Code splitting
-  - Lazy loading of components
-  - Image optimization
-  - Caching strategies
-
-- [ ] **SEO Optimizations**
-  - Meta tags
-  - Open Graph tags
-  - Sitemap
-  - Server-side rendering (SSR) or Static Site Generation (SSG)
-
-### UI/UX Improvements
-- [ ] **Accessibility**
-  - ARIA labels
-  - Keyboard navigation
-  - Screen reader support
-  - Contrast and color schemes
-
-- [ ] **Internationalization (i18n)**
-  - English and other languages
-
-- [ ] **Animations and Micro-interactions**
-  - Richer animations
-  - Skeleton loaders
-  - Smooth transitions
-
-### DevOps and Deployment
-- [ ] **CI/CD Pipeline**
-  - GitHub Actions or GitLab CI
-  - Automated testing
-  - Automated deployment
-
-- [ ] **Deployment**
-  - Frontend: Vercel, Netlify, or AWS
-  - Backend: Heroku, Railway, or AWS
-  - Database hosting
-
-- [ ] **Monitoring and Analytics**
-  - Error tracking (Sentry)
-  - Analytics (Google Analytics)
-  - Performance monitoring
-
-### Additional Features
-- [ ] **Calendar View**
-  - Monthly event view
-  - Weekly view
-
-- [ ] **Export and Sharing**
-  - Export to calendar (iCal)
-  - PDF generation
-
-- [ ] **Admin Panel**
-  - Statistics dashboard
-  - User management
-  - Event moderation
-
-## 🤝 Contributing
-
-Contributions are welcome! Please create an issue or pull request for any suggestions or improvements.
-
-## 📄 License
-
-This project is open source and available under the MIT license.
+Този проект е създаден за образователни цели.

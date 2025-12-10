@@ -1,0 +1,86 @@
+#welcome-world {
+  position: relative;
+  overflow: hidden;
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 1rem;
+}
+
+#welcome-world .welcome-message {
+  position: relative;
+  text-align: center;
+  max-width: 900px;
+  z-index: 10;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+#welcome-world .welcome-message h1 {
+  font-size: 3.5rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+}
+
+#welcome-world .welcome-message h1 .text-gradient {
+  font-size: 4rem;
+}
+
+#welcome-world .welcome-message h2 {
+  font-size: 1.5rem;
+  color: #374151;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+#welcome-world .welcome-message p {
+  font-size: 1.125rem;
+  color: #4b5563;
+  line-height: 1.8;
+  margin-bottom: 1.5rem;
+}
+
+#welcome-world .welcome-message .btn {
+  margin-top: 1rem;
+  padding: 1rem 2.5rem;
+  font-size: 1.125rem;
+}
+
+/* Decorative elements */
+#welcome-world::before {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  width: 80px;
+  height: 80px;
+  background: rgba(236, 72, 153, 0.1);
+  border-radius: 50%;
+  filter: blur(40px);
+  animation: pulse 3s ease-in-out infinite;
+}
+
+#welcome-world::after {
+  content: '';
+  position: absolute;
+  bottom: 10%;
+  right: 10%;
+  width: 128px;
+  height: 128px;
+  background: rgba(245, 158, 11, 0.1);
+  border-radius: 50%;
+  filter: blur(60px);
+  animation: pulse 3s ease-in-out infinite 1.5s;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+

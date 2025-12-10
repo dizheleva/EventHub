@@ -1,287 +1,433 @@
-const jsonServer = require("json-server");
-const path = require("path");
-const fs = require("fs");
-const { scrapeVarnaEvents } = require("./scraper");
-const {
-  getCachedEvents,
-  refreshIfNeeded,
-  forceRefreshCache,
-} = require("./externalEventsService");
+import express from 'express';
+import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import crypto from 'crypto';
 
-const dbPath = path.join(__dirname, "db.json");
-console.log("📁 Loading database from:", dbPath);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Проверка дали файлът съществува
-if (!fs.existsSync(dbPath)) {
-  console.error("❌ Database file not found at:", dbPath);
-  process.exit(1);
-}
+const app = express();
+const PORT = 3030;
+const DB_PATH = path.join(__dirname, 'db.json');
 
-console.log("✅ Database file found");
+// Middleware
+app.use(cors({
+    origin: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173', 'http://127.0.0.1:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'X-Authorization'],
+    exposedHeaders: ['Content-Type']
+}));
 
-const server = jsonServer.create();
-const router = jsonServer.router(dbPath);
-const middlewares = jsonServer.defaults({
-  // Запазва CORS и други важни middleware-и
-  noCors: false,
-  readOnly: false
-});
+app.use(express.json());
 
-server.use(middlewares);
+// Handle preflight requests
+app.options('*', cors());
 
-// Custom root route - показва информация за API-то
-server.get('/', (req, res) => {
-  res.json({
-    message: "EventHub API",
-    version: "2.0.0",
-    endpoints: {
-      events: "/events",
-      eventById: "/events/:id",
-      users: "/users",
-      userById: "/users/:id",
-      allEvents: "/all-events",
-      externalEvents: "/external-events",
-      refreshExternal: "POST /refresh-external",
-      scrapeVarna: "/api/scrape/varna (deprecated)"
-    },
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
-  });
-});
-
-// ============================================
-// External Events Endpoints
-// ============================================
-
-// GET /external-events - Get cached external events
-server.get("/external-events", async (req, res) => {
-  try {
-    console.log("GET /external-events - Returning cached events");
-    const events = await getCachedEvents();
-    res.json({
-      success: true,
-      count: events.length,
-      events: events,
-      cached: true,
-    });
-  } catch (error) {
-    console.error("Error getting cached external events:", error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      events: [],
-    });
-  }
-});
-
-// POST /refresh-external - Force refresh external events cache
-server.post("/refresh-external", async (req, res) => {
-  try {
-    console.log("POST /refresh-external - Force refreshing cache");
-    const events = await forceRefreshCache();
-    res.json({
-      success: true,
-      count: events.length,
-      events: events,
-      message: "Cache refreshed successfully",
-    });
-  } catch (error) {
-    console.error("Error force refreshing cache:", error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-});
-
-// GET /all-events - Get both local and external events
-server.get("/all-events", async (req, res) => {
-  try {
-    console.log("GET /all-events - Fetching local and external events");
-    
-    // Get local events from db.json
-    const dbData = JSON.parse(fs.readFileSync(dbPath, "utf-8"));
-    const localEvents = (dbData.events || []).map(event => ({
-      ...event,
-      source: "local",
-    }));
-    
-    // Get cached external events
-    const externalEvents = await getCachedEvents();
-    const externalEventsWithSource = externalEvents.map(event => ({
-      ...event,
-      source: "external",
-    }));
-    
-    res.json({
-      success: true,
-      localEvents: localEvents,
-      externalEvents: externalEventsWithSource,
-      counts: {
-        local: localEvents.length,
-        external: externalEvents.length,
-        total: localEvents.length + externalEvents.length,
-      },
-    });
-  } catch (error) {
-    console.error("Error getting all events:", error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      localEvents: [],
-      externalEvents: [],
-    });
-  }
-});
-
-// Legacy endpoint - keep for backward compatibility but mark as deprecated
-server.get("/api/scrape/varna", async (req, res) => {
-  try {
-    console.log("⚠️  /api/scrape/varna called (deprecated, use /external-events instead)");
-    const events = await getCachedEvents();
-    res.json({
-      success: true,
-      count: events.length,
-      events: events,
-      deprecated: true,
-      message: "This endpoint is deprecated. Use /external-events instead.",
-    });
-  } catch (error) {
-    console.error("Error in legacy scrape endpoint:", error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-});
-
-// ============================================
-// Favorites Endpoints with Query Support
-// ============================================
-
-// GET /favorites - Support query parameters (userId, eventId)
-server.get("/favorites", (req, res, next) => {
-  const { userId, eventId } = req.query;
-  
-  // If no query params, use default JSON Server behavior
-  if (!userId && !eventId) {
-    return next();
-  }
-  
-  // Read database
-  const dbData = JSON.parse(fs.readFileSync(dbPath, "utf-8"));
-  let favorites = dbData.favorites || [];
-  
-  // Filter by userId if provided
-  if (userId) {
-    favorites = favorites.filter(fav => fav.userId === Number(userId));
-  }
-  
-  // Filter by eventId if provided
-  if (eventId) {
-    favorites = favorites.filter(fav => fav.eventId === String(eventId));
-  }
-  
-  res.json(favorites);
-});
-
-// ============================================
-// Interests Endpoints with Query Support
-// ============================================
-
-// GET /interests - Support query parameters (eventId, userId)
-server.get("/interests", (req, res, next) => {
-  const { eventId, userId } = req.query;
-  
-  // If no query params, use default JSON Server behavior
-  if (!eventId && !userId) {
-    return next();
-  }
-  
-  // Read database
-  const dbData = JSON.parse(fs.readFileSync(dbPath, "utf-8"));
-  let interests = dbData.interests || [];
-  
-  // Filter by eventId if provided
-  if (eventId) {
-    interests = interests.filter(int => int.eventId === String(eventId));
-  }
-  
-  // Filter by userId if provided
-  if (userId) {
-    interests = interests.filter(int => int.userId === Number(userId));
-  }
-  
-  res.json(interests);
-});
-
-// Middleware за добавяне на createdAt и updatedAt
-// За POST заявки добавяме createdAt и updatedAt
-// За PUT/PATCH заявки, updatedAt се добавя от клиента
-server.use((req, res, next) => {
-  if (req.method === "POST" && req.body && typeof req.body === "object" && !Array.isArray(req.body)) {
-    if (!req.body.createdAt) {
-      req.body.createdAt = new Date().toISOString();
-    }
-    if (!req.body.updatedAt) {
-      req.body.updatedAt = new Date().toISOString();
-    }
-  }
-  // PUT/PATCH заявките вече имат updatedAt от клиента, няма нужда да го добавяме тук
-  next();
-});
-
-server.use(router);
-
-const PORT = process.env.PORT || 5000;
-
-// Initialize external events cache on startup
-async function initializeExternalEvents() {
-  try {
-    console.log("🔄 Initializing external events cache...");
-    await refreshIfNeeded();
-    console.log("✅ External events cache initialized");
-  } catch (error) {
-    console.error("❌ Error initializing external events cache:", error);
-    // Don't exit - server can still run with empty cache
-  }
-}
-
-// Auto-refresh cache every hour
-const REFRESH_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
-
-function startAutoRefresh() {
-  console.log(`⏰ Auto-refresh scheduled every ${REFRESH_INTERVAL_MS / 1000 / 60} minutes`);
-  
-  setInterval(async () => {
+// Helper functions
+function readDB() {
     try {
-      console.log("🔄 Auto-refresh: Checking if cache needs update...");
-      await refreshIfNeeded();
+        const data = fs.readFileSync(DB_PATH, 'utf8');
+        return JSON.parse(data);
     } catch (error) {
-      console.error("❌ Error in auto-refresh:", error);
-      // Continue running even if refresh fails
+        return { events: {}, comments: {}, users: {}, sessions: {} };
     }
-  }, REFRESH_INTERVAL_MS);
 }
 
-server.listen(PORT, async () => {
-  console.log("✅ JSON Server is running on http://localhost:" + PORT);
-  console.log("✅ Try: http://localhost:" + PORT + "/events");
-  console.log("✅ Try: http://localhost:" + PORT + "/users");
-  console.log("✅ Try: http://localhost:" + PORT + "/all-events");
-  console.log("✅ Try: http://localhost:" + PORT + "/external-events");
-  
-  // Initialize cache on startup
-  await initializeExternalEvents();
-  
-  // Start auto-refresh
-  startAutoRefresh();
+function writeDB(data) {
+    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+}
+
+function generateId() {
+    return 'id-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+}
+
+function hashPassword(password) {
+    return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+// Auth middleware
+function authenticate(req, res, next) {
+    const token = req.headers['x-authorization'];
+    if (!token) {
+        return next();
+    }
+
+    const db = readDB();
+    const session = Object.values(db.sessions || {}).find(s => s.accessToken === token);
+    
+    if (session) {
+        const user = db.users[session.userId];
+        if (user) {
+            req.user = { ...user };
+            delete req.user.hashedPassword;
+        }
+    }
+    
+    next();
+}
+
+// Routes
+
+// Users
+app.post('/users/register', (req, res) => {
+    const { email, password, username, avatarUrl } = req.body;
+    const db = readDB();
+
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Имейл и парола са задължителни' });
+    }
+
+    const existingUser = Object.values(db.users).find(u => u.email === email);
+    if (existingUser) {
+        return res.status(409).json({ message: 'Потребител с този имейл вече съществува' });
+    }
+
+    const userId = generateId();
+    const newUser = {
+        _id: userId,
+        email,
+        hashedPassword: hashPassword(password),
+        username: username || '',
+        avatarUrl: avatarUrl || '',
+        _createdOn: Date.now()
+    };
+
+    db.users[userId] = newUser;
+    
+    // Create session
+    const sessionId = generateId();
+    const accessToken = crypto.randomBytes(32).toString('hex');
+    db.sessions[sessionId] = {
+        _id: sessionId,
+        userId,
+        accessToken
+    };
+
+    writeDB(db);
+
+    const userResponse = { 
+        _id: newUser._id,
+        email: newUser.email,
+        username: newUser.username || '',
+        avatarUrl: newUser.avatarUrl || '',
+        _createdOn: newUser._createdOn || Date.now(),
+        accessToken: accessToken
+    };
+
+    res.json(userResponse);
 });
 
-server.on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`❌ Port ${PORT} is already in use. Try a different port.`);
-  } else {
-    console.error("❌ Server error:", err);
-  }
-  process.exit(1);
+app.post('/users/login', (req, res) => {
+    const { email, password } = req.body;
+    const db = readDB();
+
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    const user = Object.values(db.users).find(u => u.email === email);
+    if (!user || user.hashedPassword !== hashPassword(password)) {
+        return res.status(401).json({ message: 'Невалиден имейл или парола' });
+    }
+
+    // Create session
+    const sessionId = generateId();
+    const accessToken = crypto.randomBytes(32).toString('hex');
+    db.sessions[sessionId] = {
+        _id: sessionId,
+        userId: user._id,
+        accessToken
+    };
+
+    writeDB(db);
+
+    const userResponse = { 
+        _id: user._id,
+        email: user.email,
+        username: user.username || '',
+        avatarUrl: user.avatarUrl || '',
+        _createdOn: user._createdOn || Date.now(),
+        accessToken: accessToken
+    };
+
+    res.json(userResponse);
 });
+
+app.get('/users/logout', authenticate, (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const db = readDB();
+    const token = req.headers['x-authorization'];
+    
+    const sessionId = Object.keys(db.sessions).find(
+        id => db.sessions[id].accessToken === token
+    );
+    
+    if (sessionId) {
+        delete db.sessions[sessionId];
+        writeDB(db);
+    }
+
+    res.status(204).send();
+});
+
+// GET /data/users (for loading user data - public)
+app.get('/data/users', (req, res) => {
+    const db = readDB();
+    const users = Object.values(db.users || {}).map(user => ({
+        _id: user._id,
+        email: user.email,
+        username: user.username || '',
+        avatarUrl: user.avatarUrl || '',
+        _createdOn: user._createdOn || Date.now()
+    }));
+    res.json(users);
+});
+
+// GET /users/:id (for loading specific user - public)
+app.get('/users/:id', (req, res) => {
+    const db = readDB();
+    const user = db.users[req.params.id];
+    
+    if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const userResponse = {
+        _id: user._id,
+        email: user.email,
+        username: user.username || '',
+        avatarUrl: user.avatarUrl || '',
+        _createdOn: user._createdOn || Date.now()
+    };
+    
+    res.json(userResponse);
+});
+
+// PUT /users/:id (for updating user - requires auth)
+app.put('/users/:id', authenticate, (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const db = readDB();
+    const user = db.users[req.params.id];
+    
+    if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Only allow users to update their own profile
+    if (user._id !== req.user._id) {
+        return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    // Update user data
+    if (req.body.email) {
+        // Check if email is already taken by another user
+        const existingUser = Object.values(db.users).find(
+            u => u.email === req.body.email && u._id !== req.params.id
+        );
+        if (existingUser) {
+            return res.status(409).json({ message: 'Email already exists' });
+        }
+        user.email = req.body.email;
+    }
+
+    if (req.body.username !== undefined) {
+        user.username = req.body.username || '';
+    }
+
+    if (req.body.avatarUrl !== undefined) {
+        user.avatarUrl = req.body.avatarUrl || '';
+    }
+
+    if (req.body.password) {
+        user.hashedPassword = hashPassword(req.body.password);
+    }
+
+    db.users[req.params.id] = user;
+    writeDB(db);
+
+    const userResponse = {
+        _id: user._id,
+        email: user.email,
+        username: user.username || '',
+        avatarUrl: user.avatarUrl || '',
+        _createdOn: user._createdOn || Date.now()
+    };
+
+    res.json(userResponse);
+});
+
+// Data routes
+app.use('/data', authenticate);
+
+// GET /data/events
+app.get('/data/events', (req, res) => {
+    const db = readDB();
+    const events = Object.values(db.events || {});
+    
+    // Handle query parameters
+    let result = events;
+    
+    if (req.query.where) {
+        // Simple where clause parsing (eventId="...")
+        const match = req.query.where.match(/eventId="([^"]+)"/);
+        if (match) {
+            // This is for comments, not events
+            return res.json([]);
+        }
+    }
+    
+    res.json(result);
+});
+
+// GET /data/events/:id
+app.get('/data/events/:id', (req, res) => {
+    const db = readDB();
+    const event = db.events[req.params.id];
+    
+    if (!event) {
+        return res.status(404).json({ message: 'Event not found' });
+    }
+    
+    res.json(event);
+});
+
+// POST /data/events
+app.post('/data/events', (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const db = readDB();
+    const eventId = generateId();
+    const newEvent = {
+        _id: eventId,
+        _ownerId: req.user._id,
+        _createdOn: Date.now(),
+        ...req.body
+    };
+
+    db.events[eventId] = newEvent;
+    writeDB(db);
+
+    res.json(newEvent);
+});
+
+// PUT /data/events/:id
+app.put('/data/events/:id', (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const db = readDB();
+    const event = db.events[req.params.id];
+    
+    if (!event) {
+        return res.status(404).json({ message: 'Event not found' });
+    }
+
+    if (event._ownerId !== req.user._id) {
+        return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    const updatedEvent = {
+        ...event,
+        ...req.body,
+        _id: event._id,
+        _ownerId: event._ownerId,
+        _createdOn: event._createdOn
+    };
+
+    db.events[req.params.id] = updatedEvent;
+    writeDB(db);
+
+    res.json(updatedEvent);
+});
+
+// DELETE /data/events/:id
+app.delete('/data/events/:id', (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const db = readDB();
+    const event = db.events[req.params.id];
+    
+    if (!event) {
+        return res.status(404).json({ message: 'Event not found' });
+    }
+
+    if (event._ownerId !== req.user._id) {
+        return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    delete db.events[req.params.id];
+    writeDB(db);
+
+    res.status(204).send();
+});
+
+// GET /data/comments
+app.get('/data/comments', (req, res) => {
+    const db = readDB();
+    let comments = Object.values(db.comments || {});
+    
+    // Handle where clause
+    if (req.query.where) {
+        const match = req.query.where.match(/eventId="([^"]+)"/);
+        if (match) {
+            comments = comments.filter(c => c.eventId === match[1]);
+        }
+    }
+    
+    // Handle load parameter (author=_ownerId:users)
+    if (req.query.load) {
+        const loadMatch = req.query.load.match(/author=_ownerId:users/);
+        if (loadMatch) {
+            comments = comments.map(comment => {
+                const user = db.users[comment._ownerId];
+                return {
+                    ...comment,
+                    author: user ? { email: user.email, _id: user._id } : null
+                };
+            });
+        }
+    }
+    
+    res.json(comments);
+});
+
+// POST /data/comments
+app.post('/data/comments', (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const db = readDB();
+    const commentId = generateId();
+    const newComment = {
+        _id: commentId,
+        _ownerId: req.user._id,
+        _createdOn: Date.now(),
+        ...req.body
+    };
+
+    db.comments[commentId] = newComment;
+    writeDB(db);
+
+    res.json(newComment);
+});
+
+// Start server
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+});
+
