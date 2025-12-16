@@ -5,6 +5,7 @@ import DetailsComments from "./details-comments/DetailsComments";
 import DeleteEventModal from "./DeleteEventModal";
 import EditEventModal from "../events/EditEventModal";
 import LoadingSpinner from "../common/LoadingSpinner";
+import InterestedButton from "../common/InterestedButton";
 import useRequest from "../../hooks/useRequest";
 import useToast from "../../hooks/useToast";
 import { useUserContext } from "../../contexts/UserContext";
@@ -42,7 +43,18 @@ export default function Details() {
             setShowDeleteModal(false);
             navigate('/events');
         } catch (err) {
-            showToast('error', 'Не може да се изтрие събитието: ' + (err.message || 'Възникна грешка'));
+            // Handle specific error types
+            if (err.status === 401) {
+                showToast('error', 'Трябва да сте влезли в профила си, за да изтриете събитие.');
+                navigate('/login');
+            } else if (err.status === 403) {
+                showToast('error', 'Нямате право да изтриете това събитие.');
+            } else if (err.status === 404) {
+                showToast('error', 'Събитието не е намерено.');
+                navigate('/events');
+            } else {
+                showToast('error', 'Не може да се изтрие събитието: ' + (err.message || 'Възникна грешка'));
+            }
             setShowDeleteModal(false);
         }
     };
@@ -158,24 +170,30 @@ export default function Details() {
                             {event.title}
                         </h1>
                         
-                        {isOwner && (
-                            <div className="flex gap-2">
-                                <button 
-                                    onClick={() => setShowEditModal(true)}
-                                    className="inline-flex items-center gap-2 px-4 py-2 bg-success text-white rounded-xl hover:bg-success/90 transition-colors"
-                                >
-                                    <Edit className="w-4 h-4" />
-                                    <span>Редактирай</span>
-                                </button>
-                                <button 
-                                    onClick={handleDeleteClick}
-                                    className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                    <span>Изтрий</span>
-                                </button>
-                            </div>
-                        )}
+                        <div className="flex items-center gap-3 flex-wrap">
+                            {/* Interested Button */}
+                            <InterestedButton eventId={eventId} variant="default" />
+                            
+                            {/* Owner Actions */}
+                            {isOwner && (
+                                <>
+                                    <button 
+                                        onClick={() => setShowEditModal(true)}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-success text-white rounded-xl hover:bg-success/90 transition-colors"
+                                    >
+                                        <Edit className="w-4 h-4" />
+                                        <span>Редактирай</span>
+                                    </button>
+                                    <button 
+                                        onClick={handleDeleteClick}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        <span>Изтрий</span>
+                                    </button>
+                                </>
+                            )}
+                        </div>
                     </div>
 
                     {/* Info Grid - 4 Cards */}
@@ -309,7 +327,7 @@ export default function Details() {
                     )}
 
                     {/* Comments Section */}
-                    <DetailsComments comments={comments} />
+                    <DetailsComments comments={comments} setComments={setComments} />
                 </div>
             </article>
 

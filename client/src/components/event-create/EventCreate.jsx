@@ -8,6 +8,44 @@ export default function EventCreate() {
     const { request } = useRequest();
 
     const createEventHandler = async (values) => {
+        // Validation
+        // Date validation - not in the past
+        if (values.startDate) {
+            const startDate = new Date(values.startDate);
+            const now = new Date();
+            if (startDate < now) {
+                alert('Началната дата не може да бъде в миналото!');
+                return;
+            }
+        }
+
+        // Price validation - not negative
+        const price = values.price ? Number(values.price) : 0;
+        if (price < 0) {
+            alert('Цената не може да бъде отрицателна!');
+            return;
+        }
+
+        // URL validation for imageUrl
+        if (values.imageUrl && values.imageUrl.trim()) {
+            try {
+                new URL(values.imageUrl);
+            } catch {
+                alert('Моля, въведете валиден URL за снимката!');
+                return;
+            }
+        }
+
+        // URL validation for websiteUrl
+        if (values.websiteUrl && values.websiteUrl.trim()) {
+            try {
+                new URL(values.websiteUrl);
+            } catch {
+                alert('Моля, въведете валиден URL за официалната страница!');
+                return;
+            }
+        }
+
         const data = {
             title: values.title,
             category: values.category,
@@ -16,7 +54,7 @@ export default function EventCreate() {
             location: values.isOnline ? 'Онлайн' : (values.city ? (values.address ? `${values.address}, ${values.city}` : values.city) : ''),
             imageUrl: values.imageUrl || '',
             websiteUrl: values.websiteUrl || '',
-            price: values.price ? Number(values.price) : 0,
+            price: price,
             tags: values.tags || '',
         };
 

@@ -426,6 +426,179 @@ app.post('/data/comments', (req, res) => {
     res.json(newComment);
 });
 
+// PUT /data/comments/:id
+app.put('/data/comments/:id', (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const db = readDB();
+    const comment = db.comments?.[req.params.id];
+    
+    if (!comment) {
+        return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    // Only allow users to update their own comments
+    if (comment._ownerId !== req.user._id) {
+        return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    const updatedComment = {
+        ...comment,
+        ...req.body,
+        _id: comment._id,
+        _ownerId: comment._ownerId,
+        _createdOn: comment._createdOn
+    };
+
+    db.comments[req.params.id] = updatedComment;
+    writeDB(db);
+
+    res.json(updatedComment);
+});
+
+// DELETE /data/comments/:id
+app.delete('/data/comments/:id', (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const db = readDB();
+    const comment = db.comments?.[req.params.id];
+    
+    if (!comment) {
+        return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    // Only allow users to delete their own comments
+    if (comment._ownerId !== req.user._id) {
+        return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    delete db.comments[req.params.id];
+    writeDB(db);
+
+    res.status(204).send();
+});
+
+// GET /data/interested
+app.get('/data/interested', (req, res) => {
+    const db = readDB();
+    let interested = Object.values(db.interested || {});
+    
+    // Handle where clause
+    if (req.query.where) {
+        const eventMatch = req.query.where.match(/eventId="([^"]+)"/);
+        if (eventMatch) {
+            interested = interested.filter(i => i.eventId === eventMatch[1]);
+        }
+        
+        const userMatch = req.query.where.match(/_ownerId="([^"]+)"/);
+        if (userMatch) {
+            interested = interested.filter(i => i._ownerId === userMatch[1]);
+        }
+    }
+    
+    res.json(interested);
+});
+
+// POST /data/interested
+app.post('/data/interested', (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const db = readDB();
+    const { eventId } = req.body;
+    
+    if (!eventId) {
+        return res.status(400).json({ message: 'eventId is required' });
+    }
+
+    // Check if event exists
+    const event = db.events[eventId];
+    if (!event) {
+        return res.status(404).json({ message: 'Event not found' });
+    }
+
+    // Check if user already expressed interest
+    const existingInterest = Object.values(db.interested || {}).find(
+        i => i.eventId === eventId && i._ownerId === req.user._id
+    );
+
+    if (existingInterest) {
+        return res.status(409).json({ message: 'Already interested' });
+    }
+
+    const interestId = generateId();
+    const newInterest = {
+        _id: interestId,
+        eventId: eventId,
+        _ownerId: req.user._id,
+        _createdOn: Date.now()
+    };
+
+    if (!db.interested) {
+        db.interested = {};
+    }
+    db.interested[interestId] = newInterest;
+    writeDB(db);
+
+    res.json(newInterest);
+});
+
+// DELETE /data/interested/:id
+app.delete('/data/interested/:id', (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const db = readDB();
+    const interest = db.interested?.[req.params.id];
+    
+    if (!interest) {
+        return res.status(404).json({ message: 'Interest not found' });
+    }
+
+    // Only allow users to remove their own interest
+    if (interest._ownerId !== req.user._id) {
+        return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    delete db.interested[req.params.id];
+    writeDB(db);
+
+    res.status(204).send();
+});
+
+// DELETE /data/interested (by eventId and userId)
+app.delete('/data/interested', (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const { eventId } = req.query;
+    
+    if (!eventId) {
+        return res.status(400).json({ message: 'eventId is required' });
+    }
+
+    const db = readDB();
+    const interest = Object.values(db.interested || {}).find(
+        i => i.eventId === eventId && i._ownerId === req.user._id
+    );
+    
+    if (!interest) {
+        return res.status(404).json({ message: 'Interest not found' });
+    }
+
+    delete db.interested[interest._id];
+    writeDB(db);
+
+    res.status(204).send();
+});
+
 // Start server
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);

@@ -1,5 +1,25 @@
-export default function DetailsComments({ comments }) {
+import CommentItem from "./CommentItem";
+
+export default function DetailsComments({ comments, setComments }) {
     const commentsList = Array.isArray(comments) ? comments : [];
+
+    const handleCommentUpdated = (updatedComment) => {
+        if (setComments) {
+            setComments(prev => {
+                if (!Array.isArray(prev)) return [updatedComment];
+                return prev.map(c => c._id === updatedComment._id ? updatedComment : c);
+            });
+        }
+    };
+
+    const handleCommentDeleted = (commentId) => {
+        if (setComments) {
+            setComments(prev => {
+                if (!Array.isArray(prev)) return [];
+                return prev.filter(c => c._id !== commentId);
+            });
+        }
+    };
 
     return (
         <div className="mt-8 pt-6 border-t border-gray-200">
@@ -9,16 +29,12 @@ export default function DetailsComments({ comments }) {
             )}
             <ul className="space-y-4">
                 {commentsList.map(comment => (
-                    <li key={comment._id || Math.random()} className="bg-gray-50 rounded-xl p-4 border-l-4 border-primary">
-                        <div className="flex items-start gap-3">
-                            <div className="flex-1">
-                                <p className="text-sm font-semibold text-primary mb-1">
-                                    {comment.author?.email || 'Анонимен'}
-                                </p>
-                                <p className="text-gray-700">{comment.comment || ''}</p>
-                            </div>
-                        </div>
-                    </li>
+                    <CommentItem
+                        key={comment._id || Math.random()}
+                        comment={comment}
+                        onCommentUpdated={handleCommentUpdated}
+                        onCommentDeleted={handleCommentDeleted}
+                    />
                 ))}
             </ul>
         </div>

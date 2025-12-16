@@ -120,6 +120,20 @@
       "_createdOn": 1765393990876,
       "comment": "Ще бъда там!",
       "eventId": "evt-005"
+    },
+    "id-1765697610653-t70va4m4c": {
+      "_id": "id-1765697610653-t70va4m4c",
+      "_ownerId": "id-1765391316240-w9j6wjacl",
+      "_createdOn": 1765697610653,
+      "comment": "Strahotna igra!",
+      "eventId": "id-1765697530932-fykkb1rgp"
+    },
+    "id-1765905093646-tyrh3urwx": {
+      "_id": "id-1765905093646-tyrh3urwx",
+      "_ownerId": "id-1765391316240-w9j6wjacl",
+      "_createdOn": 1765905093646,
+      "comment": "Много яко събитие!",
+      "eventId": "id-1765402053324-4hypxm22i"
     }
   },
   "users": {
@@ -154,10 +168,36 @@
       "userId": "id-1765391316240-w9j6wjacl",
       "accessToken": "0b70ee49eeed3d7b30b3b4538ccb407616c47e42a0a332dad446a7e63fa777cb"
     },
-    "id-1765399176120-toidntlya": {
-      "_id": "id-1765399176120-toidntlya",
+    "id-1765697330959-ecva8u0kz": {
+      "_id": "id-1765697330959-ecva8u0kz",
       "userId": "id-1765391316240-w9j6wjacl",
-      "accessToken": "4c095328b82021f47e925e17ee61848c8567bda083179af4d19f2dc52fd21eb9"
+      "accessToken": "0d7afe9b155f4111a92d9b9241ee48d47ba75d6ab5f76d7d0936075889bcc55d"
+    }
+  },
+  "interested": {
+    "int-001": {
+      "_id": "int-001",
+      "eventId": "evt-001",
+      "_ownerId": "user-002",
+      "_createdOn": 1734207100000
+    },
+    "int-002": {
+      "_id": "int-002",
+      "eventId": "evt-002",
+      "_ownerId": "user-001",
+      "_createdOn": 1734207200000
+    },
+    "id-1765904712741-f8asnp3nr": {
+      "_id": "id-1765904712741-f8asnp3nr",
+      "eventId": "id-1765402053324-4hypxm22i",
+      "_ownerId": "id-1765391316240-w9j6wjacl",
+      "_createdOn": 1765904712741
+    },
+    "id-1765904832797-1yjsa5dou": {
+      "_id": "id-1765904832797-1yjsa5dou",
+      "eventId": "evt-002",
+      "_ownerId": "id-1765391316240-w9j6wjacl",
+      "_createdOn": 1765904832797
     }
   }
 }

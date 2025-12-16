@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { Calendar, MapPin, User } from 'lucide-react';
 import { getCategoryDisplay, formatEventPrice } from '../../utils/categories';
+import InterestedButton from '../common/InterestedButton';
 
 export default function EventCard({
     _id,
@@ -11,7 +12,10 @@ export default function EventCard({
     location,
     price,
     author,
+    eventId,
 }) {
+    // Use eventId prop if provided, otherwise use _id
+    const currentEventId = eventId || _id;
     const formatDate = (dateString) => {
         if (!dateString) return '';
         try {
@@ -48,7 +52,7 @@ export default function EventCard({
 
     return (
         <Link 
-            to={`/events/${_id}/details`}
+            to={`/events/${currentEventId}/details`}
             className="block w-full bg-white rounded-2xl shadow-soft hover:shadow-color transition-all overflow-hidden group h-full flex flex-col cursor-pointer"
         >
             <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/20 via-secondary/20 to-primary/10">
@@ -74,19 +78,24 @@ export default function EventCard({
             </div>
 
             <div className="p-6 flex flex-col flex-grow">
-                {/* Badges */}
+                {/* Badges and Interested Button */}
                 <div className="flex items-center justify-between mb-3">
-                    {category && (
-                        <span className="px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full">
-                            {getCategoryDisplay(category)}
-                        </span>
-                    )}
-                    {isOnline && (
-                        <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
-                            Онлайн
-                        </span>
-                    )}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {category && (
+                            <span className="px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full">
+                                {getCategoryDisplay(category)}
+                            </span>
+                        )}
+                        {isOnline && (
+                            <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full flex items-center gap-1">
+                                <MapPin className="w-3 h-3" />
+                                Онлайн
+                            </span>
+                        )}
+                    </div>
+                    <div onClick={(e) => e.preventDefault()} className="relative z-10 flex-shrink-0">
+                        <InterestedButton eventId={currentEventId} variant="card" />
+                    </div>
                 </div>
 
                 <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary transition-colors">

@@ -15,6 +15,7 @@ import Login from "./components/login/Login"
 import Logout from "./components/logout/Logout"
 import Edit from "./components/edit/Edit"
 import RouteGuard from "./components/route-guard/RouteGuard"
+import NotFound from "./components/common/NotFound"
 import { ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 
@@ -56,6 +57,7 @@ function App() {
                     <Route element={<RouteGuard />}>
                         <Route path="/logout" element={<Logout />} />
                     </Route>
+                    <Route path="*" element={<NotFound />} />
                 </Routes>
             </main>
 

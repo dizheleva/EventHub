@@ -8,6 +8,44 @@ export default function EventCreateForm({ onEventCreated, onCancel, isSubmitting
     const { showToast } = useToast();
 
     const createEventHandler = async (values) => {
+        // Validation
+        // Date validation - not in the past
+        if (values.startDate) {
+            const startDate = new Date(values.startDate);
+            const now = new Date();
+            if (startDate < now) {
+                showToast('error', 'Началната дата не може да бъде в миналото!');
+                return;
+            }
+        }
+
+        // Price validation - not negative
+        const price = values.price ? Number(values.price) : 0;
+        if (price < 0) {
+            showToast('error', 'Цената не може да бъде отрицателна!');
+            return;
+        }
+
+        // URL validation for imageUrl
+        if (values.imageUrl && values.imageUrl.trim()) {
+            try {
+                new URL(values.imageUrl);
+            } catch {
+                showToast('error', 'Моля, въведете валиден URL за снимката!');
+                return;
+            }
+        }
+
+        // URL validation for websiteUrl
+        if (values.websiteUrl && values.websiteUrl.trim()) {
+            try {
+                new URL(values.websiteUrl);
+            } catch {
+                showToast('error', 'Моля, въведете валиден URL за официалната страница!');
+                return;
+            }
+        }
+
         const data = {
             title: values.title,
             category: values.category,
@@ -16,7 +54,7 @@ export default function EventCreateForm({ onEventCreated, onCancel, isSubmitting
             location: values.isOnline ? 'Онлайн' : (values.city ? (values.address ? `${values.city}, ${values.address}` : values.city) : ''),
             imageUrl: values.imageUrl || '',
             websiteUrl: values.websiteUrl || '',
-            price: values.price ? Number(values.price) : 0,
+            price: price,
             tags: values.tags || '',
         };
 

@@ -17,6 +17,17 @@ export default function Register() {
             return showToast('error', 'Имейл и парола са задължителни!');
         }
 
+        // Email format validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return showToast('error', 'Моля, въведете валиден имейл адрес!');
+        }
+
+        // Password length validation
+        if (password.length < 6) {
+            return showToast('error', 'Паролата трябва да бъде поне 6 символа!');
+        }
+
         if (password !== confirmPassword) {
             return showToast('error', 'Паролите не съвпадат!');
         }
